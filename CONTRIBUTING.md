@@ -69,7 +69,7 @@ We love pull requests! Here's how to contribute:
 
 1. **Clone your fork:**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/adabraka-ui.git
+   git clone https://github.com/augani/adabraka-ui.git
    cd adabraka-ui
    ```
 

@@ -22,6 +22,20 @@ A comprehensive, professional UI component library for [GPUI](https://github.com
 - 🚀 **High Performance** - Optimized for GPUI's retained-mode rendering with virtual scrolling
 - 📚 **Well Documented** - Extensive examples and comprehensive API documentation
 
+## 🎬 Showcase
+
+See adabraka-ui in action in real applications:
+
+### Desktop Music Player
+![Music Player App](docs/assets/images/music-player.png)
+
+A beautiful desktop music player with offline playing capabilities. Features smooth animations, responsive UI, and a polished user experience built entirely with adabraka-ui components.
+
+### Project Task Manager
+![Task Manager App](docs/assets/images/task-manager.png)
+
+A powerful task management application used to track the development of this UI library. Features drag-and-drop task organization with smooth animations, showcasing the library's advanced capabilities.
+
 ## 🚀 Installation
 
 > **Note:** Currently requires Rust nightly due to GPUI dependencies. Install with: `rustup toolchain install nightly`

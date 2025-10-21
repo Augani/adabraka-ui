@@ -6,48 +6,36 @@
     <title>adabraka-ui - Professional UI Components for GPUI</title>
     <meta name="description" content="A comprehensive, professional UI component library for GPUI. 70+ polished components for building beautiful desktop applications in Rust.">
 
-    <!-- Open Graph / Social Media -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="adabraka-ui - Professional UI Components for GPUI">
-    <meta property="og:description" content="70+ polished, accessible components for building beautiful desktop applications in Rust">
-    <meta property="og:image" content="https://augani.github.io/adabraka-ui/og-image.png">
-
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-    <!-- Styles -->
     <style>
         :root {
-            --bg-primary: #ffffff;
-            --bg-secondary: #f8fafc;
-            --bg-tertiary: #f1f5f9;
-            --text-primary: #0f172a;
-            --text-secondary: #475569;
-            --text-tertiary: #64748b;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --accent-light: #eef2ff;
-            --border: #e2e8f0;
-            --code-bg: #1e293b;
-            --success: #10b981;
-            --warning: #f59e0b;
+            --bg: #ffffff;
+            --bg-secondary: #fafafa;
+            --border: #e5e5e5;
+            --text: #171717;
+            --text-secondary: #737373;
+            --text-muted: #a3a3a3;
+            --accent: #18181b;
+            --accent-hover: #27272a;
+            --code-bg: #fafafa;
+            --sidebar-width: 260px;
         }
 
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-primary: #0f172a;
-                --bg-secondary: #1e293b;
-                --bg-tertiary: #334155;
-                --text-primary: #f1f5f9;
-                --text-secondary: #cbd5e1;
-                --text-tertiary: #94a3b8;
-                --accent: #818cf8;
-                --accent-hover: #6366f1;
-                --accent-light: #1e1b4b;
-                --border: #334155;
-                --code-bg: #0f172a;
+                --bg: #0a0a0a;
+                --bg-secondary: #18181b;
+                --border: #27272a;
+                --text: #fafafa;
+                --text-secondary: #a3a3a3;
+                --text-muted: #737373;
+                --accent: #fafafa;
+                --accent-hover: #e5e5e5;
+                --code-bg: #18181b;
             }
         }
 
@@ -59,714 +47,582 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: var(--bg-primary);
-            color: var(--text-primary);
+            background: var(--bg);
+            color: var(--text);
             line-height: 1.6;
-            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
-        /* Header */
-        header {
-            background: var(--bg-primary);
-            border-bottom: 1px solid var(--border);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        @media (prefers-color-scheme: dark) {
-            header {
-                background: rgba(15, 23, 42, 0.9);
-            }
-        }
-
-        nav {
+        /* Layout */
+        .layout {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.5rem 0;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg);
+            border-right: 1px solid var(--border);
+            padding: 2rem 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
         }
 
         .logo {
-            font-size: 1.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            padding: 0 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .logo h1 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .logo p {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 0.25rem;
+        }
+
+        .nav-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .nav-section-title {
+            padding: 0 1.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
         }
 
         .nav-links {
-            display: flex;
-            gap: 2rem;
-            align-items: center;
+            list-style: none;
         }
 
         .nav-links a {
+            display: block;
+            padding: 0.5rem 1.5rem;
             color: var(--text-secondary);
             text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+            border-left: 2px solid transparent;
         }
 
         .nav-links a:hover {
-            color: var(--accent);
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: white;
-            padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-block;
-            border: none;
-            cursor: pointer;
-        }
-
-        .btn-primary:hover {
-            background: var(--accent-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-secondary {
+            color: var(--text);
             background: var(--bg-secondary);
-            color: var(--text-primary);
-            padding: 0.625rem 1.5rem;
-            border-radius: 0.5rem;
-            text-decoration: none;
-            font-weight: 600;
-            transition: all 0.2s;
-            display: inline-block;
-            border: 1px solid var(--border);
         }
 
-        .btn-secondary:hover {
-            background: var(--bg-tertiary);
-            transform: translateY(-1px);
+        .nav-links a.active {
+            color: var(--text);
+            background: var(--bg-secondary);
+            border-left-color: var(--accent);
+            font-weight: 500;
+        }
+
+        .sidebar-footer {
+            padding: 0 1.5rem;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .sidebar-footer a {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--accent);
+            color: var(--bg);
+            text-decoration: none;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s;
+            width: 100%;
+            justify-content: center;
+        }
+
+        .sidebar-footer a:hover {
+            background: var(--accent-hover);
+        }
+
+        .support-btn {
+            margin-top: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .support-btn:hover {
+            opacity: 1;
+        }
+
+        /* Main Content */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 3rem;
+            max-width: 1200px;
         }
 
         /* Hero Section */
         .hero {
-            padding: 6rem 0 8rem;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-            animation: pulse 15s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1) rotate(0deg); }
-            50% { transform: scale(1.1) rotate(5deg); }
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 1;
+            margin-bottom: 4rem;
         }
 
         .hero h1 {
-            font-size: 4rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            margin-bottom: 1.5rem;
+            letter-spacing: -0.03em;
+            margin-bottom: 1rem;
             line-height: 1.1;
-            background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
-        .hero-subtitle {
-            font-size: 1.5rem;
+        .hero p {
+            font-size: 1.125rem;
             color: var(--text-secondary);
-            margin-bottom: 3rem;
-            max-width: 700px;
-            margin-left: auto;
-            margin-right: auto;
+            max-width: 600px;
+            margin-bottom: 2rem;
         }
 
-        .hero-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
-
-        /* Badges */
         .badges {
             display: flex;
             gap: 0.75rem;
-            justify-content: center;
-            margin-top: 2rem;
             flex-wrap: wrap;
         }
 
         .badge {
-            background: var(--bg-secondary);
+            display: inline-flex;
+            align-items: center;
             padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
+            background: var(--bg-secondary);
             border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.8125rem;
+            color: var(--text-secondary);
+        }
+
+        /* Showcase Section */
+        .showcase {
+            margin-bottom: 4rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .section-subtitle {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+        }
+
+        .showcase-grid {
+            display: grid;
+            gap: 2rem;
+        }
+
+        .showcase-item {
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: var(--bg-secondary);
+        }
+
+        .showcase-image {
+            width: 100%;
+            height: auto;
+            display: block;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .showcase-content {
+            padding: 1.5rem;
+        }
+
+        .showcase-content h3 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .showcase-content p {
+            color: var(--text-secondary);
+            font-size: 0.9375rem;
         }
 
         /* Features Grid */
         .features {
-            padding: 6rem 0;
-            background: var(--bg-secondary);
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1rem;
-        }
-
-        .section-subtitle {
-            text-align: center;
-            font-size: 1.25rem;
-            color: var(--text-secondary);
             margin-bottom: 4rem;
         }
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-        }
-
-        .feature-card {
-            background: var(--bg-primary);
-            padding: 2rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border);
-            transition: all 0.3s;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
-            border-color: var(--accent);
-        }
-
-        .feature-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-
-        .feature-card h3 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.75rem;
-        }
-
-        .feature-card p {
-            color: var(--text-secondary);
-            line-height: 1.7;
-        }
-
-        /* Components Section */
-        .components {
-            padding: 6rem 0;
-        }
-
-        .component-categories {
-            display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
-            margin-top: 3rem;
         }
 
-        .category-card {
-            background: var(--bg-secondary);
+        .feature {
             padding: 1.5rem;
-            border-radius: 0.75rem;
             border: 1px solid var(--border);
-            transition: all 0.2s;
-            cursor: pointer;
+            border-radius: 0.5rem;
+            background: var(--bg-secondary);
         }
 
-        .category-card:hover {
-            border-color: var(--accent);
-            background: var(--accent-light);
-        }
-
-        .category-card h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
+        .feature h3 {
+            font-size: 1rem;
+            font-weight: 600;
             margin-bottom: 0.5rem;
-            color: var(--accent);
         }
 
-        .category-card .count {
-            color: var(--text-tertiary);
+        .feature p {
             font-size: 0.875rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .category-card ul {
-            list-style: none;
             color: var(--text-secondary);
-            font-size: 0.875rem;
-            line-height: 1.8;
-        }
-
-        .category-card li::before {
-            content: '→';
-            margin-right: 0.5rem;
-            color: var(--accent);
+            line-height: 1.6;
         }
 
         /* Code Section */
         .code-section {
-            padding: 6rem 0;
-            background: var(--bg-secondary);
+            margin-bottom: 4rem;
         }
 
-        .code-example {
+        .code-block {
             background: var(--code-bg);
-            border-radius: 1rem;
-            padding: 2rem;
-            margin-top: 2rem;
-            overflow-x: auto;
             border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin-bottom: 1rem;
         }
 
-        .code-example pre {
+        .code-block pre {
             margin: 0;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.875rem;
+            font-size: 0.8125rem;
             line-height: 1.7;
-            color: #e2e8f0;
-        }
-
-        .code-example code {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .code-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text);
         }
 
         .code-title {
-            color: #94a3b8;
             font-size: 0.875rem;
             font-weight: 600;
+            margin-bottom: 1rem;
+            color: var(--text-secondary);
         }
 
-        .copy-btn {
-            background: rgba(255, 255, 255, 0.1);
-            color: #cbd5e1;
-            border: none;
-            padding: 0.375rem 0.75rem;
-            border-radius: 0.375rem;
-            cursor: pointer;
-            font-size: 0.75rem;
-            transition: all 0.2s;
-        }
-
-        .copy-btn:hover {
-            background: rgba(255, 255, 255, 0.2);
-        }
-
-        /* Stats Section */
+        /* Stats */
         .stats {
-            padding: 6rem 0;
-            text-align: center;
-        }
-
-        .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-            margin-top: 3rem;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+            padding: 2rem;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
         }
 
         .stat {
-            padding: 2rem;
+            text-align: center;
         }
 
         .stat-number {
-            font-size: 3.5rem;
+            font-size: 2rem;
             font-weight: 800;
-            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            margin-bottom: 0.5rem;
+            letter-spacing: -0.03em;
         }
 
         .stat-label {
+            font-size: 0.875rem;
             color: var(--text-secondary);
-            font-size: 1.125rem;
-            font-weight: 500;
+            margin-top: 0.25rem;
         }
 
-        /* CTA Section */
-        .cta {
-            padding: 6rem 0;
-            background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
-            text-align: center;
-            color: white;
+        /* Components List */
+        .components-list {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.75rem;
         }
 
-        .cta h2 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            margin-bottom: 1.5rem;
-        }
-
-        .cta p {
-            font-size: 1.25rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        .cta .btn-primary {
-            background: white;
-            color: var(--accent);
-        }
-
-        .cta .btn-primary:hover {
+        .components-list li {
+            padding: 0.75rem 1rem;
             background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            transition: all 0.2s;
         }
 
-        .cta .btn-secondary {
-            background: transparent;
-            color: white;
-            border-color: rgba(255, 255, 255, 0.3);
+        .components-list li:hover {
+            border-color: var(--accent);
         }
 
-        .cta .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: white;
+        .components-list li::before {
+            content: '→';
+            margin-right: 0.5rem;
+            color: var(--text-muted);
         }
 
         /* Footer */
-        footer {
-            background: var(--bg-secondary);
-            padding: 3rem 0;
-            border-top: 1px solid var(--border);
-        }
-
-        .footer-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 3rem;
-        }
-
-        .footer-section h4 {
-            font-weight: 700;
-            margin-bottom: 1rem;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section li {
-            margin-bottom: 0.5rem;
-        }
-
-        .footer-section a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            transition: color 0.2s;
-        }
-
-        .footer-section a:hover {
-            color: var(--accent);
-        }
-
-        .footer-bottom {
-            margin-top: 3rem;
+        .footer {
+            margin-top: 6rem;
             padding-top: 2rem;
             border-top: 1px solid var(--border);
-            text-align: center;
-            color: var(--text-tertiary);
+            color: var(--text-secondary);
             font-size: 0.875rem;
         }
 
-        /* Responsive */
+        .footer-links {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--text);
+        }
+
+        /* Mobile */
         @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .hero-subtitle {
-                font-size: 1.25rem;
-            }
-
-            .section-title {
-                font-size: 2rem;
-            }
-
-            .nav-links {
+            .sidebar {
                 display: none;
             }
 
-            .stats-grid {
-                gap: 2rem;
+            .main {
+                margin-left: 0;
+                padding: 2rem 1.5rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
             }
         }
 
         /* Syntax Highlighting */
-        .keyword { color: #c792ea; }
-        .string { color: #c3e88d; }
-        .function { color: #82aaff; }
-        .comment { color: #546e7a; }
-        .type { color: #ffcb6b; }
+        .keyword { color: #d73a49; }
+        .string { color: #032f62; }
+        .function { color: #6f42c1; }
+        .comment { color: #6a737d; }
+        .type { color: #005cc5; }
+
+        @media (prefers-color-scheme: dark) {
+            .keyword { color: #f97583; }
+            .string { color: #9ecbff; }
+            .function { color: #b392f0; }
+            .comment { color: #8b949e; }
+            .type { color: #79c0ff; }
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <header>
-        <nav class="container">
-            <div class="logo">adabraka-ui</div>
-            <div class="nav-links">
-                <a href="#features">Features</a>
-                <a href="#components">Components</a>
-                <a href="#examples">Examples</a>
-                <a href="https://docs.rs/adabraka-ui" target="_blank">Docs</a>
-                <a href="https://github.com/Augani/adabraka-ui" target="_blank" class="btn-primary">GitHub</a>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <h1>adabraka-ui</h1>
+            <p>GPUI Components</p>
+        </div>
+
+        <nav>
+            <div class="nav-section">
+                <div class="nav-section-title">Getting Started</div>
+                <ul class="nav-links">
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#quick-start">Quick Start</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Examples</div>
+                <ul class="nav-links">
+                    <li><a href="#showcase">App Showcase</a></li>
+                    <li><a href="#components">Components</a></li>
+                    <li><a href="#code-examples">Code Examples</a></li>
+                </ul>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Resources</div>
+                <ul class="nav-links">
+                    <li><a href="https://docs.rs/adabraka-ui" target="_blank">API Docs</a></li>
+                    <li><a href="https://github.com/Augani/adabraka-ui" target="_blank">GitHub</a></li>
+                    <li><a href="https://github.com/Augani/adabraka-ui/blob/main/CONTRIBUTING.md" target="_blank">Contributing</a></li>
+                </ul>
             </div>
         </nav>
-    </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="hero-content container">
-            <h1>Professional UI Components<br>for GPUI</h1>
-            <p class="hero-subtitle">
-                A comprehensive UI component library for building beautiful desktop applications in Rust.
-                70+ polished, accessible components inspired by shadcn/ui.
+        <div class="sidebar-footer">
+            <a href="https://github.com/Augani/adabraka-ui" target="_blank">
+                <span>View on GitHub</span>
+            </a>
+            <a href="https://www.buymeacoffee.com/pythonxi" target="_blank" class="support-btn">
+                <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
+                     alt="Buy Me A Coffee"
+                     style="height: 32px; width: auto; border-radius: 0.25rem;">
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main">
+        <!-- Hero -->
+        <section id="overview" class="hero">
+            <h1>Build beautiful desktop apps with Rust</h1>
+            <p>
+                A comprehensive UI component library for GPUI. 70+ polished, accessible components
+                inspired by shadcn/ui for building professional desktop applications.
             </p>
-            <div class="hero-buttons">
-                <a href="https://github.com/Augani/adabraka-ui" class="btn-primary">Get Started</a>
-                <a href="https://docs.rs/adabraka-ui" class="btn-secondary">Documentation</a>
-            </div>
             <div class="badges">
-                <span class="badge">🎨 Complete Theme System</span>
-                <span class="badge">🧩 70+ Components</span>
-                <span class="badge">♿ Fully Accessible</span>
-                <span class="badge">🚀 High Performance</span>
+                <span class="badge">70+ Components</span>
+                <span class="badge">Complete Theme System</span>
+                <span class="badge">Fully Accessible</span>
+                <span class="badge">Type-Safe</span>
+                <span class="badge">MIT Licensed</span>
             </div>
-            <div style="margin-top: 2rem;">
-                <a href="https://www.buymeacoffee.com/pythonxi" target="_blank">
-                    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-                         alt="Buy Me A Coffee"
-                         style="height: 50px; width: 180px; border-radius: 0.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
-                </a>
+        </section>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number">70+</div>
+                <div class="stat-label">Components</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">50+</div>
+                <div class="stat-label">Examples</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">100%</div>
+                <div class="stat-label">Type-Safe</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number">0.1</div>
+                <div class="stat-label">Version</div>
             </div>
         </div>
-    </section>
 
-    <!-- Stats Section -->
-    <section class="stats">
-        <div class="container">
-            <div class="stats-grid">
-                <div class="stat">
-                    <div class="stat-number">70+</div>
-                    <div class="stat-label">Components</div>
+        <!-- App Showcase -->
+        <section id="showcase" class="showcase">
+            <h2 class="section-title">Built with adabraka-ui</h2>
+            <p class="section-subtitle">Real applications showcasing the power and flexibility of the library</p>
+
+            <div class="showcase-grid">
+                <div class="showcase-item">
+                    <img src="assets/images/music-player.png" alt="Music Player App" class="showcase-image">
+                    <div class="showcase-content">
+                        <h3>Desktop Music Player</h3>
+                        <p>
+                            A beautiful desktop music player with offline playing capabilities.
+                            Features smooth animations, responsive UI, and a polished user experience
+                            built entirely with adabraka-ui components.
+                        </p>
+                    </div>
                 </div>
-                <div class="stat">
-                    <div class="stat-number">50+</div>
-                    <div class="stat-label">Examples</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">100%</div>
-                    <div class="stat-label">Type-Safe</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-number">MIT</div>
-                    <div class="stat-label">Licensed</div>
+
+                <div class="showcase-item">
+                    <img src="assets/images/task-manager.png" alt="Task Manager App" class="showcase-image">
+                    <div class="showcase-content">
+                        <h3>Project Task Manager</h3>
+                        <p>
+                            A powerful task management application used to track the development of this UI library.
+                            Demonstrates data tables, forms, and complex layouts working together seamlessly.
+                        </p>
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Features Section -->
-    <section id="features" class="features">
-        <div class="container">
+        <!-- Features -->
+        <section class="features">
             <h2 class="section-title">Why adabraka-ui?</h2>
             <p class="section-subtitle">Everything you need to build professional desktop applications</p>
 
             <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎨</div>
+                <div class="feature">
                     <h3>Complete Theme System</h3>
                     <p>Built-in light/dark themes with semantic color tokens. Easily customizable to match your brand.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">🧩</div>
+                <div class="feature">
                     <h3>70+ Components</h3>
-                    <p>Comprehensive library covering all UI needs from basic buttons to complex data tables and editors.</p>
+                    <p>From basic buttons to complex data tables and code editors. Everything you need in one library.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3>Responsive Layouts</h3>
-                    <p>Flexible layout utilities (VStack, HStack, Grid) for building adaptive interfaces.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🎭</div>
-                    <h3>Smooth Animations</h3>
-                    <p>Professional animations with cubic-bezier easing and spring physics for polished UX.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">♿</div>
+                <div class="feature">
                     <h3>Accessible by Default</h3>
                     <p>Full keyboard navigation, ARIA labels, and screen reader support built into every component.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">🚀</div>
+                <div class="feature">
+                    <h3>Type-Safe</h3>
+                    <p>Leverages Rust's type system for compile-time guarantees and better developer experience.</p>
+                </div>
+
+                <div class="feature">
                     <h3>High Performance</h3>
                     <p>Optimized for GPUI's retained-mode rendering with virtual scrolling and efficient updates.</p>
                 </div>
 
-                <div class="feature-card">
-                    <div class="feature-icon">💻</div>
-                    <h3>Code Editor</h3>
-                    <p>Multi-line editor with syntax highlighting, perfect for SQL queries and code editing.</p>
-                </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">📚</div>
+                <div class="feature">
                     <h3>Well Documented</h3>
                     <p>Extensive examples and comprehensive API documentation to get you started quickly.</p>
                 </div>
-
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Type-Safe</h3>
-                    <p>Leverages Rust's type system for compile-time guarantees and better developer experience.</p>
-                </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Components Section -->
-    <section id="components" class="components">
-        <div class="container">
-            <h2 class="section-title">Component Library</h2>
-            <p class="section-subtitle">Organized by category for easy discovery</p>
+        <!-- Installation -->
+        <section id="installation" class="code-section">
+            <h2 class="section-title">Installation</h2>
+            <p class="section-subtitle">Add to your Cargo.toml and start building</p>
 
-            <div class="component-categories">
-                <div class="category-card">
-                    <h3>Input Components</h3>
-                    <div class="count">12 components</div>
-                    <ul>
-                        <li>Button & IconButton</li>
-                        <li>Input & Textarea</li>
-                        <li>Checkbox & Toggle</li>
-                        <li>Select & SearchInput</li>
-                        <li>Editor (Code/SQL)</li>
-                    </ul>
-                </div>
-
-                <div class="category-card">
-                    <h3>Navigation</h3>
-                    <div class="count">10 components</div>
-                    <ul>
-                        <li>Sidebar & MenuBar</li>
-                        <li>Tabs & Breadcrumbs</li>
-                        <li>Tree Navigation</li>
-                        <li>Toolbar & StatusBar</li>
-                        <li>Command Palette</li>
-                    </ul>
-                </div>
-
-                <div class="category-card">
-                    <h3>Data Display</h3>
-                    <div class="count">8 components</div>
-                    <ul>
-                        <li>Table & DataTable</li>
-                        <li>Card & Badge</li>
-                        <li>Accordion</li>
-                        <li>Progress & Spinner</li>
-                        <li>Text Component</li>
-                    </ul>
-                </div>
-
-                <div class="category-card">
-                    <h3>Overlays</h3>
-                    <div class="count">6 components</div>
-                    <ul>
-                        <li>Dialog & Modal</li>
-                        <li>Popover & Tooltip</li>
-                        <li>Toast Notifications</li>
-                        <li>Context Menu</li>
-                    </ul>
-                </div>
-
-                <div class="category-card">
-                    <h3>Layout</h3>
-                    <div class="count">5 components</div>
-                    <ul>
-                        <li>VStack & HStack</li>
-                        <li>Grid Layout</li>
-                        <li>Scrollable</li>
-                        <li>Resizable Panels</li>
-                    </ul>
-                </div>
-
-                <div class="category-card">
-                    <h3>Advanced</h3>
-                    <div class="count">8 components</div>
-                    <ul>
-                        <li>Drag & Drop</li>
-                        <li>Form Validation</li>
-                        <li>Virtual Scrolling</li>
-                        <li>Keyboard Shortcuts</li>
-                        <li>Icon System</li>
-                    </ul>
-                </div>
+            <div class="code-block">
+                <div class="code-title">Cargo.toml</div>
+                <pre><code>[dependencies]
+adabraka-ui = "0.1.0"
+gpui = "0.2.0"</code></pre>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Code Example Section -->
-    <section class="code-section">
-        <div class="container">
-            <h2 class="section-title">Get Started in Minutes</h2>
-            <p class="section-subtitle">Simple, elegant API inspired by shadcn/ui</p>
+        <!-- Quick Start -->
+        <section id="quick-start" class="code-section">
+            <h2 class="section-title">Quick Start</h2>
+            <p class="section-subtitle">Get up and running in minutes</p>
 
-            <div class="code-example">
-                <div class="code-header">
-                    <span class="code-title">main.rs</span>
-                    <button class="copy-btn" onclick="copyCode()">Copy</button>
-                </div>
+            <div class="code-block">
+                <div class="code-title">main.rs</div>
                 <pre><code><span class="keyword">use</span> adabraka_ui::prelude::*;
 <span class="keyword">use</span> gpui::*;
 
@@ -774,8 +630,6 @@
     Application::<span class="function">new</span>().<span class="function">run</span>(|cx| {
         <span class="comment">// Initialize the UI library</span>
         adabraka_ui::<span class="function">init</span>(cx);
-
-        <span class="comment">// Install a theme</span>
         <span class="function">install_theme</span>(cx, Theme::<span class="function">dark</span>());
 
         cx.<span class="function">open_window</span>(
@@ -789,159 +643,182 @@
             |_, cx| cx.<span class="function">new</span>(|_| MyApp::<span class="function">new</span>()),
         ).<span class="function">unwrap</span>();
     });
-}
-
-<span class="keyword">impl</span> <span class="type">Render</span> <span class="keyword">for</span> <span class="type">MyApp</span> {
-    <span class="keyword">fn</span> <span class="function">render</span>(&<span class="keyword">mut self</span>, _: &<span class="keyword">mut</span> Window, cx: &<span class="keyword">mut</span> Context&lt;<span class="keyword">Self</span>&gt;) -&gt; <span class="keyword">impl</span> IntoElement {
-        VStack::<span class="function">new</span>()
-            .<span class="function">p</span>(<span class="function">px</span>(32.0))
-            .<span class="function">gap</span>(<span class="function">px</span>(16.0))
-            .<span class="function">child</span>(
-                <span class="function">h1</span>(<span class="string">"Welcome to adabraka-ui!"</span>)
-            )
-            .<span class="function">child</span>(
-                Button::<span class="function">new</span>(<span class="string">"Get Started"</span>)
-                    .<span class="function">variant</span>(ButtonVariant::Default)
-                    .<span class="function">on_click</span>(|_, _, _| {
-                        <span class="function">println!</span>(<span class="string">"Button clicked!"</span>);
-                    })
-            )
-    }
 }</code></pre>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <!-- Examples Section -->
-    <section id="examples" class="stats">
-        <div class="container">
-            <h2 class="section-title">50+ Working Examples</h2>
-            <p class="section-subtitle">Learn by exploring fully functional example applications</p>
+        <!-- Code Examples -->
+        <section id="code-examples" class="code-section">
+            <h2 class="section-title">Component Examples</h2>
+            <p class="section-subtitle">Simple, elegant APIs inspired by modern UI frameworks</p>
 
-            <div class="features-grid" style="margin-top: 3rem;">
-                <div class="feature-card">
-                    <h3>🎨 Component Demos</h3>
-                    <p>Dedicated examples for every component showcasing all variants and configurations.</p>
-                </div>
+            <div class="code-block">
+                <div class="code-title">Creating a Button</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::components::button::*;
 
-                <div class="feature-card">
-                    <h3>🖥️ IDE Demo</h3>
-                    <p>Full IDE-style application demonstrating complex layouts and interactions.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>📁 File Explorer</h3>
-                    <p>Tree navigation with file system integration and context menus.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>💫 Animation Showcase</h3>
-                    <p>Interactive demos of all animation presets and easing functions.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>📊 Data Tables</h3>
-                    <p>Sortable, filterable tables with virtual scrolling for large datasets.</p>
-                </div>
-
-                <div class="feature-card">
-                    <h3>🎯 Form Validation</h3>
-                    <p>Complete forms with real-time validation and error handling.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- CTA Section -->
-    <section class="cta">
-        <div class="container">
-            <h2>Ready to Build Something Amazing?</h2>
-            <p>Start building beautiful desktop applications with adabraka-ui today</p>
-            <div class="hero-buttons">
-                <a href="https://github.com/Augani/adabraka-ui" class="btn-primary">View on GitHub</a>
-                <a href="https://docs.rs/adabraka-ui" class="btn-secondary">Read the Docs</a>
-            </div>
-            <div style="margin-top: 2.5rem; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.2);">
-                <p style="font-size: 1.125rem; margin-bottom: 1rem; opacity: 0.95;">Support the Project</p>
-                <a href="https://www.buymeacoffee.com/pythonxi" target="_blank">
-                    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png"
-                         alt="Buy Me A Coffee"
-                         style="height: 50px; width: 180px; border-radius: 0.5rem; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);">
-                </a>
-            </div>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>adabraka-ui</h4>
-                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">
-                        Professional UI components for GPUI applications
-                    </p>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Documentation</h4>
-                    <ul>
-                        <li><a href="https://docs.rs/adabraka-ui">API Docs</a></li>
-                        <li><a href="https://github.com/Augani/adabraka-ui#quick-start">Quick Start</a></li>
-                        <li><a href="https://github.com/Augani/adabraka-ui#theme-system">Theme System</a></li>
-                        <li><a href="https://github.com/Augani/adabraka-ui#components">Components</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Community</h4>
-                    <ul>
-                        <li><a href="https://github.com/Augani/adabraka-ui">GitHub</a></li>
-                        <li><a href="https://github.com/Augani/adabraka-ui/issues">Issues</a></li>
-                        <li><a href="https://github.com/Augani/adabraka-ui/discussions">Discussions</a></li>
-                        <li><a href="https://crates.io/crates/adabraka-ui">Crates.io</a></li>
-                    </ul>
-                </div>
-
-                <div class="footer-section">
-                    <h4>Acknowledgments</h4>
-                    <ul>
-                        <li><a href="https://zed.dev/">Zed & GPUI</a></li>
-                        <li><a href="https://lucide.dev/">Lucide Icons</a></li>
-                        <li><a href="https://ui.shadcn.com/">shadcn/ui</a></li>
-                    </ul>
-                </div>
+Button::<span class="function">new</span>(<span class="string">"Click me"</span>)
+    .<span class="function">variant</span>(ButtonVariant::Default)
+    .<span class="function">size</span>(ButtonSize::Md)
+    .<span class="function">on_click</span>(|_event, _window, _cx| {
+        <span class="function">println!</span>(<span class="string">"Button clicked!"</span>);
+    })</code></pre>
             </div>
 
-            <div class="footer-bottom">
-                <p>&copy; 2025 adabraka-ui. Released under the MIT License.</p>
-                <p style="margin-top: 0.5rem;">Built with ❤️ using GPUI</p>
+            <div class="code-block">
+                <div class="code-title">Building Layouts</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::layout::*;
+
+VStack::<span class="function">new</span>()
+    .<span class="function">p</span>(<span class="function">px</span>(32.0))
+    .<span class="function">gap</span>(<span class="function">px</span>(16.0))
+    .<span class="function">child</span>(<span class="function">h1</span>(<span class="string">"Welcome"</span>))
+    .<span class="function">child</span>(
+        HStack::<span class="function">new</span>()
+            .<span class="function">gap</span>(<span class="function">px</span>(12.0))
+            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"Cancel"</span>))
+            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"Save"</span>).<span class="function">variant</span>(ButtonVariant::Default))
+    )</code></pre>
             </div>
-        </div>
-    </footer>
+
+            <div class="code-block">
+                <div class="code-title">Using the Theme System</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::theme::*;
+
+<span class="keyword">fn</span> <span class="function">render</span>(&<span class="keyword">mut self</span>, _: &<span class="keyword">mut</span> Window, cx: &<span class="keyword">mut</span> Context&lt;<span class="keyword">Self</span>&gt;) -&gt; <span class="keyword">impl</span> IntoElement {
+    <span class="keyword">let</span> theme = <span class="function">use_theme</span>();
+
+    <span class="function">div</span>()
+        .<span class="function">bg</span>(theme.tokens.background)
+        .<span class="function">text_color</span>(theme.tokens.foreground)
+        .<span class="function">border_1</span>()
+        .<span class="function">border_color</span>(theme.tokens.border)
+        .<span class="function">child</span>(<span class="string">"Themed content"</span>)
+}</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">Data Tables</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::components::table::*;
+
+<span class="keyword">let</span> columns = <span class="function">vec!</span>[
+    Column::<span class="function">new</span>(<span class="string">"name"</span>, <span class="string">"Name"</span>).<span class="function">sortable</span>(<span class="keyword">true</span>),
+    Column::<span class="function">new</span>(<span class="string">"email"</span>, <span class="string">"Email"</span>).<span class="function">sortable</span>(<span class="keyword">true</span>),
+    Column::<span class="function">new</span>(<span class="string">"role"</span>, <span class="string">"Role"</span>),
+];
+
+DataTable::<span class="function">new</span>(data, columns, cx)
+    .<span class="function">sortable</span>(<span class="keyword">true</span>)
+    .<span class="function">on_row_select</span>(|item, _window, _cx| {
+        <span class="function">println!</span>(<span class="string">"Selected: {:?}"</span>, item);
+    })</code></pre>
+            </div>
+        </section>
+
+        <!-- Components List -->
+        <section id="components" class="features">
+            <h2 class="section-title">70+ Components</h2>
+            <p class="section-subtitle">Comprehensive library covering all your UI needs</p>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Input & Forms</h3>
+            <ul class="components-list">
+                <li>Button & IconButton</li>
+                <li>Input & Textarea</li>
+                <li>Checkbox & Toggle</li>
+                <li>Select & SearchInput</li>
+                <li>Editor (Code/SQL)</li>
+                <li>Radio & RadioGroup</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Navigation</h3>
+            <ul class="components-list">
+                <li>Sidebar & MenuBar</li>
+                <li>Tabs & Breadcrumbs</li>
+                <li>Tree Navigation</li>
+                <li>Toolbar & StatusBar</li>
+                <li>Command Palette</li>
+                <li>Context Menu</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Data Display</h3>
+            <ul class="components-list">
+                <li>Table & DataTable</li>
+                <li>Card & Badge</li>
+                <li>Accordion</li>
+                <li>Progress & Spinner</li>
+                <li>Text Component</li>
+                <li>Avatar & AvatarGroup</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Overlays</h3>
+            <ul class="components-list">
+                <li>Dialog & Modal</li>
+                <li>Popover & Tooltip</li>
+                <li>Toast Notifications</li>
+                <li>Alert & AlertDialog</li>
+            </ul>
+
+            <h3 style="font-size: 1rem; font-weight: 600; margin-top: 2rem; margin-bottom: 1rem;">Layout</h3>
+            <ul class="components-list">
+                <li>VStack & HStack</li>
+                <li>Grid Layout</li>
+                <li>Scrollable</li>
+                <li>Resizable Panels</li>
+            </ul>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-links">
+                <a href="https://github.com/Augani/adabraka-ui">GitHub</a>
+                <a href="https://docs.rs/adabraka-ui">Documentation</a>
+                <a href="https://github.com/Augani/adabraka-ui/blob/main/CONTRIBUTING.md">Contributing</a>
+                <a href="https://crates.io/crates/adabraka-ui">Crates.io</a>
+            </div>
+            <p>
+                Built with <a href="https://github.com/zed-industries/zed" target="_blank">GPUI</a> •
+                Icons by <a href="https://lucide.dev" target="_blank">Lucide</a> •
+                Inspired by <a href="https://ui.shadcn.com" target="_blank">shadcn/ui</a>
+            </p>
+            <p style="margin-top: 0.5rem;">MIT License © 2025 adabraka-ui</p>
+        </footer>
+    </main>
 
     <script>
-        function copyCode() {
-            const code = document.querySelector('.code-example pre').textContent;
-            navigator.clipboard.writeText(code).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                btn.textContent = 'Copied!';
-                setTimeout(() => {
-                    btn.textContent = 'Copy';
-                }, 2000);
-            });
-        }
-
-        // Smooth scrolling for anchor links
+        // Smooth scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                    // Update active link
+                    document.querySelectorAll('.nav-links a').forEach(link => {
+                        link.classList.remove('active');
                     });
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Update active link on scroll
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.clientHeight;
+                if (window.pageYOffset >= sectionTop - 100) {
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === `#${current}`) {
+                    link.classList.add('active');
                 }
             });
         });

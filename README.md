@@ -1363,13 +1363,31 @@ Your support helps maintain and improve this library for the community!
 
 ## Contributing
 
-Contributions are welcome! Please:
+We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
 
-1. Check existing issues and PRs
-2. Follow the established code patterns
-3. Add tests for new functionality
-4. Update documentation
-5. Ensure all examples compile and run
+### Quick Start
+
+1. **Read the [Contributing Guidelines](CONTRIBUTING.md)** for detailed information
+2. **Check existing [issues](https://github.com/Augani/adabraka-ui/issues)** and [pull requests](https://github.com/Augani/adabraka-ui/pulls)
+3. **Fork the repository** and create your feature branch
+4. **Follow our coding guidelines** and add tests
+5. **Submit a pull request** using our template
+
+### Reporting Issues
+
+- **Bug Reports**: Use our [bug report template](.github/ISSUE_TEMPLATE/bug_report.md)
+- **Feature Requests**: Use our [feature request template](.github/ISSUE_TEMPLATE/feature_request.md)
+- **Questions**: Start a [discussion](https://github.com/Augani/adabraka-ui/discussions)
+
+### Development Guidelines
+
+- Follow Rust best practices and idioms
+- Use `cargo fmt` for formatting and `cargo clippy` for linting
+- Write tests for new functionality
+- Update documentation and examples
+- Ensure all examples compile and run
+
+For detailed guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Acknowledgments
 

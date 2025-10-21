@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 💬 Discussions
+    url: https://github.com/Augani/adabraka-ui/discussions
+    about: Ask questions and discuss ideas with the community
+  - name: 📚 Documentation
+    url: https://docs.rs/adabraka-ui
+    about: Read the API documentation
+  - name: 💡 Examples
+    url: https://github.com/Augani/adabraka-ui/tree/main/examples
+    about: Browse example applications

@@ -1,0 +1,22 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "danielbayley",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "find",
+    "data",
+    "copy",
+    "txt",
+    "pdf",
+    "document",
+    "scan",
+    "magnifier",
+    "magnifying glass",
+    "lens"
+  ],
+  "categories": [
+    "text"
+  ]
+}

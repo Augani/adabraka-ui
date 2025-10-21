@@ -1,0 +1,21 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "danielbayley",
+    "jguddas",
+    "karsa-mistmere",
+    "jamiemlaw"
+  ],
+  "tags": [
+    "issue",
+    "testing",
+    "debug",
+    "reproduce",
+    "code",
+    "insect"
+  ],
+  "categories": [
+    "development",
+    "animals"
+  ]
+}

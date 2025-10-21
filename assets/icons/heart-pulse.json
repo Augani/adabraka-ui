@@ -1,0 +1,21 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "karsa-mistmere",
+    "danielbayley",
+    "jguddas"
+  ],
+  "tags": [
+    "heartbeat",
+    "pulse",
+    "health",
+    "medical",
+    "blood pressure",
+    "cardiac",
+    "systole",
+    "diastole"
+  ],
+  "categories": [
+    "medical"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "lscheibel",
+    "jguddas"
+  ],
+  "tags": [
+    "gizmo",
+    "coordinates"
+  ],
+  "categories": [
+    "design"
+  ],
+  "aliases": [
+    {
+      "name": "axis-3-d",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ]
+}

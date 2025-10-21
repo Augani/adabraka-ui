@@ -1,0 +1,17 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "wojtekmaj",
+    "ericfennis",
+    "danielbayley",
+    "jamiemlaw"
+  ],
+  "tags": [
+    "time",
+    "watch",
+    "alarm"
+  ],
+  "categories": [
+    "time"
+  ]
+}

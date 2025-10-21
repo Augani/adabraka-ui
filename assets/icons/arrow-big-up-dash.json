@@ -1,0 +1,28 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "danielbayley",
+    "karsa-mistmere",
+    "jamiemlaw"
+  ],
+  "tags": [
+    "caps lock",
+    "capitals",
+    "keyboard",
+    "button",
+    "mac",
+    "forward",
+    "direction",
+    "north",
+    "faster",
+    "speed",
+    "boost"
+  ],
+  "categories": [
+    "arrows",
+    "navigation",
+    "text",
+    "development",
+    "gaming"
+  ]
+}

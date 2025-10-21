@@ -1,0 +1,44 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "danielbayley"
+  ],
+  "tags": [
+    "lines",
+    "list",
+    "queue",
+    "preview",
+    "parallel",
+    "series",
+    "split",
+    "vertical",
+    "horizontal",
+    "thirds",
+    "triple",
+    "center",
+    "middle",
+    "alignment",
+    "even",
+    "sidebars",
+    "drawers",
+    "gutters",
+    "fold",
+    "reflow",
+    "typography",
+    "pagination",
+    "pages"
+  ],
+  "categories": [
+    "layout",
+    "design",
+    "text"
+  ],
+  "aliases": [
+    {
+      "name": "panels-left-right",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "colebemis",
+    "csandman",
+    "mittalyashu",
+    "ericfennis",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "cog",
+    "edit",
+    "gear",
+    "preferences"
+  ],
+  "categories": [
+    "account"
+  ]
+}

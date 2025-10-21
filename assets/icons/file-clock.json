@@ -1,0 +1,17 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "karsa-mistmere",
+    "danielbayley",
+    "jamiemlaw"
+  ],
+  "tags": [
+    "history",
+    "log",
+    "clock"
+  ],
+  "categories": [
+    "files",
+    "time"
+  ]
+}

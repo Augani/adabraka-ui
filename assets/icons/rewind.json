@@ -1,0 +1,14 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "colebemis",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "music"
+  ],
+  "categories": [
+    "arrows",
+    "multimedia"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "Andreto",
+    "ericfennis",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "mallet",
+    "nails",
+    "diy",
+    "toolbox",
+    "build",
+    "construction"
+  ],
+  "categories": [
+    "tools",
+    "home"
+  ]
+}

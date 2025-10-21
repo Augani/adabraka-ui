@@ -1,0 +1,27 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "mittalyashu",
+    "danielbayley",
+    "ericfennis"
+  ],
+  "tags": [
+    "primary",
+    "drawer",
+    "hide",
+    "chevron",
+    "<"
+  ],
+  "categories": [
+    "layout",
+    "arrows"
+  ],
+  "aliases": [
+    {
+      "name": "sidebar-close",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ]
+}

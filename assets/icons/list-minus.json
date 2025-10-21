@@ -1,0 +1,19 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "ericfennis",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "playlist",
+    "remove",
+    "song",
+    "subtract",
+    "delete",
+    "unqueue"
+  ],
+  "categories": [
+    "multimedia",
+    "text"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "colebemis",
+    "csandman",
+    "ericfennis",
+    "cd16b",
+    "danielbayley",
+    "karsa-mistmere"
+  ],
+  "tags": [
+    "security"
+  ],
+  "categories": [
+    "security"
+  ],
+  "aliases": [
+    {
+      "name": "unlock-keyhole",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ]
+}

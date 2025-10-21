@@ -1,0 +1,22 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "karsa-mistmere",
+    "jguddas"
+  ],
+  "aliases": [
+    {
+      "name": "verified",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ],
+  "tags": [
+    "verified",
+    "check"
+  ],
+  "categories": [
+    "social"
+  ]
+}

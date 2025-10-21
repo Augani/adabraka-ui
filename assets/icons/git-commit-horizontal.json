@@ -1,0 +1,27 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "colebemis",
+    "ericfennis",
+    "johnletey"
+  ],
+  "tags": [
+    "code",
+    "version control",
+    "waypoint",
+    "stop",
+    "station"
+  ],
+  "categories": [
+    "development",
+    "navigation"
+  ],
+  "aliases": [
+    {
+      "name": "git-commit",
+      "deprecationReason": "alias.name",
+      "deprecated": true,
+      "toBeRemovedInVersion": "v1.0"
+    }
+  ]
+}

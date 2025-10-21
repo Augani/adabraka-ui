@@ -1,0 +1,23 @@
+{
+  "$schema": "../icon.schema.json",
+  "contributors": [
+    "karsa-mistmere",
+    "danielbayley",
+    "jguddas"
+  ],
+  "tags": [
+    "agreement",
+    "charity",
+    "help",
+    "deal",
+    "terms",
+    "emotion",
+    "together",
+    "handshake"
+  ],
+  "categories": [
+    "emoji",
+    "account",
+    "security"
+  ]
+}

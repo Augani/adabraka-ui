@@ -24,12 +24,19 @@ A comprehensive, professional UI component library for [GPUI](https://github.com
 
 ## 🚀 Installation
 
+> **Note:** Currently requires Rust nightly due to GPUI dependencies. Install with: `rustup toolchain install nightly`
+
 Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
 adabraka-ui = "0.1.0"
 gpui = "0.2.0"
+```
+
+Build your project with nightly:
+```bash
+cargo +nightly build
 ```
 
 ## Quick Start

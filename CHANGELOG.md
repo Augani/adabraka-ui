@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-01-XX
+## [0.1.0] - 2025-10-21
 
 ### Added
 - Initial release of adabraka-ui
@@ -35,5 +35,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform-aware UI elements
 - Responsive layout utilities (VStack, HStack, Grid)
 
-[Unreleased]: https://github.com/your-username/adabraka-ui/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-username/adabraka-ui/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.0

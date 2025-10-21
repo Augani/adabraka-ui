@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
 
+<a href="https://www.buymeacoffee.com/pythonxi" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
+
 A comprehensive, professional UI component library for [GPUI](https://github.com/zed-industries/zed), the GPU-accelerated UI framework powering the Zed editor. Inspired by [shadcn/ui](https://ui.shadcn.com/), adabraka-ui provides 70+ polished, accessible components for building beautiful desktop applications in Rust.
 
 ## ✨ Features
@@ -1350,6 +1352,14 @@ adabraka-ui is built on top of GPUI with these key principles:
 - **Type-safe APIs** with comprehensive Rust types
 - **Performance-first** with efficient rendering and minimal allocations
 - **Accessible** with proper ARIA labels and keyboard navigation
+
+## Support the Project
+
+If you find adabraka-ui helpful, consider supporting its development:
+
+<a href="https://www.buymeacoffee.com/pythonxi" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 50px !important;width: 180px !important;" ></a>
+
+Your support helps maintain and improve this library for the community!
 
 ## Contributing
 

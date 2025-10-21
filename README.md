@@ -1361,6 +1361,16 @@ Contributions are welcome! Please:
 4. Update documentation
 5. Ensure all examples compile and run
 
+## Acknowledgments
+
+This project wouldn't be possible without the amazing work of:
+
+- **[Zed Industries](https://zed.dev/)** - For creating [GPUI](https://github.com/zed-industries/zed), the powerful GPU-accelerated UI framework that powers the Zed editor and makes adabraka-ui possible
+- **[Lucide Icons](https://lucide.dev/)** - For providing the beautiful, consistent icon set used throughout the component library
+- **[shadcn/ui](https://ui.shadcn.com/)** - For the design inspiration and component patterns
+
+Special thanks to the Zed team for open-sourcing GPUI and making it available for building desktop applications in Rust.
+
 ## License
 
 MIT License - see LICENSE file for details.

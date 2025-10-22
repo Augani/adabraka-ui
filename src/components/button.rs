@@ -253,11 +253,6 @@ impl RenderOnce for Button {
         let user_style = self.style;
 
         self.base
-            .map(|this| {
-                let mut div = this;
-                *div.style() = user_style;
-                div
-            })
             .when(!self.disabled && !is_loading, |this| {
                 this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
             })
@@ -300,6 +295,11 @@ impl RenderOnce for Button {
                             hover_style
                         }
                     })
+            })
+            .map(|this| {
+                let mut div = this;
+                *div.style() = user_style;
+                div
             })
             .on_mouse_down(MouseButton::Left, |_, window, _| {
                 window.prevent_default();

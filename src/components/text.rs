@@ -238,18 +238,39 @@ impl RenderOnce for Text {
         let mut base = div();
         *base.style() = self.style;
 
+        // Build highlight style for italic/strikethrough if needed
+        let needs_highlights = self.italic || self.strikethrough;
+        let styled_text = if needs_highlights {
+            let mut highlight_style = HighlightStyle::default();
+
+            if self.italic {
+                highlight_style.font_style = Some(FontStyle::Italic);
+            }
+            if self.strikethrough {
+                highlight_style.strikethrough = Some(StrikethroughStyle {
+                    color: Some(text_color),
+                    thickness: px(1.0),
+                });
+            }
+
+            // Apply highlight to entire text range
+            let text_len = self.content.len();
+            StyledText::new(self.content.clone())
+                .with_highlights(vec![(0..text_len, highlight_style)])
+        } else {
+            StyledText::new(self.content.clone())
+        };
+
         base
             .font_family(font_family)
             .text_size(size)
             .font_weight(weight)
             .text_color(text_color)
             .line_height(relative(line_height))
-            // Note: italic and strikethrough are not yet supported in GPUI Div
-            // They would need to be applied via a custom text element or styling
             .when(self.underline, |this| this.underline())
             .when(!self.wrap, |this| this.whitespace_nowrap())
             .when(self.truncate, |this| this.overflow_hidden().text_ellipsis())
-            .child(self.content)
+            .child(styled_text)
     }
 }
 

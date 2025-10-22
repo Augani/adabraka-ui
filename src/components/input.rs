@@ -101,6 +101,9 @@ pub struct Input {
     on_focus: Option<Rc<dyn Fn(SharedString, &mut App)>>,
     on_blur: Option<Rc<dyn Fn(SharedString, &mut App)>>,
     on_validate: Option<Rc<dyn Fn(Result<(), ValidationError>, &mut App)>>,
+
+    // Style refinement for Styled trait
+    style: StyleRefinement,
 }
 
 impl Input {
@@ -142,6 +145,9 @@ impl Input {
             on_focus: None,
             on_blur: None,
             on_validate: None,
+
+            // Style refinement
+            style: StyleRefinement::default(),
         }
     }
 
@@ -419,12 +425,18 @@ impl Input {
     }
 
     /// Get gap between elements based on size
-    fn gap(&self) -> Pixels {
+    fn element_gap(&self) -> Pixels {
         match self.size {
             InputSize::Sm => px(6.0),
             InputSize::Md => px(8.0),
             InputSize::Lg => px(10.0),
         }
+    }
+}
+
+impl Styled for Input {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -434,7 +446,7 @@ impl RenderOnce for Input {
         let height = self.height();
         let padding_x = self.padding_x();
         let font_size = self.font_size();
-        let gap = self.gap();
+        let gap = self.element_gap();
 
         self.state.update(cx, |state, cx| {
             state.disabled = self.disabled;
@@ -632,6 +644,8 @@ impl RenderOnce for Input {
         let ring_color = theme.tokens.ring;
         let destructive_color = theme.tokens.destructive;
 
+        let user_style = self.style;
+
         VStack::new()
             .w_full()
             .gap(px(4.0))
@@ -801,5 +815,10 @@ impl RenderOnce for Input {
                     )
                 }
             )
+            .map(|this| {
+                let mut vstack = this;
+                vstack.style().refine(&user_style);
+                vstack
+            })
     }
 }

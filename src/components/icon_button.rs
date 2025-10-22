@@ -22,6 +22,7 @@ pub struct IconButton {
     disabled: bool,
     no_background: bool,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl IconButton {
@@ -44,6 +45,7 @@ impl IconButton {
             disabled: false,
             no_background: false,
             on_click: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -91,6 +93,12 @@ impl IconButton {
                 Some(SharedString::from(icon_path_from_name(name)))
             }
         }
+    }
+}
+
+impl Styled for IconButton {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -156,6 +164,7 @@ impl RenderOnce for IconButton {
         let clickable = self.clickable();
         let handler = self.on_click.clone();
         let svg_path = self.get_svg_path();
+        let user_style = self.style;
 
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
@@ -188,6 +197,11 @@ impl RenderOnce for IconButton {
                     .when(self.no_background, |this| {
                         this.hover(|style| style.opacity(0.7))
                     })
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
             .on_mouse_down(MouseButton::Left, |_, window, _| {
                 window.prevent_default();

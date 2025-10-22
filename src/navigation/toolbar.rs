@@ -4,7 +4,8 @@ use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use crate::{
     theme::use_theme,
-    components::icon::{Icon, IconSource},
+    components::icon::Icon,
+    components::icon_source::IconSource,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

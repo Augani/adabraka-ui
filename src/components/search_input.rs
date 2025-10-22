@@ -7,7 +7,8 @@ use crate::{
     components::{
         input::Input,
         input_state::{InputState, InputEvent},
-        icon::{Icon, IconSource},
+        icon::Icon,
+        icon_source::IconSource,
     },
 };
 

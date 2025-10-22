@@ -5,8 +5,9 @@ pub use crate::layout::{
     VStack, HStack, Grid, Flow, FlowDirection, Cluster, Spacer, Align, Justify,
     ScrollContainer, ScrollDirection, ScrollList, Panel, Container,
 };
-pub use crate::components::button::{Button, ButtonVariant, ButtonSize};
-pub use crate::components::icon_button::{IconButton, IconSource};
+pub use crate::components::button::{Button, ButtonVariant, ButtonSize, IconPosition};
+pub use crate::components::icon_source::IconSource;
+pub use crate::components::icon_button::IconButton;
 pub use crate::components::text::{
     Text, TextVariant, h1, h2, h3, h4, h5, h6,
     body, body_large, body_small, caption,

@@ -4,44 +4,8 @@ use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use crate::theme::use_theme;
 use crate::components::button::ButtonVariant;
+use crate::components::icon_source::IconSource;
 use crate::icon_config::resolve_icon_path;
-
-#[derive(Debug, Clone)]
-pub enum IconSource {
-    Named(String),
-    FilePath(SharedString),
-}
-
-impl From<&str> for IconSource {
-    fn from(s: &str) -> Self {
-        if s.contains('/') || s.contains('\\') || s.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(SharedString::from(s.to_string()))
-        } else {
-            IconSource::Named(s.to_string())
-        }
-    }
-}
-
-impl From<String> for IconSource {
-    fn from(s: String) -> Self {
-        if s.contains('/') || s.contains('\\') || s.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(s.into())
-        } else {
-            IconSource::Named(s)
-        }
-    }
-}
-
-impl From<SharedString> for IconSource {
-    fn from(s: SharedString) -> Self {
-        let s_str = s.to_string();
-        if s_str.contains('/') || s_str.contains('\\') || s_str.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(s)
-        } else {
-            IconSource::Named(s_str)
-        }
-    }
-}
 
 fn icon_path_from_name(name: &str) -> String {
     resolve_icon_path(name)

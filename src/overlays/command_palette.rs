@@ -6,7 +6,8 @@ use crate::{
     theme::use_theme,
     components::{
         text::{body, caption, label_small},
-        icon::{Icon, IconSource},
+        icon::Icon,
+        icon_source::IconSource,
         input::Input,
         input_state::InputState,
         scrollable::scrollable_vertical,

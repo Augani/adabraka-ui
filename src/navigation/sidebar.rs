@@ -3,7 +3,8 @@
 use gpui::{prelude::*, *};
 use std::sync::Arc;
 use crate::theme::use_theme;
-use crate::components::icon::{Icon, IconSource};
+use crate::components::icon::Icon;
+use crate::components::icon_source::IconSource;
 
 actions!(sidebar, [ToggleSidebar, FocusNext, FocusPrevious, ActivateItem]);
 

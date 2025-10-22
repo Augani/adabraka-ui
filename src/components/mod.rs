@@ -1,9 +1,13 @@
 //! UI components module.
 
 pub mod button;
+pub mod icon_source;
 pub mod icon_button;
 pub mod icon;
 pub mod text;
+
+// Re-export commonly used types
+pub use icon_source::IconSource;
 pub mod text_field;
 pub mod checkbox;
 pub mod toggle;

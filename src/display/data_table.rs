@@ -7,7 +7,7 @@ use std::rc::Rc;
 use crate::theme::use_theme;
 use crate::components::input::{Input, InputState, InputSize};
 use crate::components::select::{Select, SelectOption, SelectEvent};
-use crate::components::icon::IconSource;
+use crate::components::icon_source::IconSource;
 use crate::virtual_list::{vlist_uniform_view};
 
 #[derive(Clone)]

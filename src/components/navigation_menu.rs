@@ -6,7 +6,8 @@ use std::hash::Hash;
 use std::collections::HashSet;
 
 use crate::theme::use_theme;
-use crate::components::icon::{Icon, IconSource};
+use crate::components::icon::Icon;
+use crate::components::icon_source::IconSource;
 use crate::components::text::{Text, TextVariant};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

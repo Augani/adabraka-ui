@@ -6,7 +6,8 @@ use crate::{
     theme::use_theme,
     components::{
         text::caption,
-        icon::{Icon, IconSource},
+        icon::Icon,
+        icon_source::IconSource,
         badge::{Badge, BadgeVariant},
     },
 };

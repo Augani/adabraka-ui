@@ -3,7 +3,8 @@
 use gpui::{prelude::*, *};
 use crate::theme::use_theme;
 use crate::components::scrollable::scrollable_vertical;
-use crate::components::icon::{Icon, IconSource};
+use crate::components::icon::Icon;
+use crate::components::icon_source::IconSource;
 
 actions!(select, [SelectUp, SelectDown, SelectConfirm, SelectCancel]);
 

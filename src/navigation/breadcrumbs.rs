@@ -2,7 +2,8 @@
 
 use gpui::*;
 use crate::theme::use_theme;
-use crate::components::icon::{Icon, IconSource};
+use crate::components::icon::Icon;
+use crate::components::icon_source::IconSource;
 use std::sync::Arc;
 
 pub struct BreadcrumbItem<T> {

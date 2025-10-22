@@ -6,7 +6,8 @@ use std::rc::Rc;
 use std::collections::{HashSet, HashMap};
 use std::hash::Hash;
 use crate::theme::use_theme;
-use crate::components::icon::{Icon, IconSource};
+use crate::components::icon::Icon;
+use crate::components::icon_source::IconSource;
 
 #[derive(Clone)]
 pub struct TreeNode<T: Clone> {

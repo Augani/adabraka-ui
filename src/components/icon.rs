@@ -3,7 +3,10 @@
 use gpui::{prelude::*, *};
 use crate::theme::use_theme;
 use crate::icon_config::resolve_icon_path;
+use crate::components::icon_source::IconSource;
 
+/// Icon variant - currently for API compatibility, not yet affecting rendering
+/// TODO: Implement different icon styles or remove if not needed
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IconVariant {
     Regular,
@@ -13,43 +16,6 @@ pub enum IconVariant {
 impl Default for IconVariant {
     fn default() -> Self {
         Self::Regular
-    }
-}
-
-#[derive(Debug, Clone)]
-pub enum IconSource {
-    Named(String),
-    FilePath(SharedString),
-}
-
-impl From<&str> for IconSource {
-    fn from(s: &str) -> Self {
-        if s.contains('/') || s.contains('\\') || s.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(SharedString::from(s.to_string()))
-        } else {
-            IconSource::Named(s.to_string())
-        }
-    }
-}
-
-impl From<String> for IconSource {
-    fn from(s: String) -> Self {
-        if s.contains('/') || s.contains('\\') || s.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(s.into())
-        } else {
-            IconSource::Named(s)
-        }
-    }
-}
-
-impl From<SharedString> for IconSource {
-    fn from(s: SharedString) -> Self {
-        let s_str = s.to_string();
-        if s_str.contains('/') || s_str.contains('\\') || s_str.trim_end().to_lowercase().ends_with(".svg") {
-            IconSource::FilePath(s)
-        } else {
-            IconSource::Named(s_str)
-        }
     }
 }
 
@@ -127,37 +93,36 @@ impl Icon {
 }
 
 impl IntoElement for Icon {
-    type Element = Div;
+    type Element = AnyElement;
 
     fn into_element(self) -> Self::Element {
         let theme = use_theme();
         let color = self.color.unwrap_or(theme.tokens.primary);
         let svg_content = self.get_svg_path();
 
+        // For non-clickable icons, return minimal wrapper
         if !self.clickable {
-            return div()
-                .flex()
-                .items_center()
-                .justify_center()
-                .when_some(svg_content, |div, svg_string| {
-                    div.child(
-                        svg()
-                            .path(svg_string)
-                            .size(self.size)
-                            .text_color(if self.disabled {
-                                theme.tokens.muted_foreground
-                            } else {
-                                color
-                            })
-                    )
-                });
+            return svg()
+                .flex_shrink_0()
+                .when_some(svg_content, |this, svg_string| {
+                    this.path(svg_string)
+                })
+                .size(self.size)
+                .text_color(if self.disabled {
+                    theme.tokens.muted_foreground
+                } else {
+                    color
+                })
+                .into_any_element();
         }
 
+        // For clickable icons, wrap in interactive Div
         let on_click = self.on_click;
         let disabled = self.disabled;
 
         div()
             .flex()
+            .flex_shrink_0()
             .items_center()
             .justify_center()
             .cursor(if disabled {
@@ -193,6 +158,7 @@ impl IntoElement for Icon {
                         })
                 )
             })
+            .into_any_element()
     }
 }
 

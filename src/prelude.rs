@@ -9,6 +9,7 @@ pub use crate::components::button::{Button, ButtonVariant, ButtonSize, IconPosit
 pub use crate::components::icon_source::IconSource;
 pub use crate::components::icon::{Icon, IconSize, IconVariant, icon, icon_button};
 pub use crate::components::icon_button::IconButton;
+pub use crate::components::label::Label;
 pub use crate::components::text::{
     Text, TextVariant, h1, h2, h3, h4, h5, h6,
     body, body_large, body_small, caption,

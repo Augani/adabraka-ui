@@ -3,7 +3,7 @@
 use gpui::SharedString;
 
 /// Enum representing the source of an icon - either a named icon or a file path.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum IconSource {
     /// A named icon that will be resolved using the configured icon base path.
     /// Example: "search" → "assets/icons/search.svg"

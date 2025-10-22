@@ -1,8 +1,6 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    navigation::menu::{Menu, MenuItem, MenuItemKind, MenuBar, MenuBarItem, ContextMenu},
-    components::button::{Button, ButtonVariant},
-    components::icon::IconSource,
+    navigation::menu::{MenuBar, MenuBarItem},
     layout::VStack,
     theme::use_theme,
 };

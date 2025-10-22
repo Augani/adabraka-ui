@@ -1,7 +1,7 @@
 use gpui::*;
 use adabraka_ui::{
     navigation::sidebar::{Sidebar, SidebarItem, SidebarVariant, SidebarPosition},
-    components::{icon::IconSource, resizable::{ResizableState, h_resizable, resizable_panel}},
+    components::{icon_source::IconSource, resizable::{ResizableState, h_resizable, resizable_panel}},
     layout::VStack,
     theme::use_theme,
 };

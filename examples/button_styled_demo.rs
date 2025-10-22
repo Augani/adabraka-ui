@@ -1,4 +1,7 @@
-use adabraka_ui::prelude::*;
+use adabraka_ui::{
+    prelude::*,
+    components::scrollable::scrollable_vertical,
+};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -73,12 +76,18 @@ impl Render for ButtonStyledDemo {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
-        VStack::new()
+        div()
             .size_full()
             .bg(theme.tokens.background)
-            .text_color(theme.tokens.foreground)
-            .p(px(32.0))
-            .gap(px(32.0))
+            .overflow_hidden()
+            .child(
+                scrollable_vertical(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .text_color(theme.tokens.foreground)
+                        .p(px(32.0))
+                        .gap(px(32.0))
             .child(
                 VStack::new()
                     .gap(px(8.0))
@@ -435,6 +444,8 @@ impl Render for ButtonStyledDemo {
                             .text_color(theme.tokens.accent_foreground)
                             .child("Methods used: .p_4(), .p_8(), .px(), .bg(), .border_2(), .rounded(), .w_full(), .w(), .shadow_sm/md/lg()")
                     )
+            )
+                )
             )
     }
 }

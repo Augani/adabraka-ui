@@ -5,7 +5,7 @@ use adabraka_ui::{
         text::{h1, h2, body, caption},
         button::{Button, ButtonVariant},
         progress::{ProgressBar, CircularProgress, ProgressVariant, ProgressSize, SpinnerType},
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
     },
 };
 

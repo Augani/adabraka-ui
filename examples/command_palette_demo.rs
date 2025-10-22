@@ -6,6 +6,34 @@ use adabraka_ui::{
     layout::VStack,
     theme::use_theme,
 };
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 actions!(command_palette_demo, [Quit, TogglePalette]);
 
@@ -227,7 +255,6 @@ impl Render for CommandPaletteDemo {
                     .p(px(32.0))
                     .gap(px(32.0))
                     .size_full()
-                    // Header
                     .child(
                         div()
                             .flex()
@@ -246,7 +273,6 @@ impl Render for CommandPaletteDemo {
                                     .child("Searchable command palette (Cmd+K style) for quick access to application commands")
                             )
                     )
-                    // Instructions
                     .child(
                         div()
                             .p(px(16.0))
@@ -284,7 +310,6 @@ impl Render for CommandPaletteDemo {
                                     .child("• Press Escape or click outside to close the palette")
                             )
                     )
-                    // Status Display
                     .child(
                         div()
                             .p(px(16.0))
@@ -317,7 +342,6 @@ impl Render for CommandPaletteDemo {
                                     .child(format!("Sidebar: {}", if self.sidebar_visible { "Visible" } else { "Hidden" }))
                             )
                     )
-                    // Open Command Palette Button
                     .child(
                         div()
                             .flex()
@@ -340,7 +364,6 @@ impl Render for CommandPaletteDemo {
                                     .child("Cmd+K")
                             )
                     )
-                    // Features List
                     .child(
                         div()
                             .flex()
@@ -404,7 +427,6 @@ impl Render for CommandPaletteDemo {
                             )
                     )
             )
-            // Command Palette Overlay
             .children(if self.show_palette {
                 let commands = self.create_commands(cx);
                 let entity = cx.entity().clone();
@@ -425,20 +447,18 @@ impl Render for CommandPaletteDemo {
 }
 
 fn main() {
-    Application::new().run(move |cx: &mut App| {
-        // Install dark theme
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx: &mut App| {
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
-        // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
 
         cx.bind_keys([
             KeyBinding::new("cmd-q", Quit, None),
             KeyBinding::new("cmd-k", TogglePalette, None),
-            // Command palette navigation
             KeyBinding::new("up", NavigateUp, None),
             KeyBinding::new("down", NavigateDown, None),
             KeyBinding::new("enter", SelectCommand, None),
@@ -446,7 +466,6 @@ fn main() {
         ]);
         cx.activate(true);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

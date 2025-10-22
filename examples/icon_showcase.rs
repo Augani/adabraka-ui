@@ -36,8 +36,8 @@ fn main() {
     Application::new()
         .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
         .run(|cx| {
-        // Initialize adabraka-ui (registers input key bindings)
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
         cx.open_window(
             WindowOptions {
@@ -71,7 +71,6 @@ impl IconShowcaseApp {
     fn render_icon_grid(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
-        // Common icons to showcase - using icon names
         let icons = vec![
             ("arrow-up", "Arrow Up"),
             ("arrow-down", "Arrow Down"),

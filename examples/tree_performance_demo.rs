@@ -46,7 +46,6 @@ fn read_directory(path: &Path, max_depth: usize, current_depth: usize) -> Result
     let entries = match fs::read_dir(path) {
         Ok(entries) => entries,
         Err(_e) => {
-            // Silently skip permission errors - common on macOS
             return Ok((vec![], 0));
         }
     };
@@ -58,7 +57,6 @@ fn read_directory(path: &Path, max_depth: usize, current_depth: usize) -> Result
     let mut entries_vec: Vec<_> = entries
         .filter_map(|e| e.ok())
         .filter(|e| {
-            // Skip hidden files/folders
             e.file_name()
                 .to_string_lossy()
                 .chars()
@@ -84,7 +82,6 @@ fn read_directory(path: &Path, max_depth: usize, current_depth: usize) -> Result
         let file_name = entry.file_name().to_string_lossy().to_string();
         let is_dir = entry.file_type().map(|t| t.is_dir()).unwrap_or(false);
 
-        // Use full path as unique ID
         let id = path.to_string_lossy().to_string();
 
         let (children, child_count) = if is_dir {
@@ -185,7 +182,6 @@ impl Render for TreePerformanceDemo {
             .fill() // Fill available space
             .bg(theme.tokens.background)
             .text_color(theme.tokens.foreground)
-            // Header with stats
             .child(
                 VStack::new()
                     .fill_width() // Fill width
@@ -398,13 +394,10 @@ fn main() {
     Application::new()
         .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
         .run(move |cx: &mut App| {
-            // Install dark theme
             adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-            // Initialize UI system
             adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-            // Create window
             cx.open_window(
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

@@ -70,6 +70,12 @@ pub mod util;
 /// Font loading and registration
 pub mod fonts;
 
+/// Icon configuration for custom asset paths
+pub mod icon_config;
+
+// Re-export commonly used icon configuration functions
+pub use icon_config::set_icon_base_path;
+
 /// Initialize the UI library
 ///
 /// This registers all necessary keybindings and initializes component systems.

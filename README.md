@@ -44,7 +44,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.1.0"
+adabraka-ui = "0.1.1"
 gpui = "0.2.0"
 ```
 
@@ -1224,12 +1224,81 @@ scrollable_both_with_padding(content, px(16.0))
 
 ## Icon System
 
-adabraka-ui includes thousands of icons from Heroicons:
+adabraka-ui provides flexible icon support with both named icons and custom icon paths. **Note:** Icon assets are **not bundled** with the library to keep the bundle size small. You need to provide your own icon assets.
+
+### Setting Up Icon Assets
+
+To use icons in your application, you need to:
+
+1. **Download icon assets** (we recommend [Lucide Icons](https://lucide.dev/) or [Heroicons](https://heroicons.com/))
+2. **Configure the icon base path** in your application initialization
+3. **Set up GPUI's AssetSource** to load the icons
+
+```rust
+use adabraka_ui::prelude::*;
+use gpui::*;
+use std::path::PathBuf;
+
+// Define your asset source
+struct Assets {
+    base: PathBuf,
+}
+
+impl AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry.ok().and_then(|e| {
+                            e.file_name().to_str().map(|s| SharedString::from(s.to_string()))
+                        })
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
+
+fn main() {
+    Application::new()
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
+        .run(|cx| {
+            // Initialize the UI library
+            adabraka_ui::init(cx);
+
+            // Configure where icons are located
+            // This path is relative to your CARGO_MANIFEST_DIR
+            adabraka_ui::set_icon_base_path("assets/icons");
+
+            // Install theme
+            install_theme(cx, Theme::dark());
+
+            // ... rest of your app
+        });
+}
+```
+
+### Using Icons
+
+Once configured, you can use icons in two ways:
+
+#### Named Icons
+
+Named icons are automatically resolved using the configured base path:
 
 ```rust
 use adabraka_ui::components::icon::IconSource;
 
-// Named icons
+// Named icons (resolved to: assets/icons/{name}.svg)
 IconSource::Named("search".to_string())
 IconSource::Named("home".to_string())
 IconSource::Named("settings".to_string())
@@ -1240,7 +1309,65 @@ Button::new("Search")
 
 SidebarItem::new("dashboard", "Dashboard")
     .with_icon(IconSource::Named("home".to_string()))
+
+Icon::new("arrow-up")
+    .size(px(24.0))
+    .color(theme.tokens.primary)
 ```
+
+#### Custom Icon Paths
+
+For custom or one-off icons, use direct file paths:
+
+```rust
+// Direct file path
+IconSource::FilePath("assets/custom/my-icon.svg".into())
+
+// Absolute path
+IconSource::FilePath("/path/to/icon.svg".into())
+
+// The library automatically detects paths (contains '/' or ends with '.svg')
+Icon::new("assets/custom/logo.svg")  // Treated as file path
+Icon::new("search")                  // Treated as named icon
+```
+
+### Icon Requirements
+
+Your icon SVG files should:
+
+- Use `stroke="currentColor"` to inherit color from the component
+- Have a consistent viewBox (typically `0 0 24 24`)
+- Be optimized for performance
+
+Example icon SVG:
+```xml
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="24" height="24"
+     viewBox="0 0 24 24"
+     fill="none"
+     stroke="currentColor"
+     stroke-width="2"
+     stroke-linecap="round"
+     stroke-linejoin="round">
+  <!-- icon paths -->
+</svg>
+```
+
+### Recommended Icon Sets
+
+- **[Lucide Icons](https://lucide.dev/)** - Beautiful, consistent icons (3,000+)
+- **[Heroicons](https://heroicons.com/)** - Hand-crafted by Tailwind CSS team
+- **[Feather Icons](https://feathericons.com/)** - Simply beautiful open source icons
+- **[Phosphor Icons](https://phosphoricons.com/)** - Flexible icon family
+
+### Icon Bundle Size
+
+By not bundling icons, adabraka-ui keeps its package size small (saves ~3,274 icon files). This allows you to:
+
+- ✓ Include only the icons you actually use
+- ✓ Choose your preferred icon set
+- ✓ Update icons independently from the library
+- ✓ Keep your application bundle optimized
 
 ## Advanced Features
 

@@ -6,6 +6,34 @@ use adabraka_ui::{
     layout::VStack,
     theme::use_theme,
 };
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 actions!(status_bar_demo, [Quit, ShowNotifications, ShowWarnings, ShowErrors, ChangeEncoding, ToggleGit]);
 
@@ -90,7 +118,6 @@ impl Render for StatusBarDemo {
             .on_action(cx.listener(|_this, _: &Quit, _window, cx| {
                 cx.quit();
             }))
-            // Main content
             .child(
                 div()
                     .flex_1()
@@ -100,7 +127,6 @@ impl Render for StatusBarDemo {
                             .p(px(32.0))
                             .gap(px(32.0))
                             .size_full()
-                            // Header
                             .child(
                                 div()
                                     .flex()
@@ -119,7 +145,6 @@ impl Render for StatusBarDemo {
                                             .child("Bottom application status bar with sections and interactive items")
                                     )
                             )
-                            // Instructions
                             .child(
                                 div()
                                     .p(px(16.0))
@@ -157,7 +182,6 @@ impl Render for StatusBarDemo {
                                             .child("• Click on Git status to toggle Git integration")
                                     )
                             )
-                            // Current State
                             .child(
                                 div()
                                     .p(px(16.0))
@@ -205,7 +229,6 @@ impl Render for StatusBarDemo {
                                             .child(format!("Git: {}", if self.git_enabled { "Enabled" } else { "Disabled" }))
                                     )
                             )
-                            // Features
                             .child(
                                 div()
                                     .flex()
@@ -281,7 +304,6 @@ impl Render for StatusBarDemo {
                             )
                     )
             )
-            // Status bar at the bottom
             .child({
                 let entity = cx.entity().clone();
                 cx.new(|_| {
@@ -383,14 +405,13 @@ impl Render for StatusBarDemo {
 }
 
 fn main() {
-    Application::new().run(move |cx: &mut App| {
-        // Install dark theme
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx: &mut App| {
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
-        // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
 
         cx.bind_keys([
@@ -398,7 +419,6 @@ fn main() {
         ]);
         cx.activate(true);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

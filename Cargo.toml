@@ -1,6 +1,6 @@
 [package]
 name = "adabraka-ui"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Adabraka Team"]
 license = "MIT"
@@ -12,6 +12,7 @@ readme = "README.md"
 keywords = ["gpui", "ui", "gui", "components", "desktop"]
 categories = ["gui", "rendering"]
 rust-version = "1.70"
+exclude = ["assets/icons/**/*"]
 
 [dependencies]
 # Core Framework
@@ -29,14 +30,6 @@ smol = "2.0.2"
 # Syntax Highlighting (tree-sitter based)
 tree-sitter = "0.25.10"
 tree-sitter-sequel = "0.3.11"
-
-[[example]]
-name = "ide_demo"
-path = "examples/ide_demo.rs"
-
-[[example]]
-name = "file_explorer"
-path = "examples/file_explorer/main.rs"
 
 [[example]]
 name = "scroll_test"

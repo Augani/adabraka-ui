@@ -4,6 +4,7 @@ use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use crate::theme::use_theme;
 use crate::components::button::ButtonVariant;
+use crate::icon_config::resolve_icon_path;
 
 #[derive(Debug, Clone)]
 pub enum IconSource {
@@ -43,7 +44,7 @@ impl From<SharedString> for IconSource {
 }
 
 fn icon_path_from_name(name: &str) -> String {
-    format!("crates/adabraka-ui/assets/icons/{}.svg", name)
+    resolve_icon_path(name)
 }
 
 #[derive(IntoElement)]

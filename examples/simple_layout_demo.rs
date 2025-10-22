@@ -69,9 +69,11 @@ impl Render for SimpleLayoutDemo {
                     .overflow_hidden()
                     .child(
                                 scrollable_vertical(
-                                    VStack::new()
-                                        .padding(24.0)
-                                        .spacing(32.0)
+                                    div()
+                                        .flex()
+                                        .flex_col()
+                                        .p(px(24.0))
+                                        .gap(px(32.0))
                                         // VStack Demo
                                         .child(section_card(
                                             "VStack - Vertical Stacking",

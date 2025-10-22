@@ -1,7 +1,7 @@
 use adabraka_ui::{
     prelude::*,
     components::{
-        calendar::{Calendar, DateValue},
+        calendar::{Calendar, DateValue, CalendarLocale},
         scrollable::scrollable_vertical,
     },
 };
@@ -656,6 +656,173 @@ impl Render for CalendarStyledDemo {
                             )
                     )
             )
+            // Section: Internationalization (i18n)
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.0))
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(8.0))
+                            .child(
+                                div()
+                                    .text_size(px(16.0))
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .text_color(theme.tokens.foreground)
+                                    .child("Internationalization (i18n)")
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(12.0))
+                                    .text_color(theme.tokens.muted_foreground)
+                                    .child("Customize weekday and month names for different languages")
+                            )
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(16.0))
+                            // French Locale
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("French locale with .locale(CalendarLocale::french())")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::french())
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                            // Spanish Locale
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Spanish locale with .locale(CalendarLocale::spanish())")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::spanish())
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                            // German Locale
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("German locale with .locale(CalendarLocale::german())")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::german())
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                            // Portuguese Locale
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Portuguese locale with .locale(CalendarLocale::portuguese())")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::portuguese())
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                            // Italian Locale
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Italian locale with .locale(CalendarLocale::italian())")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::italian())
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                            // Custom Locale Example
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(8.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(12.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Custom locale: CalendarLocale::new([weekdays], [months])")
+                                    )
+                                    .child(
+                                        Calendar::new()
+                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .locale(CalendarLocale::new(
+                                                ["S", "M", "T", "W", "T", "F", "S"].map(|s| s.into()),
+                                                ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map(|s| s.into())
+                                            ))
+                                            .on_date_select(cx.listener(|view, date, _, cx| {
+                                                view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                    )
+                            )
+                    )
+            )
             // Info Box
             .child(
                 div()
@@ -667,14 +834,21 @@ impl Render for CalendarStyledDemo {
                         div()
                             .text_size(px(14.0))
                             .text_color(theme.tokens.accent_foreground)
-                            .child("All customizations above use the Styled trait for full GPUI styling control!")
+                            .child("Calendar supports full i18n customization!")
                     )
                     .child(
                         div()
                             .mt(px(8.0))
                             .text_size(px(12.0))
                             .text_color(theme.tokens.accent_foreground)
-                            .child("Methods used: .p_4(), .p_8(), .p(), .bg(), .border_2(), .border_color(), .rounded(), .w_full(), .w(), .shadow_sm/md/lg()")
+                            .child("Built-in locales: English (default), French, Spanish, German, Portuguese, Italian")
+                    )
+                    .child(
+                        div()
+                            .mt(px(4.0))
+                            .text_size(px(12.0))
+                            .text_color(theme.tokens.accent_foreground)
+                            .child("Or create custom with: CalendarLocale::new([weekdays], [months])")
                     )
             )
                 )

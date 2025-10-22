@@ -70,6 +70,7 @@ pub struct NavigationMenu<T: Clone + PartialEq + Eq + Hash + 'static> {
     expanded_ids: Vec<T>,
     on_select: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_toggle: Option<Arc<dyn Fn(&T, bool, &mut Window, &mut App) + Send + Sync + 'static>>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + PartialEq + Eq + Hash + 'static> NavigationMenu<T> {
@@ -82,6 +83,7 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> NavigationMenu<T> {
             expanded_ids: Vec::new(),
             on_select: None,
             on_toggle: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -140,6 +142,12 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> Default for NavigationMenu<T> {
     }
 }
 
+impl<T: Clone + PartialEq + Eq + Hash + 'static> Styled for NavigationMenu<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for NavigationMenu<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -149,6 +157,7 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for NavigationMenu<T
         let selected_id = self.selected_id;
         let on_select = self.on_select;
         let on_toggle = self.on_toggle;
+        let user_style = self.style;
 
         div()
             .flex()
@@ -172,6 +181,11 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for NavigationMenu<T
                     )
                 })
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 

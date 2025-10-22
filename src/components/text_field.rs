@@ -1,6 +1,6 @@
 //! Text field component - Simple text input field.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 use std::ops::Range;
 
@@ -163,12 +163,14 @@ impl Render for TextFieldState {
     }
 }
 
+#[derive(IntoElement)]
 pub struct TextField {
     state: Entity<TextFieldState>,
     size: TextFieldSize,
     placeholder: Option<SharedString>,
     disabled: bool,
     invalid: bool,
+    style: StyleRefinement,
 }
 
 impl TextField {
@@ -180,6 +182,7 @@ impl TextField {
             placeholder: None,
             disabled: false,
             invalid: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -219,9 +222,17 @@ impl TextField {
     }
 }
 
+impl Styled for TextField {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for TextField {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
+
         let (height, padding_x, padding_y, text_size) = match self.size {
             TextFieldSize::Sm => (px(36.0), px(12.0), px(8.0), px(14.0)),
             TextFieldSize::Md => (px(40.0), px(12.0), px(8.0), px(14.0)),
@@ -253,7 +264,13 @@ impl RenderOnce for TextField {
             base = base.opacity(0.5);
         }
 
-        base.child(
+        base
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
+            .child(
                 div()
                     .size_full()
                     .flex()

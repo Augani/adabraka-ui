@@ -1,6 +1,6 @@
 //! Keyboard shortcuts manager component with categorized shortcuts and platform-specific key display.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 
 #[derive(Clone, Debug)]
@@ -67,6 +67,7 @@ impl ShortcutCategory {
 pub struct KeyboardShortcuts {
     categories: Vec<ShortcutCategory>,
     show_icons: bool,
+    style: StyleRefinement,
 }
 
 impl KeyboardShortcuts {
@@ -74,6 +75,7 @@ impl KeyboardShortcuts {
         Self {
             categories: Vec::new(),
             show_icons: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -99,9 +101,16 @@ impl Default for KeyboardShortcuts {
     }
 }
 
+impl Styled for KeyboardShortcuts {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for KeyboardShortcuts {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
 
         div()
             .flex()
@@ -169,5 +178,10 @@ impl Render for KeyboardShortcuts {
                     )
                     .into_any_element()
             }))
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

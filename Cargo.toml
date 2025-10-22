@@ -59,3 +59,19 @@ path = "examples/toggle_group_styled_demo.rs"
 name = "pagination_styled_demo"
 path = "examples/pagination_styled_demo.rs"
 
+[[example]]
+name = "keyboard_shortcuts_styled_demo"
+path = "examples/keyboard_shortcuts_styled_demo.rs"
+
+[[example]]
+name = "navigation_menu_styled_demo"
+path = "examples/navigation_menu_styled_demo.rs"
+
+[[example]]
+name = "text_field_styled_demo"
+path = "examples/text_field_styled_demo.rs"
+
+[[example]]
+name = "confirm_dialog_styled_demo"
+path = "examples/confirm_dialog_styled_demo.rs"
+

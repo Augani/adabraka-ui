@@ -1415,6 +1415,7 @@ pub struct Editor {
     min_lines: Option<usize>,
     max_lines: Option<usize>,
     show_border: bool,
+    style: StyleRefinement,
 }
 
 impl Editor {
@@ -1424,6 +1425,7 @@ impl Editor {
             min_lines: None,
             max_lines: None,
             show_border: true,
+            style: StyleRefinement::default(),
         }
     }
 

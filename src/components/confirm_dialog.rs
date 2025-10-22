@@ -11,6 +11,7 @@ pub struct Dialog {
     content: Option<AnyElement>,
     footer: Option<AnyElement>,
     on_backdrop_click: Option<Box<dyn Fn(&mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Dialog {
@@ -22,6 +23,7 @@ impl Dialog {
             content: None,
             footer: None,
             on_backdrop_click: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -59,10 +61,17 @@ impl Dialog {
     }
 }
 
+impl Styled for Dialog {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Dialog {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let backdrop_click_handler = self.on_backdrop_click;
+        let user_style = self.style;
 
         div()
             .absolute()
@@ -104,6 +113,11 @@ impl RenderOnce for Dialog {
                     .when_some(self.header, |this, header| this.child(header))
                     .when_some(self.content, |this, content| this.child(content))
                     .when_some(self.footer, |this, footer| this.child(footer))
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
+                    })
             )
     }
 }

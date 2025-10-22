@@ -19,6 +19,52 @@ impl Default for IconVariant {
     }
 }
 
+/// Icon size variants - supports named sizes and custom pixel values
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum IconSize {
+    /// Extra small: 12px (size_3 in GPUI)
+    XSmall,
+    /// Small: 14px (size_3p5 in GPUI)
+    Small,
+    /// Medium: 16px (size_4 in GPUI) - Default
+    Medium,
+    /// Large: 24px (size_6 in GPUI)
+    Large,
+    /// Custom pixel size
+    Custom(Pixels),
+}
+
+impl Default for IconSize {
+    fn default() -> Self {
+        Self::Medium
+    }
+}
+
+impl From<Pixels> for IconSize {
+    fn from(pixels: Pixels) -> Self {
+        Self::Custom(pixels)
+    }
+}
+
+impl From<f32> for IconSize {
+    fn from(value: f32) -> Self {
+        Self::Custom(px(value))
+    }
+}
+
+impl IconSize {
+    /// Convert IconSize to Pixels
+    pub fn to_pixels(&self) -> Pixels {
+        match self {
+            IconSize::XSmall => px(12.0),
+            IconSize::Small => px(14.0),
+            IconSize::Medium => px(16.0),
+            IconSize::Large => px(24.0),
+            IconSize::Custom(pixels) => *pixels,
+        }
+    }
+}
+
 fn icon_path_from_name(name: &str) -> String {
     resolve_icon_path(name)
 }
@@ -26,12 +72,14 @@ fn icon_path_from_name(name: &str) -> String {
 pub struct Icon {
     source: IconSource,
     variant: IconVariant,
-    size: Pixels,
+    size: IconSize,
     color: Option<Hsla>,
     clickable: bool,
     disabled: bool,
     on_click: Option<Box<dyn Fn(&mut Window, &mut App) + Send + Sync + 'static>>,
     focus_handle: Option<FocusHandle>,
+    style: StyleRefinement,
+    rotation: Option<Radians>,
 }
 
 impl Icon {
@@ -39,12 +87,14 @@ impl Icon {
         Self {
             source: source.into(),
             variant: IconVariant::default(),
-            size: px(16.0),
+            size: IconSize::default(),
             color: None,
             clickable: false,
             disabled: false,
             on_click: None,
             focus_handle: None,
+            style: StyleRefinement::default(),
+            rotation: None,
         }
     }
 
@@ -53,8 +103,8 @@ impl Icon {
         self
     }
 
-    pub fn size(mut self, size: Pixels) -> Self {
-        self.size = size;
+    pub fn size(mut self, size: impl Into<IconSize>) -> Self {
+        self.size = size.into();
         self
     }
 
@@ -82,6 +132,12 @@ impl Icon {
         self
     }
 
+    /// Rotate the icon by the given angle in radians
+    pub fn rotate(mut self, radians: impl Into<Radians>) -> Self {
+        self.rotation = Some(radians.into());
+        self
+    }
+
     fn get_svg_path(&self) -> Option<SharedString> {
         match &self.source {
             IconSource::FilePath(path) => Some(path.clone()),
@@ -89,6 +145,12 @@ impl Icon {
                 Some(SharedString::from(icon_path_from_name(name)))
             }
         }
+    }
+}
+
+impl Styled for Icon {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -102,16 +164,22 @@ impl IntoElement for Icon {
 
         // For non-clickable icons, return minimal wrapper
         if !self.clickable {
-            return svg()
+            let mut base = svg();
+            *base.style() = self.style;
+
+            return base
                 .flex_shrink_0()
                 .when_some(svg_content, |this, svg_string| {
                     this.path(svg_string)
                 })
-                .size(self.size)
+                .size(self.size.to_pixels())
                 .text_color(if self.disabled {
                     theme.tokens.muted_foreground
                 } else {
                     color
+                })
+                .when_some(self.rotation, |this, rotation| {
+                    this.with_transformation(Transformation::rotate(rotation))
                 })
                 .into_any_element();
         }
@@ -147,14 +215,20 @@ impl IntoElement for Icon {
                 })
             })
             .when_some(svg_content, |div, svg_string| {
+                let mut icon_svg = svg();
+                *icon_svg.style() = self.style.clone();
+
                 div.child(
-                    svg()
+                    icon_svg
                         .path(svg_string)
-                        .size(self.size)
+                        .size(self.size.to_pixels())
                         .text_color(if disabled {
                             theme.tokens.muted_foreground
                         } else {
                             color
+                        })
+                        .when_some(self.rotation, |this, rotation| {
+                            this.with_transformation(Transformation::rotate(rotation))
                         })
                 )
             })

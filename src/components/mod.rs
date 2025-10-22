@@ -8,6 +8,7 @@ pub mod text;
 
 // Re-export commonly used types
 pub use icon_source::IconSource;
+pub use icon::{IconSize, IconVariant};
 pub mod text_field;
 pub mod checkbox;
 pub mod toggle;

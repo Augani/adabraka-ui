@@ -615,6 +615,14 @@
 adabraka-ui = "0.1.1"
 gpui = "0.2.0"</code></pre>
             </div>
+
+            <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.5rem;">
+                <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary);">
+                    <strong style="color: var(--text);">Note:</strong> Icons are not bundled with the library.
+                    Download your preferred icon set (we recommend <a href="https://lucide.dev/" target="_blank" style="color: var(--accent);">Lucide Icons</a>)
+                    and configure the icon path as shown in the Quick Start below.
+                </p>
+            </div>
         </section>
 
         <!-- Quick Start -->
@@ -626,24 +634,59 @@ gpui = "0.2.0"</code></pre>
                 <div class="code-title">main.rs</div>
                 <pre><code><span class="keyword">use</span> adabraka_ui::prelude::*;
 <span class="keyword">use</span> gpui::*;
+<span class="keyword">use</span> std::path::PathBuf;
+
+<span class="comment">// Define asset source for loading icons and resources</span>
+<span class="keyword">struct</span> <span class="type">Assets</span> {
+    base: PathBuf,
+}
+
+<span class="keyword">impl</span> AssetSource <span class="keyword">for</span> Assets {
+    <span class="keyword">fn</span> <span class="function">load</span>(&<span class="keyword">self</span>, path: &<span class="keyword">str</span>) -&gt; Result&lt;Option&lt;std::borrow::Cow&lt;'<span class="keyword">static</span>, [<span class="keyword">u8</span>]&gt;&gt;&gt; {
+        std::fs::<span class="function">read</span>(<span class="keyword">self</span>.base.<span class="function">join</span>(path))
+            .<span class="function">map</span>(|data| <span class="keyword">Some</span>(std::borrow::Cow::Owned(data)))
+            .<span class="function">map_err</span>(|err| err.<span class="function">into</span>())
+    }
+
+    <span class="keyword">fn</span> <span class="function">list</span>(&<span class="keyword">self</span>, path: &<span class="keyword">str</span>) -&gt; Result&lt;Vec&lt;SharedString&gt;&gt; {
+        std::fs::<span class="function">read_dir</span>(<span class="keyword">self</span>.base.<span class="function">join</span>(path))
+            .<span class="function">map</span>(|entries| {
+                entries.<span class="function">filter_map</span>(|entry| {
+                    entry.<span class="function">ok</span>().<span class="function">and_then</span>(|e| {
+                        e.<span class="function">file_name</span>().<span class="function">to_str</span>().<span class="function">map</span>(|s| SharedString::<span class="function">from</span>(s))
+                    })
+                }).<span class="function">collect</span>()
+            })
+            .<span class="function">map_err</span>(|err| err.<span class="function">into</span>())
+    }
+}
 
 <span class="keyword">fn</span> <span class="function">main</span>() {
-    Application::<span class="function">new</span>().<span class="function">run</span>(|cx| {
-        <span class="comment">// Initialize the UI library</span>
-        adabraka_ui::<span class="function">init</span>(cx);
-        <span class="function">install_theme</span>(cx, Theme::<span class="function">dark</span>());
+    Application::<span class="function">new</span>()
+        .<span class="function">with_assets</span>(Assets {
+            base: PathBuf::<span class="function">from</span>(env!(<span class="string">"CARGO_MANIFEST_DIR"</span>)),
+        })
+        .<span class="function">run</span>(|cx| {
+            <span class="comment">// Initialize the UI library</span>
+            adabraka_ui::<span class="function">init</span>(cx);
 
-        cx.<span class="function">open_window</span>(
-            WindowOptions {
-                titlebar: <span class="keyword">Some</span>(TitlebarOptions {
-                    title: <span class="keyword">Some</span>(<span class="string">"My App"</span>.<span class="function">into</span>()),
+            <span class="comment">// Configure icon base path (for named icons)</span>
+            adabraka_ui::<span class="function">set_icon_base_path</span>(<span class="string">"assets/icons"</span>);
+
+            <span class="comment">// Install theme</span>
+            <span class="function">install_theme</span>(cx, Theme::<span class="function">dark</span>());
+
+            cx.<span class="function">open_window</span>(
+                WindowOptions {
+                    titlebar: <span class="keyword">Some</span>(TitlebarOptions {
+                        title: <span class="keyword">Some</span>(<span class="string">"My App"</span>.<span class="function">into</span>()),
+                        ..<span class="keyword">Default</span>::<span class="function">default</span>()
+                    }),
                     ..<span class="keyword">Default</span>::<span class="function">default</span>()
-                }),
-                ..<span class="keyword">Default</span>::<span class="function">default</span>()
-            },
-            |_, cx| cx.<span class="function">new</span>(|_| MyApp::<span class="function">new</span>()),
-        ).<span class="function">unwrap</span>();
-    });
+                },
+                |_, cx| cx.<span class="function">new</span>(|_| MyApp::<span class="function">new</span>()),
+            ).<span class="function">unwrap</span>();
+        });
 }</code></pre>
             </div>
         </section>
@@ -712,6 +755,87 @@ DataTable::<span class="function">new</span>(data, columns, cx)
     .<span class="function">on_row_select</span>(|item, _window, _cx| {
         <span class="function">println!</span>(<span class="string">"Selected: {:?}"</span>, item);
     })</code></pre>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">Using Icons</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::components::icon::*;
+
+<span class="comment">// Named icons (resolved using configured base path)</span>
+Icon::<span class="function">new</span>(<span class="string">"search"</span>)
+    .<span class="function">size</span>(<span class="function">px</span>(24.0))
+    .<span class="function">color</span>(theme.tokens.primary)
+
+<span class="comment">// Using icons in components</span>
+Button::<span class="function">new</span>(<span class="string">"Search"</span>)
+    .<span class="function">prefix</span>(IconSource::Named(<span class="string">"search"</span>.<span class="function">to_string</span>()))
+
+SidebarItem::<span class="function">new</span>(<span class="string">"dashboard"</span>, <span class="string">"Dashboard"</span>)
+    .<span class="function">with_icon</span>(IconSource::Named(<span class="string">"home"</span>.<span class="function">to_string</span>()))
+
+<span class="comment">// Custom icon paths</span>
+IconSource::FilePath(<span class="string">"assets/custom/logo.svg"</span>.<span class="function">into</span>())</code></pre>
+            </div>
+        </section>
+
+        <!-- Icon Setup -->
+        <section class="features">
+            <h2 class="section-title">Icon System</h2>
+            <p class="section-subtitle">Flexible icon support with your choice of icon set</p>
+
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 2rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Important: Icon Assets Not Bundled</h3>
+                <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                    To keep the library size small (95% reduction!), adabraka-ui does not bundle icon assets.
+                    You need to provide your own icon files.
+                </p>
+                <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                    <strong style="color: var(--text);">Why?</strong> This allows you to:
+                    include only the icons you use, choose your preferred icon set,
+                    update icons independently, and keep your bundle optimized.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Setup Steps</h3>
+                <ol style="margin-left: 1.5rem; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.8;">
+                    <li style="margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text);">Download icons:</strong> Get your preferred icon set
+                        (<a href="https://lucide.dev/" target="_blank" style="color: var(--accent);">Lucide</a>,
+                        <a href="https://heroicons.com/" target="_blank" style="color: var(--accent);">Heroicons</a>, etc.)
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text);">Place in project:</strong> Put SVG files in <code style="background: var(--code-bg); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">assets/icons/</code>
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text);">Configure AssetSource:</strong> Implement GPUI's AssetSource trait (see Quick Start example above)
+                    </li>
+                    <li style="margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text);">Set icon path:</strong> Call <code style="background: var(--code-bg); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">set_icon_base_path("assets/icons")</code>
+                    </li>
+                </ol>
+            </div>
+
+            <div>
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Recommended Icon Sets</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                    <a href="https://lucide.dev/" target="_blank" style="display: block; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.375rem; text-decoration: none; transition: all 0.2s;">
+                        <div style="font-weight: 600; color: var(--text); margin-bottom: 0.25rem;">Lucide Icons</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Beautiful, consistent (3,000+ icons)</div>
+                    </a>
+                    <a href="https://heroicons.com/" target="_blank" style="display: block; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.375rem; text-decoration: none; transition: all 0.2s;">
+                        <div style="font-weight: 600; color: var(--text); margin-bottom: 0.25rem;">Heroicons</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Hand-crafted by Tailwind team</div>
+                    </a>
+                    <a href="https://feathericons.com/" target="_blank" style="display: block; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.375rem; text-decoration: none; transition: all 0.2s;">
+                        <div style="font-weight: 600; color: var(--text); margin-bottom: 0.25rem;">Feather Icons</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Simply beautiful open source</div>
+                    </a>
+                    <a href="https://phosphoricons.com/" target="_blank" style="display: block; padding: 1rem; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.375rem; text-decoration: none; transition: all 0.2s;">
+                        <div style="font-weight: 600; color: var(--text); margin-bottom: 0.25rem;">Phosphor Icons</div>
+                        <div style="font-size: 0.8125rem; color: var(--text-secondary);">Flexible icon family</div>
+                    </a>
+                </div>
             </div>
         </section>
 

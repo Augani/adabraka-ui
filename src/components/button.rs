@@ -63,6 +63,7 @@ pub struct Button {
     icon_position: IconPosition,
     tooltip: Option<SharedString>,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -95,6 +96,7 @@ impl Button {
             icon_position: IconPosition::Start,
             tooltip: None,
             on_click: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -150,6 +152,12 @@ impl Button {
         !self.disabled && !self.loading && self.on_click.is_some()
     }
 
+}
+
+impl Styled for Button {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
 }
 
 impl InteractiveElement for Button {
@@ -242,8 +250,14 @@ impl RenderOnce for Button {
         let icon_pos = self.icon_position;
         let is_loading = self.loading;
         let is_selected = self.selected;
+        let user_style = self.style;
 
         self.base
+            .map(|this| {
+                let mut div = this;
+                *div.style() = user_style;
+                div
+            })
             .when(!self.disabled && !is_loading, |this| {
                 this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
             })

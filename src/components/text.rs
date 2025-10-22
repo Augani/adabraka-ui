@@ -105,6 +105,7 @@ pub struct Text {
     strikethrough: bool,
     wrap: bool,
     truncate: bool,
+    style: StyleRefinement,
 }
 
 impl Text {
@@ -123,6 +124,7 @@ impl Text {
             strikethrough: false,
             wrap: true,
             truncate: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -209,6 +211,12 @@ impl Text {
     }
 }
 
+impl Styled for Text {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Text {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -227,7 +235,10 @@ impl RenderOnce for Text {
 
         let text_color = self.color.unwrap_or(theme.tokens.foreground);
 
-        div()
+        let mut base = div();
+        *base.style() = self.style;
+
+        base
             .font_family(font_family)
             .text_size(size)
             .font_weight(weight)

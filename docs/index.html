@@ -837,6 +837,72 @@ IconSource::FilePath(<span class="string">"assets/custom/logo.svg"</span>.<span 
                     </a>
                 </div>
             </div>
+
+            <!-- New Icon Features -->
+            <div style="margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+                <h3 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 1.5rem; color: var(--text);">
+                    ✨ New in v0.1.2: Enhanced Icon Features
+                </h3>
+
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.75rem;">Named Icon Sizes</h4>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        Use semantic size names for consistent icon sizing:
+                    </p>
+                    <pre style="background: var(--code-bg); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;"><code>Icon::new("search")
+    .size(IconSize::XSmall)   // 12px
+    .size(IconSize::Small)    // 14px
+    .size(IconSize::Medium)   // 16px (default)
+    .size(IconSize::Large)    // 24px
+    .size(IconSize::Custom(px(32.0)))  // Custom
+
+// Backward compatible:
+Icon::new("search").size(px(20.0))  // Auto-converts</code></pre>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.75rem;">Full GPUI Styling Support</h4>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        Icons now implement the <code style="background: var(--code-bg); padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;">Styled</code> trait for full styling:
+                    </p>
+                    <pre style="background: var(--code-bg); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;"><code>Icon::new("star")
+    .size(IconSize::Large)
+    .p_2()                    // Padding
+    .bg(gpui::blue())         // Background
+    .rounded_md()             // Rounded corners
+    .border_1()               // Border
+    .border_color(gpui::gray())</code></pre>
+                </div>
+
+                <div style="margin-bottom: 2rem;">
+                    <h4 style="font-size: 0.9375rem; font-weight: 600; margin-bottom: 0.75rem;">Icon Rotation</h4>
+                    <p style="font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem;">
+                        Perfect for loading spinners, directional arrows, and animations:
+                    </p>
+                    <pre style="background: var(--code-bg); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1rem; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8125rem;"><code>// Rotate 90 degrees
+Icon::new("arrow-right")
+    .rotate(Radians::from_degrees(90.0))
+
+// Animated spinner
+Icon::new("loader")
+    .rotate(Radians::TAU * progress)</code></pre>
+                </div>
+
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem;">PERFORMANCE</div>
+                        <div style="font-size: 0.875rem; color: var(--text);">No wrapper overhead</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem;">COMPATIBILITY</div>
+                        <div style="font-size: 0.875rem; color: var(--text);">100% backward compatible</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.25rem;">FEATURES</div>
+                        <div style="font-size: 0.875rem; color: var(--text);">Full GPUI patterns</div>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Components List -->

@@ -1369,6 +1369,71 @@ By not bundling icons, adabraka-ui keeps its package size small (saves ~3,274 ic
 - ✓ Update icons independently from the library
 - ✓ Keep your application bundle optimized
 
+### Icon Customization (New in v0.1.2)
+
+The Icon component now supports advanced styling and transformations:
+
+#### Named Icon Sizes
+
+Use semantic size names instead of pixel values:
+
+```rust
+use adabraka_ui::prelude::*;
+
+Icon::new("search")
+    .size(IconSize::XSmall)   // 12px
+    .size(IconSize::Small)    // 14px
+    .size(IconSize::Medium)   // 16px (default)
+    .size(IconSize::Large)    // 24px
+    .size(IconSize::Custom(px(32.0)))  // Custom size
+
+// Backward compatible - Pixels still work:
+Icon::new("search").size(px(20.0))  // Auto-converts to Custom
+```
+
+#### Full GPUI Styling Support
+
+Icons now implement the `Styled` trait, allowing all GPUI styling methods:
+
+```rust
+Icon::new("star")
+    .size(IconSize::Large)
+    .p_2()                    // Padding
+    .bg(gpui::blue())         // Background color
+    .rounded_md()             // Rounded corners
+    .border_1()               // Border
+    .border_color(gpui::gray())
+```
+
+#### Icon Rotation
+
+Perfect for loading spinners, directional arrows, and animated icons:
+
+```rust
+use gpui::Radians;
+
+// Rotate icon 90 degrees
+Icon::new("arrow-right")
+    .rotate(Radians::from_degrees(90.0))
+
+// Animated loading spinner
+Icon::new("loader")
+    .rotate(Radians::TAU * progress)  // Animate with state
+```
+
+#### Clickable Icons
+
+Icons support built-in click handlers:
+
+```rust
+Icon::new("close")
+    .clickable(true)
+    .on_click(|window, cx| {
+        // Handle click
+    })
+    .size(IconSize::Large)
+```
+
 ## Advanced Features
 
 ### Resizable Panels

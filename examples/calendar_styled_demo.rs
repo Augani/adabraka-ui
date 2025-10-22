@@ -65,12 +65,14 @@ fn main() {
 
 struct CalendarStyledDemo {
     selected_date: Option<DateValue>,
+    current_month: DateValue,
 }
 
 impl CalendarStyledDemo {
     fn new() -> Self {
         Self {
             selected_date: Some(DateValue::new(2025, 1, 15)),
+            current_month: DateValue::new(2025, 1, 1),
         }
     }
 }
@@ -144,10 +146,18 @@ impl Render for CalendarStyledDemo {
                                     )
                                     .child(
                                         Calendar::new()
-                                            .current_month(DateValue::new(2025, 1, 1))
+                                            .current_month(self.current_month)
                                             .selected_date(self.selected_date.unwrap_or(DateValue::new(2025, 1, 15)))
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -170,6 +180,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -188,6 +202,10 @@ impl Render for CalendarStyledDemo {
                                             .p_8()  // <- Styled trait method
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -226,6 +244,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -246,6 +268,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -264,6 +290,10 @@ impl Render for CalendarStyledDemo {
                                             .bg(rgb(0x14532d))  // <- Styled trait
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -303,6 +333,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -324,6 +358,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -343,6 +381,10 @@ impl Render for CalendarStyledDemo {
                                             .border_color(rgb(0x8b5cf6))
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -383,6 +425,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -405,6 +451,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -425,6 +475,10 @@ impl Render for CalendarStyledDemo {
                                             .border_color(theme.tokens.border)
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -464,6 +518,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -484,6 +542,10 @@ impl Render for CalendarStyledDemo {
                                             .border_color(theme.tokens.border)
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -522,6 +584,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -542,6 +608,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -560,6 +630,10 @@ impl Render for CalendarStyledDemo {
                                             .shadow_lg()  // <- Styled trait
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -600,6 +674,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -626,6 +704,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             .child(
@@ -650,6 +732,10 @@ impl Render for CalendarStyledDemo {
                                             .w(px(450.0))  // <- Styled trait
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -706,6 +792,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             // Spanish Locale
@@ -726,6 +816,10 @@ impl Render for CalendarStyledDemo {
                                             .locale(CalendarLocale::spanish())
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -750,6 +844,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             // Portuguese Locale
@@ -772,6 +870,10 @@ impl Render for CalendarStyledDemo {
                                                 view.selected_date = Some(*date);
                                                 cx.notify();
                                             }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
+                                                cx.notify();
+                                            }))
                                     )
                             )
                             // Italian Locale
@@ -792,6 +894,10 @@ impl Render for CalendarStyledDemo {
                                             .locale(CalendarLocale::italian())
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )
@@ -817,6 +923,10 @@ impl Render for CalendarStyledDemo {
                                             ))
                                             .on_date_select(cx.listener(|view, date, _, cx| {
                                                 view.selected_date = Some(*date);
+                                                cx.notify();
+                                            }))
+                                            .on_month_change(cx.listener(|view, date, _, cx| {
+                                                view.current_month = *date;
                                                 cx.notify();
                                             }))
                                     )

@@ -26,6 +26,7 @@ pub struct Toggle {
     label_side: LabelSide,
     on_click: Option<Rc<dyn Fn(&bool, &mut Window, &mut App)>>,
     size: ToggleSize,
+    style: StyleRefinement,
 }
 
 impl Toggle {
@@ -40,6 +41,7 @@ impl Toggle {
             label_side: LabelSide::Right,
             on_click: None,
             size: ToggleSize::Md,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -77,6 +79,12 @@ impl Toggle {
     }
 }
 
+impl Styled for Toggle {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl InteractiveElement for Toggle {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.base.interactivity()
@@ -88,6 +96,7 @@ impl StatefulInteractiveElement for Toggle {}
 impl RenderOnce for Toggle {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         let (bg_width, bg_height, bar_width, inset) = match self.size {
             ToggleSize::Sm => (px(28.0), px(16.0), px(12.0), px(2.0)),
@@ -171,6 +180,11 @@ impl RenderOnce for Toggle {
                         })
                         .child(label)
                 )
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
             .when(!self.disabled, |this| {
                 this.when_some(self.on_click, |this, on_click| {

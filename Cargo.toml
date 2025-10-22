@@ -35,3 +35,7 @@ tree-sitter-sequel = "0.3.11"
 name = "scroll_test"
 path = "examples/scroll_test.rs"
 
+[[example]]
+name = "label_styled_demo"
+path = "examples/label_styled_demo.rs"
+

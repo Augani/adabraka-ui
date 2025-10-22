@@ -19,6 +19,7 @@ pub struct Label {
     required: bool,
     helper_text: Option<SharedString>,
     disabled: bool,
+    style: StyleRefinement,
 }
 
 impl Label {
@@ -30,6 +31,7 @@ impl Label {
             required: false,
             helper_text: None,
             disabled: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -58,9 +60,16 @@ impl Label {
     }
 }
 
+impl Styled for Label {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Label {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         div()
             .flex()
@@ -98,6 +107,11 @@ impl RenderOnce for Label {
                         .line_height(relative(1.25))
                         .child(helper),
                 )
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

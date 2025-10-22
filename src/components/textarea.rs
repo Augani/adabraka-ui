@@ -20,6 +20,7 @@ pub struct Textarea {
     resizable: bool,
     on_change: Option<Rc<dyn Fn(SharedString, &mut Window, &mut App)>>,
     on_blur: Option<Rc<dyn Fn(SharedString, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Textarea {
@@ -38,6 +39,7 @@ impl Textarea {
             resizable: true,
             on_change: None,
             on_blur: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -114,9 +116,16 @@ impl Textarea {
     }
 }
 
+impl Styled for Textarea {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Textarea {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
         let height = self.calculate_height();
 
         let (bg_color, border_color, text_color) = if self.disabled {
@@ -187,6 +196,11 @@ impl RenderOnce for Textarea {
                 })
             })
             .when(!self.resizable, |this| this)
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
             .child(
                 div()
                     .size_full()

@@ -59,6 +59,7 @@ pub struct Select<T: Clone + 'static> {
     on_change: Option<Box<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
     bounds: Bounds<Pixels>,
     leading_icon: Option<IconSource>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + 'static> Select<T> {
@@ -78,6 +79,7 @@ impl<T: Clone + 'static> Select<T> {
             on_change: None,
             bounds: Bounds::default(),
             leading_icon: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -258,9 +260,16 @@ impl<T: Clone + 'static> Select<T> {
     }
 }
 
+impl<T: Clone + 'static> Styled for Select<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + 'static> Render for Select<T> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
 
         let display_text = self.selected_label()
             .cloned()
@@ -596,6 +605,11 @@ impl<T: Clone + 'static> Render for Select<T> {
                     )
                     .with_priority(1),
                 )
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

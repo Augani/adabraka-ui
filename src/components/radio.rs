@@ -53,6 +53,7 @@ pub struct Radio {
     checked: bool,
     disabled: bool,
     on_click: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Radio {
@@ -66,6 +67,7 @@ impl Radio {
             checked: false,
             disabled: false,
             on_click: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -102,9 +104,16 @@ impl InteractiveElement for Radio {
 
 impl StatefulInteractiveElement for Radio {}
 
+impl Styled for Radio {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Radio {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
@@ -190,6 +199,11 @@ impl RenderOnce for Radio {
                             handler(window, cx);
                         })
                     })
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

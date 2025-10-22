@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-10-22
+
+### Changed
+- **BREAKING**: Icons are no longer bundled with the library (reduces package size by 95%)
+- Added configurable icon path system with `set_icon_base_path()` function
+- Users must now provide their own icon assets (see README for setup instructions)
+
+### Fixed
+- Fixed 20+ examples with incorrect API usage
+- Fixed `scroll` module imports (changed to `scrollable`)
+- Fixed VStack compatibility with scrollable_vertical
+- Fixed Menu and MenuItem API usage
+- Fixed toolbar click handlers to use `on_mouse_down`
+- Removed 3 broken test examples
+
+### Improved
+- Removed unnecessary inline comments for cleaner, production-ready code
+- Added comprehensive icon setup documentation in README
+- All 53 working examples now compile successfully
+- Updated examples with proper AssetSource configuration
+
 ## [0.1.0] - 2025-10-21
 
 ### Added

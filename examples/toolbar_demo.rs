@@ -5,6 +5,34 @@ use adabraka_ui::{
     layout::VStack,
     theme::use_theme,
 };
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 actions!(toolbar_demo, [Quit]);
 
@@ -127,7 +155,7 @@ impl Render for ToolbarDemo {
                                                 theme.tokens.muted
                                             })
                                             .cursor(CursorStyle::PointingHand)
-                                            .on_click(cx.listener(|this, _, _, cx| {
+                                            .on_mouse_down(MouseButton::Left, cx.listener(|this, _, _, cx| {
                                                 this.toolbar_size = ToolbarSize::Sm;
                                                 cx.notify();
                                             }))
@@ -144,7 +172,7 @@ impl Render for ToolbarDemo {
                                                 theme.tokens.muted
                                             })
                                             .cursor(CursorStyle::PointingHand)
-                                            .on_click(cx.listener(|this, _, _, cx| {
+                                            .on_mouse_down(MouseButton::Left, cx.listener(|this, _, _, cx| {
                                                 this.toolbar_size = ToolbarSize::Md;
                                                 cx.notify();
                                             }))
@@ -161,7 +189,7 @@ impl Render for ToolbarDemo {
                                                 theme.tokens.muted
                                             })
                                             .cursor(CursorStyle::PointingHand)
-                                            .on_click(cx.listener(|this, _, _, cx| {
+                                            .on_mouse_down(MouseButton::Left, cx.listener(|this, _, _, cx| {
                                                 this.toolbar_size = ToolbarSize::Lg;
                                                 cx.notify();
                                             }))
@@ -169,7 +197,6 @@ impl Render for ToolbarDemo {
                                     )
                             )
                     )
-                    // Main Toolbar - Text Formatting
                     .child({
                         let formatting_group = ToolbarGroup::new()
                             .button(
@@ -293,7 +320,6 @@ impl Render for ToolbarDemo {
                                 .group(list_group)
                         })
                     })
-                    // Secondary Toolbar - File Operations
                     .child({
                         let file_group = ToolbarGroup::new()
                             .button(
@@ -386,7 +412,6 @@ impl Render for ToolbarDemo {
                                 .group(settings_group)
                         })
                     })
-                    // Toolbar with Disabled Items
                     .child({
                         let group = ToolbarGroup::new()
                             .button(
@@ -427,7 +452,6 @@ impl Render for ToolbarDemo {
                                 .group(group)
                         })
                     })
-                    // Status Display
                     .child(
                         div()
                             .flex_1()
@@ -488,19 +512,17 @@ impl Render for ToolbarDemo {
 }
 
 fn main() {
-    Application::new().run(move |cx: &mut App| {
-        // Install dark theme
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx: &mut App| {
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
-        // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.activate(true);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

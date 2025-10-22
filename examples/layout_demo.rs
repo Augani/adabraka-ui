@@ -109,10 +109,12 @@ impl Render for LayoutDemo {
                             .overflow_hidden()
                             .child(
                                 scrollable_vertical(
-                                    VStack::new()
+                                    div()
+                                        .flex()
+                                        .flex_col()
                                         .w_full()
                                         .p(px(24.0))
-                                        .spacing(32.0)
+                                        .gap(px(32.0))
                                         // Section 1: Styled VStack with borders and backgrounds
                                         .child(demo_section(
                                             "🎨 Styled VStack",

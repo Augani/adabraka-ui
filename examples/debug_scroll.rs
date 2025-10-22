@@ -10,10 +10,9 @@ struct DebugScroll {}
 impl Render for DebugScroll {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         // Let's manually inline what ScrollContainer::vertical() does
-        let scroll_id = format!("debug-scroll-1");
-        
-        // This is what ScrollContainer creates in constructor
-        let mut container = div().id(scroll_id.clone());
+        let scroll_id = "debug-scroll-1";
+
+        let mut container = div().id(scroll_id);
         
         // User applies styling
         container = container.h(px(200.)).w_full().border_1().border_color(rgb(0x3b82f6)).bg(rgb(0xfafafa)).p_4();

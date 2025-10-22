@@ -2,10 +2,38 @@ use gpui::*;
 use adabraka_ui::{
     prelude::*,
     navigation::tabs::{Tabs, TabItem, TabPanel, TabVariant, init_tabs},
-    components::{icon::IconSource, scroll::scrollable_vertical},
+    components::{icon::IconSource, scrollable::scrollable_vertical},
     layout::{VStack, HStack},
     navigation::breadcrumbs::{Breadcrumbs, BreadcrumbItem},
 };
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 struct TabsDemo {
     selected_underline_tab: usize,
@@ -79,7 +107,9 @@ impl Render for TabsDemo {
                     .overflow_hidden()
                     .child(
                         scrollable_vertical(
-                            VStack::new()
+                            div()
+                                .flex()
+                                .flex_col()
                                 .w_full()
                                 .p(px(32.0))
                                 .gap(px(48.0))
@@ -559,17 +589,14 @@ impl Render for TabsDemo {
 }
 
 fn main() {
-    Application::new().run(move |cx: &mut App| {
-        // Install dark theme
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx: &mut App| {
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
-
-        // Initialize key bindings
+        adabraka_ui::set_icon_base_path("assets/icons");
         init_tabs(cx);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

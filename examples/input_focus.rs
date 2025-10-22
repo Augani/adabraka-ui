@@ -2,7 +2,7 @@ use adabraka_ui::{
     components::{
         input::{Input, InputType, InputVariant},
         input_state::{InputState, InputEvent},
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
     },
     layout::{VStack, HStack},
     theme::{install_theme, Theme},
@@ -126,7 +126,9 @@ impl Render for FocusTestApp {
                             .overflow_hidden()
                             .child(
                                 scrollable_vertical(
-                                    VStack::new()
+                                    div()
+                                        .flex()
+                                        .flex_col()
                                         .w_full()
                                         .p(px(32.0))
                                         .gap(px(24.0))

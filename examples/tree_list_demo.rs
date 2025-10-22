@@ -4,7 +4,7 @@ use adabraka_ui::{
     prelude::*,
     navigation::tree::{TreeList, TreeNode, List, ListItem},
     components::{
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
         input::{Input, InputState, InputVariant, InputSize, init as init_input},
     },
     layout::{VStack, HStack},
@@ -110,7 +110,9 @@ impl Render for TreeListDemo {
                     .overflow_hidden()
                     .child(
                         scrollable_vertical(
-                            VStack::new()
+                            div()
+                                .flex()
+                                .flex_col()
                                 .w_full()
                                 .p(px(32.0))
                                 .gap(px(48.0))
@@ -464,16 +466,11 @@ fn main() {
     Application::new()
         .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
         .run(move |cx: &mut App| {
-        // Install dark theme
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
-
-        // Initialize input key bindings
+        adabraka_ui::set_icon_base_path("assets/icons");
         init_input(cx);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

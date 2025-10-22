@@ -3,10 +3,41 @@ use adabraka_ui::{
     components::icon::Icon,
 };
 use gpui::*;
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 fn main() {
-    Application::new().run(|cx| {
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(|cx| {
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
         cx.open_window(
             WindowOptions {
@@ -80,7 +111,6 @@ impl Render for IconTestApp {
                                     .child("heart (red)")
                             )
                     )
-                    // Test 2: Arrow down
                     .child(
                         div()
                             .flex()
@@ -99,7 +129,6 @@ impl Render for IconTestApp {
                                     .child("arrow-down (blue)")
                             )
                     )
-                    // Test 3: Check mark
                     .child(
                         div()
                             .flex()

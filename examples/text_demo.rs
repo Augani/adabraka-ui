@@ -2,7 +2,7 @@ use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
     theme::{install_theme, Theme, use_theme},
     components::{
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
         text::*,
     },
 };

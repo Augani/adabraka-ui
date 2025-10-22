@@ -6,6 +6,34 @@ use adabraka_ui::{
     layout::VStack,
     theme::use_theme,
 };
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 actions!(menu_demo, [Quit]);
 
@@ -209,8 +237,7 @@ impl Render for MenuDemo {
 
                                         let view_menu = vec![
                                             MenuItem::new("radio_group", "Layout").with_children(vec![
-                                                MenuItem::new("layout_1", "Option 1")
-                                                    .kind(MenuItemKind::Radio { checked: self.radio_option == "Option 1" })
+                                                MenuItem::checkbox("layout_1", "Option 1", self.radio_option == "Option 1")
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
@@ -219,8 +246,7 @@ impl Render for MenuDemo {
                                                             });
                                                         }
                                                     }),
-                                                MenuItem::new("layout_2", "Option 2")
-                                                    .kind(MenuItemKind::Radio { checked: self.radio_option == "Option 2" })
+                                                MenuItem::checkbox("layout_2", "Option 2", self.radio_option == "Option 2")
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
@@ -229,8 +255,7 @@ impl Render for MenuDemo {
                                                             });
                                                         }
                                                     }),
-                                                MenuItem::new("layout_3", "Option 3")
-                                                    .kind(MenuItemKind::Radio { checked: self.radio_option == "Option 3" })
+                                                MenuItem::checkbox("layout_3", "Option 3", self.radio_option == "Option 3")
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
@@ -242,181 +267,14 @@ impl Render for MenuDemo {
                                             ]),
                                         ];
 
-                                        cx.new(|cx| {
-                                            MenuBar::new(cx, vec![
-                                                MenuBarItem::new("File", file_menu),
-                                                MenuBarItem::new("Edit", edit_menu),
-                                                MenuBarItem::new("View", view_menu),
+                                        cx.new(|_cx| {
+                                            MenuBar::new(vec![
+                                                MenuBarItem::new("file", "File").with_items(file_menu),
+                                                MenuBarItem::new("edit", "Edit").with_items(edit_menu),
+                                                MenuBarItem::new("view", "View").with_items(view_menu),
                                             ])
                                         })
                                     })
-                            )
-                            // Standalone Menu Section
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_col()
-                                    .gap(px(16.0))
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .gap(px(4.0))
-                                            .child(
-                                                div()
-                                                    .text_size(px(20.0))
-                                                    .font_weight(FontWeight::SEMIBOLD)
-                                                    .child("Standalone Menu")
-                                            )
-                                            .child(
-                                                div()
-                                                    .text_size(px(14.0))
-                                                    .text_color(theme.tokens.muted_foreground)
-                                                    .child("Menu component with various item types")
-                                            )
-                                    )
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .gap(px(12.0))
-                                            .child({
-                                                let items = vec![
-                                                    MenuItem::new("action1", "Regular Action")
-                                                        .with_icon(IconSource::Named("check".into()))
-                                                        .on_click({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.handle_menu_action("Regular Action", cx);
-                                                                });
-                                                            }
-                                                        }),
-                                                    MenuItem::new("action2", "With Shortcut")
-                                                        .with_shortcut("Ctrl+K")
-                                                        .on_click({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.handle_menu_action("With Shortcut", cx);
-                                                                });
-                                                            }
-                                                        }),
-                                                    MenuItem::separator(),
-                                                    MenuItem::new("disabled", "Disabled Item")
-                                                        .disabled(true),
-                                                ];
-
-                                                cx.new(|cx| Menu::new(cx, items))
-                                            })
-                                    )
-                            )
-                            // Context Menu Section
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_col()
-                                    .gap(px(16.0))
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .flex_col()
-                                            .gap(px(4.0))
-                                            .child(
-                                                div()
-                                                    .text_size(px(20.0))
-                                                    .font_weight(FontWeight::SEMIBOLD)
-                                                    .child("Context Menu")
-                                            )
-                                            .child(
-                                                div()
-                                                    .text_size(px(14.0))
-                                                    .text_color(theme.tokens.muted_foreground)
-                                                    .child("Right-click the box below to open a context menu")
-                                            )
-                                    )
-                                    .child(
-                                        div()
-                                            .relative()
-                                            .w(px(400.0))
-                                            .h(px(200.0))
-                                            .bg(theme.tokens.muted.opacity(0.3))
-                                            .border_2()
-                                            .border_color(theme.tokens.border)
-                                            .rounded(theme.tokens.radius_md)
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .cursor(CursorStyle::PointingHand)
-                                            .on_mouse_down(MouseButton::Right, cx.listener(|this, event: &MouseDownEvent, _, cx| {
-                                                this.show_context_menu = true;
-                                                this.context_menu_position = event.position;
-                                                cx.notify();
-                                            }))
-                                            .child(
-                                                div()
-                                                    .text_size(px(14.0))
-                                                    .text_color(theme.tokens.muted_foreground)
-                                                    .child("Right-click here")
-                                            )
-                                            .children(if self.show_context_menu {
-                                                let items = vec![
-                                                    MenuItem::new("copy", "Copy")
-                                                        .with_icon(IconSource::Named("copy".into()))
-                                                        .with_shortcut("Cmd+C")
-                                                        .on_click({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.handle_menu_action("Copy", cx);
-                                                                    this.show_context_menu = false;
-                                                                    cx.notify();
-                                                                });
-                                                            }
-                                                        }),
-                                                    MenuItem::new("paste", "Paste")
-                                                        .with_icon(IconSource::Named("clipboard".into()))
-                                                        .with_shortcut("Cmd+V")
-                                                        .on_click({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.handle_menu_action("Paste", cx);
-                                                                    this.show_context_menu = false;
-                                                                    cx.notify();
-                                                                });
-                                                            }
-                                                        }),
-                                                    MenuItem::separator(),
-                                                    MenuItem::new("delete", "Delete")
-                                                        .with_icon(IconSource::Named("trash".into()))
-                                                        .on_click({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.handle_menu_action("Delete", cx);
-                                                                    this.show_context_menu = false;
-                                                                    cx.notify();
-                                                                });
-                                                            }
-                                                        }),
-                                                ];
-
-                                                vec![cx.new(|cx| {
-                                                    ContextMenu::new(cx, items, self.context_menu_position)
-                                                        .on_close({
-                                                            let entity = cx.entity().clone();
-                                                            move |_, cx| {
-                                                                cx.update_entity(&entity, |this, cx| {
-                                                                    this.show_context_menu = false;
-                                                                    cx.notify();
-                                                                });
-                                                            }
-                                                        })
-                                                }).into_any_element()]
-                                            } else {
-                                                vec![]
-                                            })
-                                    )
                             )
                     )
             )
@@ -424,19 +282,17 @@ impl Render for MenuDemo {
 }
 
 fn main() {
-    Application::new().run(move |cx: &mut App| {
-        // Install dark theme
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx: &mut App| {
         adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-        // Initialize UI system
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
-        // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
         cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.activate(true);
 
-        // Create window
         cx.open_window(
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

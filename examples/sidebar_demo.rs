@@ -28,7 +28,6 @@ impl Render for SidebarDemo {
 
         h_resizable("sidebar-layout", self.sidebar_resizable_state.clone())
             .child({
-                // Sidebar - resizable horizontally
                 let app_entity = cx.entity().downgrade();
                 let app_entity_for_select = app_entity.clone();
                 let app_entity_for_toggle = app_entity.clone();
@@ -75,7 +74,6 @@ impl Render for SidebarDemo {
                     )
             })
             .child(
-                // Main content area
                 resizable_panel()
                     .child(
                         VStack::new()
@@ -158,11 +156,9 @@ fn main() {
     Application::new()
         .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
         .run(move |cx: &mut App| {
-            // Install dark theme
             adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-
-            // Initialize UI system
             adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(Bounds::centered(

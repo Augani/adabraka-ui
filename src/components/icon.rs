@@ -2,6 +2,7 @@
 
 use gpui::{prelude::*, *};
 use crate::theme::use_theme;
+use crate::icon_config::resolve_icon_path;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IconVariant {
@@ -53,7 +54,7 @@ impl From<SharedString> for IconSource {
 }
 
 fn icon_path_from_name(name: &str) -> String {
-    format!("crates/adabraka-ui/assets/icons/{}.svg", name)
+    resolve_icon_path(name)
 }
 
 pub struct Icon {

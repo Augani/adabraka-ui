@@ -4,7 +4,7 @@ use adabraka_ui::{
         input::{Input, InputVariant, InputSize},
         input_state::{InputState, *},
         button::{Button, ButtonVariant, ButtonSize},
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
     },
     layout::{VStack, HStack, Justify, Align},
     theme::{install_theme, Theme},
@@ -145,7 +145,9 @@ impl Render for InputDemoApp {
                     .overflow_hidden()
                     .child(
                         scrollable_vertical(
-                            VStack::new()
+                            div()
+                                .flex()
+                                .flex_col()
                                 .w_full()
                                 .p(px(40.0))
                                 .gap(px(32.0))

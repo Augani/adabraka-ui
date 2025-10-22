@@ -3,7 +3,7 @@ use adabraka_ui::{
         select::{Select, SelectOption, SelectEvent},
         tooltip::{TooltipPlacement, tooltip},
         button::{Button, ButtonVariant, ButtonSize},
-        scroll::scrollable_vertical,
+        scrollable::scrollable_vertical,
     },
     display::{
         badge::{Badge, BadgeVariant},
@@ -80,8 +80,8 @@ impl SelectTooltipDemoApp {
         let theme = Theme::dark();
         install_theme(cx, theme.clone());
 
-        // Initialize the UI library (includes select key bindings)
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
         let app = Self {
             country_select: cx.new(|cx| {

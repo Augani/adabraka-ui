@@ -58,7 +58,7 @@ impl Render for SimpleButtonApp {
             )
             .child(
                 // Using Button with a regular closure (gc pattern)
-                Button::new("Click Me!")
+                Button::new("click-btn", "Click Me!")
                     .on_click(move |_event, _window, _cx| {
                         let mut count = click_count.lock().unwrap();
                         *count += 1;

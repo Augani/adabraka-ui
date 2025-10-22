@@ -50,7 +50,7 @@ impl Render for MinimalButtonTest {
                     .child(format!("Clicked {} times", self.click_count))
             )
             .child(
-                Button::new("Click Me!")
+                Button::new("click-btn", "Click Me!")
                     .on_click(cx.listener(|view, _event, _window, cx| {
                         println!("[MinimalButtonTest] BUTTON CLICKED! Incrementing from {} to {}",
                                  view.click_count, view.click_count + 1);

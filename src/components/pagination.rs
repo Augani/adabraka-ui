@@ -132,7 +132,7 @@ impl RenderOnce for Pagination {
             .gap(px(4.0))
             .child({
                 let handler = on_change.clone();
-                Button::new("Previous")
+                Button::new("previous-btn", "Previous")
                     .variant(ButtonVariant::Outline)
                     .size(ButtonSize::Sm)
                     .disabled(!has_prev)
@@ -153,7 +153,7 @@ impl RenderOnce for Pagination {
 
                         div()
                             .child(
-                                Button::new(page.to_string())
+                                Button::new(("page-btn", page), page.to_string())
                                     .variant(if is_current {
                                         ButtonVariant::Default
                                     } else {
@@ -186,7 +186,7 @@ impl RenderOnce for Pagination {
             })
             .child({
                 let handler = on_change;
-                Button::new("Next")
+                Button::new("next-btn", "Next")
                     .variant(ButtonVariant::Outline)
                     .size(ButtonSize::Sm)
                     .disabled(!has_next)

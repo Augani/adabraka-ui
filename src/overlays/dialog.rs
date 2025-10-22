@@ -236,7 +236,7 @@ impl Render for Dialog {
                                             .when(self.show_close_button, |this| {
                                                 let dialog_entity = dialog_entity.clone();
                                                 this.child(
-                                                    Button::new("×")
+                                                    Button::new("dialog-close-btn", "×")
                                                         .variant(ButtonVariant::Ghost)
                                                         .size(ButtonSize::Icon)
                                                         .on_click(move |_, window, cx| {

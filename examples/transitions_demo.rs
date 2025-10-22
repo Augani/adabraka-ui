@@ -97,7 +97,7 @@ impl Render for TransitionsDemo {
             )
             // Show All Button
             .child(
-                Button::new("Toggle All Transitions")
+                Button::new("toggle-all-btn", "Toggle All Transitions")
                     .variant(ButtonVariant::Secondary)
                     .on_click(_cx.listener(|this, _, _, cx| {
                         this.toggle_all(cx);
@@ -127,7 +127,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-fade-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_fade = !this.show_fade;
@@ -169,7 +169,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-slide-up-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_up = !this.show_slide_up;
@@ -211,7 +211,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-slide-down-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_down = !this.show_slide_down;
@@ -253,7 +253,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-slide-left-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_left = !this.show_slide_left;
@@ -295,7 +295,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-slide-right-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_right = !this.show_slide_right;
@@ -337,7 +337,7 @@ impl Render for TransitionsDemo {
                                     .gap(px(12.0))
                                     .items_start()
                                     .child(
-                                        Button::new("Toggle")
+                                        Button::new("toggle-scale-btn", "Toggle")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_scale = !this.show_scale;

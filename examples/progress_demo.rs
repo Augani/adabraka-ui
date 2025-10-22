@@ -440,7 +440,7 @@ impl Render for ProgressDemo {
                             .justify_center()
                             .mt(px(16.0))
                             .child(
-                                Button::new("Increase Progress")
+                                Button::new("increase-progress-btn", "Increase Progress")
                                     .variant(ButtonVariant::Default)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.progress = (this.progress + 0.1).min(1.0);
@@ -448,7 +448,7 @@ impl Render for ProgressDemo {
                                     }))
                             )
                             .child(
-                                Button::new("Decrease Progress")
+                                Button::new("decrease-progress-btn", "Decrease Progress")
                                     .variant(ButtonVariant::Outline)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.progress = (this.progress - 0.1).max(0.0);
@@ -456,7 +456,7 @@ impl Render for ProgressDemo {
                                     }))
                             )
                             .child(
-                                Button::new("Reset")
+                                Button::new("reset-btn", "Reset")
                                     .variant(ButtonVariant::Outline)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.progress = 0.0;

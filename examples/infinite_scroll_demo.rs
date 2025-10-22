@@ -177,7 +177,7 @@ impl Render for InfiniteScrollApp {
                                     .variant(BadgeVariant::Secondary)
                             )
                             .child(
-                                Button::new("Load More")
+                                Button::new("load-more-btn", "Load More")
                                     .size(ButtonSize::Sm)
                                     .variant(ButtonVariant::Default)
                                     .on_click(cx.listener(|view, _event, _window, cx| {

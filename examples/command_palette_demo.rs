@@ -347,7 +347,7 @@ impl Render for CommandPaletteDemo {
                             .flex()
                             .gap(px(12.0))
                             .child(
-                                Button::new("Open Command Palette")
+                                Button::new("open-palette-btn", "Open Command Palette")
                                     .variant(ButtonVariant::Default)
                                     .on_mouse_down(MouseButton::Left, cx.listener(|this, _, _, cx| {
                                         this.toggle_palette(cx);

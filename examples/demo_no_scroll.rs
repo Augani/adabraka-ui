@@ -85,7 +85,7 @@ impl Render for DemoApp {
                                     .flex()
                                     .gap(px(12.0))
                                     .child(
-                                        Button::new("Click Me!")
+                                        Button::new("click-btn", "Click Me!")
                                             .on_click(cx.listener(|view, _event, _window, cx| {
                                                 println!("[DemoApp] BUTTON CLICKED! Count: {} -> {}",
                                                          view.click_count, view.click_count + 1);

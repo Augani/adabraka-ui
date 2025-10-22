@@ -524,7 +524,7 @@ impl Render for TabsDemo {
                                                 .gap(px(8.0))
                                                 .mt(px(8.0))
                                                 .children(vec![
-                                                    Button::new("Add Level")
+                                                    Button::new("add-level-btn", "Add Level")
                                                         .on_click({
                                                             let app_entity = cx.entity().downgrade();
                                                             move |_, _, cx| {
@@ -536,7 +536,7 @@ impl Render for TabsDemo {
                                                                 }
                                                             }
                                                         }),
-                                                    Button::new("Reset")
+                                                    Button::new("reset-btn", "Reset")
                                                         .variant(ButtonVariant::Outline)
                                                         .on_click({
                                                             let app_entity = cx.entity().downgrade();

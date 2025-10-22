@@ -171,7 +171,7 @@ impl RenderOnce for Calendar {
                     // Previous month button
                     .child({
                         let handler = on_month_change_handler.clone();
-                        Button::new("‹")
+                        Button::new("prev-month-btn", "‹")
                             .variant(ButtonVariant::Ghost)
                             .size(ButtonSize::Sm)
                             .when(handler.is_some(), |btn| {
@@ -194,7 +194,7 @@ impl RenderOnce for Calendar {
                     // Next month button
                     .child({
                         let handler = on_month_change_handler;
-                        Button::new("›")
+                        Button::new("next-month-btn", "›")
                             .variant(ButtonVariant::Ghost)
                             .size(ButtonSize::Sm)
                             .when(handler.is_some(), |btn| {

@@ -76,7 +76,7 @@ impl Render for AnimationsDemo {
                                     .gap(px(16.0))
                                     .items_center()
                                     .child(
-                                        Button::new("Toggle Fade")
+                                        Button::new("toggle-fade-btn", "Toggle Fade")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(cx.listener(|this, _, _, cx| {
                                                 this.show_fade = !this.show_fade;
@@ -158,7 +158,7 @@ impl Render for AnimationsDemo {
                                     .gap(px(16.0))
                                     .items_center()
                                     .child(
-                                        Button::new("Toggle Scale")
+                                        Button::new("toggle-scale-btn", "Toggle Scale")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(cx.listener(|this, _, _, cx| {
                                                 this.show_scale = !this.show_scale;
@@ -250,7 +250,7 @@ impl Render for AnimationsDemo {
                                     .gap(px(16.0))
                                     .items_center()
                                     .child(
-                                        Button::new("Toggle Slide")
+                                        Button::new("toggle-slide-btn", "Toggle Slide")
                                             .variant(ButtonVariant::Outline)
                                             .on_click(cx.listener(|this, _, _, cx| {
                                                 this.show_slide = !this.show_slide;
@@ -447,7 +447,7 @@ impl Render for AnimationsDemo {
                                     .flex_wrap()
                                     .items_center()
                                     .child(
-                                        Button::new("Trigger Shake")
+                                        Button::new("trigger-shake-btn", "Trigger Shake")
                                             .variant(ButtonVariant::Destructive)
                                             .on_click(cx.listener(|this, _, _, cx| {
                                                 this.show_shake = true;

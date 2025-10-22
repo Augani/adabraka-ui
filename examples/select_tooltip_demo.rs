@@ -218,7 +218,7 @@ impl Render for SelectTooltipDemoApp {
                             .spacing(8.0)
                             .child(
                                 tooltip(
-                                    Button::new("Refresh")
+                                    Button::new("refresh-btn", "Refresh")
                                         .variant(ButtonVariant::Outline)
                                         .size(ButtonSize::Sm)
                                         .on_click(|_event, _window, _cx| {
@@ -229,7 +229,7 @@ impl Render for SelectTooltipDemoApp {
                             )
                             .child(
                                 tooltip(
-                                    Button::new("Settings")
+                                    Button::new("settings-btn", "Settings")
                                         .variant(ButtonVariant::Ghost)
                                         .size(ButtonSize::Sm)
                                         .on_click(|_event, _window, _cx| {
@@ -459,14 +459,14 @@ impl Render for SelectTooltipDemoApp {
                                                                         .justify(Justify::Center)
                                                                         .child(
                                                                             tooltip(
-                                                                                Button::new("Tooltip Top")
+                                                                                Button::new("tooltip-top-btn", "Tooltip Top")
                                                                                     .variant(ButtonVariant::Default),
                                                                                 "This tooltip appears on top"
                                                                             ).placement(TooltipPlacement::Top)
                                                                         )
                                                                         .child(
                                                                             tooltip(
-                                                                                Button::new("Tooltip Bottom")
+                                                                                Button::new("tooltip-bottom-btn", "Tooltip Bottom")
                                                                                     .variant(ButtonVariant::Default),
                                                                                 "This tooltip appears on bottom"
                                                                             ).placement(TooltipPlacement::Bottom)
@@ -479,14 +479,14 @@ impl Render for SelectTooltipDemoApp {
                                                                         .justify(Justify::Center)
                                                                         .child(
                                                                             tooltip(
-                                                                                Button::new("Tooltip Left")
+                                                                                Button::new("tooltip-left-btn", "Tooltip Left")
                                                                                     .variant(ButtonVariant::Outline),
                                                                                 "This tooltip appears on the left"
                                                                             ).placement(TooltipPlacement::Left)
                                                                         )
                                                                         .child(
                                                                             tooltip(
-                                                                                Button::new("Tooltip Right")
+                                                                                Button::new("tooltip-right-btn", "Tooltip Right")
                                                                                     .variant(ButtonVariant::Outline),
                                                                                 "This tooltip appears on the right"
                                                                             ).placement(TooltipPlacement::Right)

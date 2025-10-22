@@ -154,7 +154,7 @@ impl Render for AlertDialog {
                                     .gap(px(12.0))
                                     .justify_end()
                                     .child(
-                                        Button::new(cancel_text)
+                                        Button::new("alert-cancel-btn", cancel_text)
                                             .variant(ButtonVariant::Outline)
                                             .size(ButtonSize::Md)
                                             .on_click(cx.listener(|this, _, window, cx| {
@@ -162,7 +162,7 @@ impl Render for AlertDialog {
                                             }))
                                     )
                                     .child(
-                                        Button::new(action_text)
+                                        Button::new("alert-action-btn", action_text)
                                             .variant(if destructive {
                                                 ButtonVariant::Destructive
                                             } else {

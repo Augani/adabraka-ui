@@ -125,7 +125,7 @@ impl Render for OverlaysDemo {
                                             .gap(px(12.0))
                                             .flex_wrap()
                                             .child(
-                                                Button::new("Small Dialog")
+                                                Button::new("small-dialog-btn", "Small Dialog")
                                                     .on_click(cx.listener(|this, _, _, cx| {
                                                         this.dialog_size = DialogSize::Sm;
                                                         this.show_dialog = true;
@@ -133,7 +133,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("Medium Dialog")
+                                                Button::new("medium-dialog-btn", "Medium Dialog")
                                                     .on_click(cx.listener(|this, _, _, cx| {
                                                         this.dialog_size = DialogSize::Md;
                                                         this.show_dialog = true;
@@ -141,7 +141,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("Large Dialog")
+                                                Button::new("large-dialog-btn", "Large Dialog")
                                                     .on_click(cx.listener(|this, _, _, cx| {
                                                         this.dialog_size = DialogSize::Lg;
                                                         this.show_dialog = true;
@@ -149,7 +149,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("XL Dialog")
+                                                Button::new("xl-dialog-btn", "XL Dialog")
                                                     .variant(ButtonVariant::Secondary)
                                                     .on_click(cx.listener(|this, _, _, cx| {
                                                         this.dialog_size = DialogSize::Xl;
@@ -190,7 +190,7 @@ impl Render for OverlaysDemo {
                                             .flex_wrap()
                                             .child(
                                                 Popover::new("simple-popover")
-                                                    .trigger(Button::new("Simple Popover").variant(ButtonVariant::Outline))
+                                                    .trigger(Button::new("simple-popover-btn", "Simple Popover").variant(ButtonVariant::Outline))
                                                     .content(|window, cx| {
                                                         cx.new(|cx| {
                                                             PopoverContent::new(window, cx, |_, _| {
@@ -216,7 +216,7 @@ impl Render for OverlaysDemo {
                                             )
                                             .child(
                                                 Popover::new("actions-popover")
-                                                    .trigger(Button::new("With Actions").variant(ButtonVariant::Outline))
+                                                    .trigger(Button::new("with-actions-btn", "With Actions").variant(ButtonVariant::Outline))
                                                     .content(|window, cx| {
                                                         let theme = use_theme();
                                                         cx.new(|cx| {
@@ -308,7 +308,7 @@ impl Render for OverlaysDemo {
                                             .gap(px(12.0))
                                             .flex_wrap()
                                             .child(
-                                                Button::new("Default Toast")
+                                                Button::new("default-toast-btn", "Default Toast")
                                                     .variant(ButtonVariant::Outline)
                                                     .on_click(cx.listener(|this, _, window, cx| {
                                                         this.add_toast(
@@ -321,7 +321,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("Success Toast")
+                                                Button::new("success-toast-btn", "Success Toast")
                                                     .variant(ButtonVariant::Outline)
                                                     .on_click(cx.listener(|this, _, window, cx| {
                                                         this.add_toast(
@@ -334,7 +334,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("Warning Toast")
+                                                Button::new("warning-toast-btn", "Warning Toast")
                                                     .variant(ButtonVariant::Outline)
                                                     .on_click(cx.listener(|this, _, window, cx| {
                                                         this.add_toast(
@@ -347,7 +347,7 @@ impl Render for OverlaysDemo {
                                                     }))
                                             )
                                             .child(
-                                                Button::new("Error Toast")
+                                                Button::new("error-toast-btn", "Error Toast")
                                                     .variant(ButtonVariant::Destructive)
                                                     .on_click(cx.listener(|this, _, window, cx| {
                                                         this.add_toast(
@@ -441,7 +441,7 @@ impl Render for OverlaysDemo {
                                                         )
                                                 )
                                                 .child(
-                                                    Button::new("×")
+                                                    Button::new("close-btn", "×")
                                                         .variant(ButtonVariant::Ghost)
                                                         .on_click(cx.listener(|this, _, _, cx| {
                                                             this.close_dialog(cx);
@@ -482,14 +482,14 @@ impl Render for OverlaysDemo {
                                         .border_t_1()
                                         .border_color(theme.tokens.border)
                                         .child(
-                                            Button::new("Cancel")
+                                            Button::new("cancel-btn", "Cancel")
                                                 .variant(ButtonVariant::Outline)
                                                 .on_click(cx.listener(|this, _, _, cx| {
                                                     this.close_dialog(cx);
                                                 }))
                                         )
                                         .child(
-                                            Button::new("Confirm")
+                                            Button::new("confirm-btn", "Confirm")
                                                 .on_click(cx.listener(|this, _, window, cx| {
                                                     this.confirm_dialog(cx);
                                                     this.add_toast(

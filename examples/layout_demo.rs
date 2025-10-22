@@ -97,9 +97,9 @@ impl Render for LayoutDemo {
                             .child(
                                 HStack::new()
                                     .spacing(8.0)
-                                    .child(Button::new("Docs").variant(ButtonVariant::Ghost))
-                                    .child(Button::new("Settings").variant(ButtonVariant::Ghost))
-                                    .child(Button::new("Profile").variant(ButtonVariant::Outline)),
+                                    .child(Button::new("docs-btn", "Docs").variant(ButtonVariant::Ghost))
+                                    .child(Button::new("settings-btn", "Settings").variant(ButtonVariant::Ghost))
+                                    .child(Button::new("profile-btn", "Profile").variant(ButtonVariant::Outline)),
                             ),
                     )
                     .child(
@@ -322,9 +322,9 @@ impl Render for LayoutDemo {
                                                         .border_1()
                                                         .border_color(theme.tokens.border)
                                                         .rounded(px(6.0))
-                                                        .child(Button::new("Left"))
+                                                        .child(Button::new("left-btn", "Left"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Right")),
+                                                        .child(Button::new("right-btn", "Right")),
                                                 )
                                                 .child(
                                                     HStack::new()
@@ -335,11 +335,11 @@ impl Render for LayoutDemo {
                                                         .border_color(theme.tokens.border)
                                                         .rounded(px(6.0))
                                                         .spacing(8.0)
-                                                        .child(Button::new("First"))
+                                                        .child(Button::new("first-btn", "First"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Middle"))
+                                                        .child(Button::new("middle-btn", "Middle"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Last")),
+                                                        .child(Button::new("last-btn", "Last")),
                                                 ),
                                         )),
                                 ),

@@ -688,12 +688,12 @@ fn render_form_example(
                         .gap(px(12.0))
                         .justify(Justify::End)
                         .child(
-                            Button::new("Cancel")
+                            Button::new("cancel-btn", "Cancel")
                                 .variant(ButtonVariant::Outline)
                                 .size(ButtonSize::Md)
                         )
                         .child(
-                            Button::new("Submit")
+                            Button::new("submit-btn", "Submit")
                                 .variant(ButtonVariant::Default)
                                 .size(ButtonSize::Md)
                         )

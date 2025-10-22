@@ -381,7 +381,7 @@ impl Render for ValidationDemoApp {
                                             div()
                                                 .w_full()
                                                 .child(
-                                                    Button::new("Submit Registration")
+                                                    Button::new("submit-registration-btn", "Submit Registration")
                                                         .variant(ButtonVariant::Default)
                                                         .size(ButtonSize::Lg)
                                                         .on_click({

@@ -215,7 +215,7 @@ impl Render for TreePerformanceDemo {
                             .gap(px(8.0))
                             .child({
                                 let app_entity = cx.entity().downgrade();
-                                Button::new("Load ~/Downloads")
+                                Button::new("load-downloads-btn", "Load ~/Downloads")
                                     .on_click(move |_, _, cx| {
                                         if let Some(app) = app_entity.upgrade() {
                                             app.update(cx, |demo, cx| {
@@ -232,7 +232,7 @@ impl Render for TreePerformanceDemo {
                             })
                             .child({
                                 let app_entity = cx.entity().downgrade();
-                                Button::new("Load ~/Desktop")
+                                Button::new("load-desktop-btn", "Load ~/Desktop")
                                     .on_click(move |_, _, cx| {
                                         if let Some(app) = app_entity.upgrade() {
                                             app.update(cx, |demo, cx| {
@@ -249,7 +249,7 @@ impl Render for TreePerformanceDemo {
                             })
                             .child({
                                 let app_entity = cx.entity().downgrade();
-                                Button::new("Load Project Folder")
+                                Button::new("load-project-btn", "Load Project Folder")
                                     .on_click(move |_, _, cx| {
                                         if let Some(app) = app_entity.upgrade() {
                                             app.update(cx, |demo, cx| {
@@ -268,7 +268,7 @@ impl Render for TreePerformanceDemo {
                             .child({
                                 let app_entity = cx.entity().downgrade();
                                 let tree_nodes_clone = self.tree_nodes.clone();
-                                Button::new("Expand All")
+                                Button::new("expand-all-btn", "Expand All")
                                     .disabled(self.tree_nodes.is_empty())
                                     .on_click(move |_, _, cx| {
                                         if let Some(app) = app_entity.upgrade() {
@@ -284,7 +284,7 @@ impl Render for TreePerformanceDemo {
                             })
                             .child({
                                 let app_entity = cx.entity().downgrade();
-                                Button::new("Collapse All")
+                                Button::new("collapse-all-btn", "Collapse All")
                                     .disabled(self.tree_nodes.is_empty())
                                     .on_click(move |_, _, cx| {
                                         if let Some(app) = app_entity.upgrade() {

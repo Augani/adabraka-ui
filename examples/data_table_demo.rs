@@ -280,7 +280,7 @@ impl Render for DataTableDemoApp {
                         HStack::new()
                             .spacing(12.0)
                             .child(
-                                Button::new("1K Rows")
+                                Button::new("1k-rows-btn", "1K Rows")
                                     .size(ButtonSize::Sm)
                                     .variant(if self.dataset_size == 1_000 {
                                         ButtonVariant::Default
@@ -292,7 +292,7 @@ impl Render for DataTableDemoApp {
                                     }))
                             )
                             .child(
-                                Button::new("10K Rows")
+                                Button::new("10k-rows-btn", "10K Rows")
                                     .size(ButtonSize::Sm)
                                     .variant(if self.dataset_size == 10_000 {
                                         ButtonVariant::Default
@@ -304,7 +304,7 @@ impl Render for DataTableDemoApp {
                                     }))
                             )
                             .child(
-                                Button::new("50K Rows")
+                                Button::new("50k-rows-btn", "50K Rows")
                                     .size(ButtonSize::Sm)
                                     .variant(if self.dataset_size == 50_000 {
                                         ButtonVariant::Default

@@ -266,7 +266,7 @@ impl Render for Sheet {
                                 )
                                 .when(self.show_close_button, |this: Div| {
                                     this.child(
-                                        Button::new("×")
+                                        Button::new("sheet-close-btn", "×")
                                             .variant(ButtonVariant::Ghost)
                                             .size(ButtonSize::Sm)
                                             .on_click(cx.listener(|this, _, window, cx| {

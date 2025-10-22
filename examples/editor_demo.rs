@@ -78,7 +78,7 @@ impl Render for EditorDemo {
                             .gap(px(8.0))
                             .mt(px(12.0))
                             .child(
-                                Button::new("Toggle Line Numbers")
+                                Button::new("toggle-line-numbers-btn", "Toggle Line Numbers")
                                     .variant(ButtonVariant::Outline)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.show_line_numbers = !this.show_line_numbers;
@@ -86,7 +86,7 @@ impl Render for EditorDemo {
                                     }))
                             )
                             .child(
-                                Button::new("Clear Content")
+                                Button::new("clear-content-btn", "Clear Content")
                                     .variant(ButtonVariant::Destructive)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.editor_state.update(cx, |state, cx| {
@@ -95,7 +95,7 @@ impl Render for EditorDemo {
                                     }))
                             )
                             .child(
-                                Button::new("Reset to Sample")
+                                Button::new("reset-sample-btn", "Reset to Sample")
                                     .variant(ButtonVariant::Default)
                                     .on_click(cx.listener(|this, _, _, cx| {
                                         this.editor_state.update(cx, |state, cx| {

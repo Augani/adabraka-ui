@@ -73,7 +73,7 @@ impl DemoApp {
                             .gap(px(12.0))
                             .flex_wrap()
                             .child(
-                                Button::new("Click Me!")
+                                Button::new("click-btn", "Click Me!")
                                     .on_click(cx.listener(|view, _event, _window, cx| {
                                         println!("[Demo] User handler called! Incrementing click_count from {} to {}", view.click_count, view.click_count + 1);
                                         view.click_count += 1;
@@ -81,23 +81,23 @@ impl DemoApp {
                                     }))
                             )
                             .child(
-                                Button::new("Secondary")
+                                Button::new("secondary-btn", "Secondary")
                                     .variant(ButtonVariant::Secondary)
                                     .on_click(|_event, _window, _cx| {
                                         println!("Secondary button clicked!");
                                     })
                             )
                             .child(
-                                Button::new("Destructive")
+                                Button::new("destructive-btn", "Destructive")
                                     .variant(ButtonVariant::Destructive)
                                     .on_click(|_event, _window, _cx| {
                                         println!("Destructive clicked!");
                                     })
                             )
-                            .child(Button::new("Outline").variant(ButtonVariant::Outline))
-                            .child(Button::new("Ghost").variant(ButtonVariant::Ghost))
-                            .child(Button::new("Link").variant(ButtonVariant::Link))
-                            .child(Button::new("Disabled").disabled(true))
+                            .child(Button::new("outline-btn", "Outline").variant(ButtonVariant::Outline))
+                            .child(Button::new("ghost-btn", "Ghost").variant(ButtonVariant::Ghost))
+                            .child(Button::new("link-btn", "Link").variant(ButtonVariant::Link))
+                            .child(Button::new("disabled-btn", "Disabled").disabled(true))
                     )
                     .child(
                         div()
@@ -117,9 +117,9 @@ impl DemoApp {
                             .gap(px(12.0))
                             .flex_wrap()
                             .items_center()
-                            .child(Button::new("Small").size(ButtonSize::Sm))
-                            .child(Button::new("Medium").size(ButtonSize::Md))
-                            .child(Button::new("Large").size(ButtonSize::Lg))
+                            .child(Button::new("small-btn", "Small").size(ButtonSize::Sm))
+                            .child(Button::new("medium-btn", "Medium").size(ButtonSize::Md))
+                            .child(Button::new("large-btn", "Large").size(ButtonSize::Lg))
                     )
             )
             .child(
@@ -357,7 +357,7 @@ impl DemoApp {
                                                     .child("Card footer")
                                             )
                                             .child(
-                                                Button::new("Action")
+                                                Button::new("action-btn", "Action")
                                                     .size(ButtonSize::Sm)
                                             )
                                     )

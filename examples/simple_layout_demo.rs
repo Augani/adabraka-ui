@@ -57,8 +57,8 @@ impl Render for SimpleLayoutDemo {
                     .child(
                         HStack::new()
                             .spacing(8.0)
-                            .child(Button::new("Docs").variant(ButtonVariant::Ghost))
-                            .child(Button::new("Settings").variant(ButtonVariant::Ghost)),
+                            .child(Button::new("docs-btn", "Docs").variant(ButtonVariant::Ghost))
+                            .child(Button::new("settings-btn", "Settings").variant(ButtonVariant::Ghost)),
                     ),
             )
             .child(
@@ -169,17 +169,17 @@ impl Render for SimpleLayoutDemo {
                                                 .spacing(16.0)
                                                 .child(
                                                     HStack::new()
-                                                        .child(Button::new("Left"))
+                                                        .child(Button::new("left-btn", "Left"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Right")),
+                                                        .child(Button::new("right-btn", "Right")),
                                                 )
                                                 .child(
                                                     HStack::new()
-                                                        .child(Button::new("First"))
+                                                        .child(Button::new("first-btn", "First"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Middle"))
+                                                        .child(Button::new("middle-btn", "Middle"))
                                                         .child(Spacer::new())
-                                                        .child(Button::new("Last")),
+                                                        .child(Button::new("last-btn", "Last")),
                                                 ),
                                         ))
                                         // Nested Layouts

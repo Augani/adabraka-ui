@@ -67,8 +67,8 @@ impl Render for CardDemoApp {
                     .child(
                         HStack::new()
                             .spacing(12.0)
-                            .child(Button::new("Settings").variant(ButtonVariant::Outline))
-                            .child(Button::new("Sign Out").variant(ButtonVariant::Ghost))
+                            .child(Button::new("settings-btn", "Settings").variant(ButtonVariant::Outline))
+                            .child(Button::new("signout-btn", "Sign Out").variant(ButtonVariant::Ghost))
                     )
             )
             .child(
@@ -100,7 +100,7 @@ impl Render for CardDemoApp {
                                                                 .child("User Profile")
                                                         )
                                                         .child(
-                                                            Button::new(if self.is_editing { "Save" } else { "Edit" })
+                                                            Button::new("edit-btn", if self.is_editing { "Save" } else { "Edit" })
                                                                 .size(ButtonSize::Sm)
                                                                 .variant(ButtonVariant::Ghost)
                                                                 .on_click(cx.listener(|view, _event, _window, cx| {
@@ -190,7 +190,7 @@ impl Render for CardDemoApp {
                                                                 )
                                                         )
                                                         .child(
-                                                            Button::new("Clear All")
+                                                            Button::new("clear-all-btn", "Clear All")
                                                                 .size(ButtonSize::Sm)
                                                                 .variant(ButtonVariant::Ghost)
                                                                 .on_click(cx.listener(|view, _event, _window, cx| {
@@ -245,7 +245,7 @@ impl Render for CardDemoApp {
                                                             HStack::new()
                                                                 .spacing(8.0)
                                                                 .child(
-                                                                    Button::new("Export")
+                                                                    Button::new("export-btn", "Export")
                                                                         .size(ButtonSize::Sm)
                                                                         .variant(ButtonVariant::Outline)
                                                                         .on_click(|_event, _window, _cx| {
@@ -253,7 +253,7 @@ impl Render for CardDemoApp {
                                                                         })
                                                                 )
                                                                 .child(
-                                                                    Button::new("Refresh")
+                                                                    Button::new("refresh-btn", "Refresh")
                                                                         .size(ButtonSize::Sm)
                                                                         .on_click(|_event, _window, _cx| {
                                                                             println!("[Card Demo] Refresh clicked!");
@@ -286,7 +286,7 @@ impl Render for CardDemoApp {
                                                                 .child("Recent Activity")
                                                         )
                                                         .child(
-                                                            Button::new("View All")
+                                                            Button::new("view-all-btn", "View All")
                                                                 .size(ButtonSize::Sm)
                                                                 .variant(ButtonVariant::Link)
                                                                 .on_click(|_event, _window, _cx| {

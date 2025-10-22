@@ -214,7 +214,6 @@ impl Render for Toolbar {
                             }
                         }
                     }))
-                    // Add separator between groups
                     .when(!is_last_group, |this| {
                         this.child(
                             div()

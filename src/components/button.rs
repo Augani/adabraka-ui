@@ -22,12 +22,11 @@ fn render_icon(icon_src: IconSource, size: Pixels, color: Hsla) -> impl IntoElem
 
 /// Render a loading spinner
 fn render_loading_spinner(size: Pixels, color: Hsla) -> impl IntoElement {
-    // Simple rotating circle as loading indicator
     div()
         .size(size)
         .child(
             svg()
-                .path("assets/icons/loader.svg") // Assumes loader icon exists
+                .path("assets/icons/loader.svg")
                 .size(size)
                 .text_color(color)
         )
@@ -263,23 +262,19 @@ impl RenderOnce for Button {
             .when(self.variant == ButtonVariant::Outline, |this| {
                 this.border_1().border_color(border)
             })
-            // Selected state styling
             .when(is_selected && !self.disabled, |this| {
                 this.bg(theme.tokens.accent)
                     .text_color(theme.tokens.accent_foreground)
                     .border_color(theme.tokens.accent)
             })
-            // Loading state styling
             .when(is_loading, |this| {
                 this.opacity(0.7)
                     .cursor(CursorStyle::Arrow)
             })
-            // Disabled state styling
             .when(self.disabled && !is_loading, |this| {
                 this.opacity(0.5)
                     .cursor(CursorStyle::Arrow)
             })
-            // Hover state
             .when(!self.disabled && !is_loading, |this| {
                 let shadow_sm = theme.tokens.shadow_sm;
                 this.cursor(CursorStyle::PointingHand)
@@ -306,29 +301,24 @@ impl RenderOnce for Button {
                     .flex()
                     .items_center()
                     .gap_2()
-                    // Icon at start (before label)
                     .when(icon_pos == IconPosition::Start && !is_loading, |this| {
                         this.when_some(icon.clone(), |this, icon_src| {
                             this.child(render_icon(icon_src, icon_size, fg))
                         })
                     })
-                    // Loading spinner (replaces icon at start)
                     .when(is_loading && icon_pos == IconPosition::Start, |this| {
                         this.child(render_loading_spinner(icon_size, fg))
                     })
-                    // Label
                     .child(
                         div()
                             .when(self.variant == ButtonVariant::Link, |this| this.underline())
                             .child(label_text)
                     )
-                    // Icon at end (after label)
                     .when(icon_pos == IconPosition::End && !is_loading, |this| {
                         this.when_some(icon.clone(), |this, icon_src| {
                             this.child(render_icon(icon_src, icon_size, fg))
                         })
                     })
-                    // Loading spinner at end
                     .when(is_loading && icon_pos == IconPosition::End, |this| {
                         this.child(render_loading_spinner(icon_size, fg))
                     })

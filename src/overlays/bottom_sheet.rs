@@ -148,10 +148,9 @@ impl RenderOnce for BottomSheet {
                     })
                 })
                 .child(
-                    // Bottom sheet panel
                     div()
                         .id("bottom-sheet-panel")
-                        .occlude() // Prevent clicks from passing through to backdrop
+                        .occlude()
                         .absolute()
                         .bottom_0()
                         .left_0()
@@ -198,7 +197,6 @@ impl RenderOnce for BottomSheet {
                                     .pb(px(16.0))
                                     .border_b_1()
                                     .border_color(theme.tokens.border)
-                                    // Title and description
                                     .child(
                                         div()
                                             .flex()

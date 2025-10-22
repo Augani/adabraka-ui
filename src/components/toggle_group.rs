@@ -194,7 +194,6 @@ impl RenderOnce for ToggleGroup {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
 
-        // Move needed fields out of self before iterating
         let variant = self.variant;
         let current_value = self.value;
         let current_values = self.values;
@@ -238,7 +237,6 @@ impl RenderOnce for ToggleGroup {
                         } else {
                             CursorStyle::PointingHand
                         })
-                        // Styling based on state
                         .when(is_selected, |this: Div| {
                             this.bg(theme.tokens.background)
                                 .text_color(theme.tokens.foreground)
@@ -268,12 +266,10 @@ impl RenderOnce for ToggleGroup {
                                 }
                             })
                         })
-                        // Icon if present
                         .when_some(item.icon, |this: Div, _icon| {
                             // TODO: Render icon when icon component is integrated
                             this
                         })
-                        // Label
                         .child(item.label)
                 })
             )

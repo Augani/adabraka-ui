@@ -145,7 +145,6 @@ impl RenderOnce for Calendar {
         let current_month = self.current_month;
         let selected_date = self.selected_date;
 
-        // Calculate dates before moving handlers
         let prev_month_date = self.prev_month();
         let next_month_date = self.next_month();
 
@@ -161,14 +160,12 @@ impl RenderOnce for Calendar {
             .w(px(280.0))
             .p(px(16.0))
             .bg(theme.tokens.background)
-            // Header with month/year navigation
             .child(
                 div()
                     .flex()
                     .items_center()
                     .justify_between()
                     .mb(px(16.0))
-                    // Previous month button
                     .child({
                         let handler = on_month_change_handler.clone();
                         Button::new("prev-month-btn", "‹")
@@ -181,7 +178,6 @@ impl RenderOnce for Calendar {
                                 })
                             })
                     })
-                    // Month and year display
                     .child(
                         div()
                             .flex_1()
@@ -191,7 +187,6 @@ impl RenderOnce for Calendar {
                             .text_color(theme.tokens.foreground)
                             .child(format!("{} {}", current_month.month_name(), current_month.year))
                     )
-                    // Next month button
                     .child({
                         let handler = on_month_change_handler;
                         Button::new("next-month-btn", "›")
@@ -205,7 +200,6 @@ impl RenderOnce for Calendar {
                             })
                     })
             )
-            // Days of week header
             .child(
                 div()
                     .flex()
@@ -222,7 +216,6 @@ impl RenderOnce for Calendar {
                         })
                     )
             )
-            // Calendar grid
             .child(
                 div()
                     .flex()
@@ -233,14 +226,11 @@ impl RenderOnce for Calendar {
                         let mut current_day = 1;
                         let mut day_of_week = 0;
 
-                        // Create weeks
                         while current_day <= days_in_month {
                             let mut week_days = Vec::new();
 
-                            // Fill week (7 days)
                             for _ in 0..7 {
                                 if (day_of_week < first_day_of_week && current_day == 1) || current_day > days_in_month {
-                                    // Empty cell before month starts or after it ends
                                     week_days.push(None);
                                 } else {
                                     week_days.push(Some(current_day));
@@ -253,7 +243,6 @@ impl RenderOnce for Calendar {
                             weeks.push(week_days);
                         }
 
-                        // Render weeks
                         let on_date_select_for_weeks = on_date_select_handler.clone();
                         weeks.into_iter().map(move |week| {
                             let on_date_select_for_days = on_date_select_for_weeks.clone();

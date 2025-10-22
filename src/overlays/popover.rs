@@ -316,7 +316,6 @@ impl Element for Popover {
                     return;
                 }
 
-                // When mouse clicks in the trigger bounds, open the popover
                 let Some(content_build) = this.content.take() else {
                     return;
                 };

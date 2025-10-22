@@ -145,7 +145,6 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for NavigationMenu<T
         let theme = use_theme();
         let orientation = self.orientation;
 
-        // Convert expanded_ids to HashSet for O(1) lookups
         let expanded_set: HashSet<T> = self.expanded_ids.into_iter().collect();
         let selected_id = self.selected_id;
         let on_select = self.on_select;
@@ -196,7 +195,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
     div()
         .flex()
         .flex_col()
-        // Main item row (contains chevron + content)
         .child(
             div()
                 .flex()
@@ -209,17 +207,14 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                     px(8.0)))
                 .rounded(theme.tokens.radius_sm)
                 .text_size(px(14.0))
-                // Selected state background
                 .when(is_selected, |this: Div| {
                     this.bg(theme.tokens.accent)
                 })
-                // Normal hover state
                 .when(!is_selected && !disabled, |this: Div| {
                     this.hover(|style| {
                         style.bg(theme.tokens.accent.opacity(0.1))
                     })
                 })
-                // Expand/collapse chevron button (separate clickable area)
                 .when(has_children, |this: Div| {
                     let item_id = item.id.clone();
                     let on_toggle = on_toggle.clone();
@@ -260,11 +255,9 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                             )
                     )
                 })
-                // Spacer when no children (to maintain alignment)
                 .when(!has_children, |this: Div| {
                     this.child(div().w(px(20.0)))
                 })
-                // Main content area (icon + label) - clickable for selection
                 .child(
                     div()
                         .flex()
@@ -276,7 +269,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                         } else {
                             CursorStyle::PointingHand
                         })
-                        // Click handler for selection
                         .when(!disabled, |this: Div| {
                             let item_id = item.id.clone();
                             let on_select = on_select.clone();
@@ -287,7 +279,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                                 }
                             })
                         })
-                        // Icon (if present)
                         .when_some(item.icon.clone(), |this: Div, icon| {
                             this.child(
                                 Icon::new(icon)
@@ -301,7 +292,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                                     })
                             )
                         })
-                        // Label
                         .child(
                             div()
                                 .flex_1()
@@ -325,7 +315,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                         )
                 )
         )
-        // Children (rendered when expanded)
         .when(has_children && is_expanded, |this: Div| {
             this.child(
                 div()
@@ -333,7 +322,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                     .flex_col()
                     .gap(px(2.0))
                     .when(orientation == NavigationMenuOrientation::Horizontal, |this: Div| {
-                        // Horizontal: dropdown below with shadow
                         this.absolute()
                             .top_full()
                             .left_0()
@@ -352,7 +340,6 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                             .p(px(4.0))
                     })
                     .when(orientation == NavigationMenuOrientation::Vertical, |this: Div| {
-                        // Vertical: nested below with subtle indent
                         this.mt(px(2.0))
                     })
                     .children(

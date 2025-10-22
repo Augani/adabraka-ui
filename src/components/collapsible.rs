@@ -83,7 +83,6 @@ impl RenderOnce for Collapsible {
             .flex()
             .flex_col()
             .w_full()
-            // Trigger
             .when_some(trigger, |this: Div, trigger| {
                 this.child(
                     div()
@@ -109,7 +108,6 @@ impl RenderOnce for Collapsible {
                                 handler(!is_open, window, cx);
                             })
                         })
-                        // Icon (chevron)
                         .when(show_icon, |this: Div| {
                             this.child(
                                 div()
@@ -118,7 +116,6 @@ impl RenderOnce for Collapsible {
                                     .justify_center()
                                     .text_size(px(16.0))
                                     .text_color(theme.tokens.muted_foreground)
-                                    // Rotate chevron when open
                                     .when(is_open, |this: Div| {
                                         this.child("▼")
                                     })
@@ -127,7 +124,6 @@ impl RenderOnce for Collapsible {
                                     })
                             )
                         })
-                        // Trigger content
                         .child(
                             div()
                                 .flex_1()
@@ -135,7 +131,6 @@ impl RenderOnce for Collapsible {
                         )
                 )
             })
-            // Content (shown when open)
             .when(is_open, |this: Div| {
                 this.when_some(content, |this: Div, content| {
                     this.child(

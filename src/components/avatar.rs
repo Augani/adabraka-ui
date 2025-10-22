@@ -1,6 +1,6 @@
 //! Avatar component - User profile image with fallback to initials or icon.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -46,6 +46,7 @@ pub struct Avatar {
     name: Option<SharedString>,
     fallback_text: Option<SharedString>,
     size: AvatarSize,
+    style: StyleRefinement,
 }
 
 impl Avatar {
@@ -55,6 +56,7 @@ impl Avatar {
             name: None,
             fallback_text: None,
             size: AvatarSize::default(),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -123,11 +125,18 @@ impl Default for Avatar {
     }
 }
 
+impl Styled for Avatar {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Avatar {
     fn render(self, _: &mut Window, _: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let size_px = self.size.size_px();
         let text_size_px = self.size.text_size_px();
+        let user_style = self.style;
 
         let (content, bg_color, text_color) = if let Some(src) = self.src {
             (
@@ -187,6 +196,11 @@ impl RenderOnce for Avatar {
             .font_family(theme.tokens.font_family.clone())
             .border_2()
             .border_color(theme.tokens.background)
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
             .child(content)
     }
 }

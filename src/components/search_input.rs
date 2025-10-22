@@ -142,6 +142,7 @@ impl SearchInputState {
 
 pub struct SearchInput {
     state: Entity<SearchInputState>,
+    style: StyleRefinement,
 }
 
 impl SearchInput {
@@ -165,7 +166,10 @@ impl SearchInput {
             }
         }).detach();
 
-        Self { state }
+        Self {
+            state,
+            style: StyleRefinement::default(),
+        }
     }
 
     pub fn placeholder(self, placeholder: impl Into<SharedString>, window: &mut Window, cx: &mut Context<Self>) -> Self {
@@ -209,11 +213,18 @@ impl SearchInput {
     }
 }
 
+impl Styled for SearchInput {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for SearchInput {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let state = self.state.read(cx);
         let has_query = !state.input.read(cx).content().is_empty();
+        let user_style = self.style.clone();
 
         div()
             .flex()
@@ -375,6 +386,11 @@ impl Render for SearchInput {
                                 .into_any_element()
                         }))
                 )
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

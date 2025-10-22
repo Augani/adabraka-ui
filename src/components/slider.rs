@@ -14,6 +14,7 @@ pub struct Slider {
     value: f32,
     disabled: bool,
     on_change: Option<Rc<dyn Fn(f32, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Slider {
@@ -28,6 +29,7 @@ impl Slider {
             value: 0.0,
             disabled: false,
             on_change: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -69,6 +71,12 @@ impl Slider {
     }
 }
 
+impl Styled for Slider {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl InteractiveElement for Slider {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.base.interactivity()
@@ -80,6 +88,7 @@ impl StatefulInteractiveElement for Slider {}
 impl RenderOnce for Slider {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
 
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
@@ -158,5 +167,10 @@ impl RenderOnce for Slider {
                             }),
                     ),
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

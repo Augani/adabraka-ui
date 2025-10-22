@@ -40,6 +40,7 @@ pub struct Separator {
     label: Option<SharedString>,
     color: Option<Hsla>,
     decorative: bool,
+    style: StyleRefinement,
 }
 
 impl Separator {
@@ -50,6 +51,7 @@ impl Separator {
             label: None,
             color: None,
             decorative: true,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -89,10 +91,17 @@ impl Separator {
     }
 }
 
+impl Styled for Separator {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Separator {
     fn render(self, _: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let line_color = self.color.unwrap_or(theme.tokens.border);
+        let user_style = self.style;
 
         div()
             .flex()
@@ -131,6 +140,11 @@ impl RenderOnce for Separator {
                         .text_color(theme.tokens.muted_foreground)
                         .child(label),
                 )
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

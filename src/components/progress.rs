@@ -49,6 +49,7 @@ pub struct ProgressBar {
     label: Option<SharedString>,
     /// Show percentage text overlay
     show_percentage: bool,
+    style: StyleRefinement,
 }
 
 impl ProgressBar {
@@ -60,6 +61,7 @@ impl ProgressBar {
             size: ProgressSize::Md,
             label: None,
             show_percentage: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -71,6 +73,7 @@ impl ProgressBar {
             size: ProgressSize::Md,
             label: None,
             show_percentage: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -99,9 +102,16 @@ impl ProgressBar {
     }
 }
 
+impl Styled for ProgressBar {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for ProgressBar {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         let height = match self.size {
             ProgressSize::Sm => px(4.0),
@@ -190,6 +200,11 @@ impl RenderOnce for ProgressBar {
                             })
                     )
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 
@@ -202,6 +217,7 @@ pub struct CircularProgress {
     stroke_width: Pixels,
     variant: ProgressVariant,
     spinner_type: SpinnerType,
+    style: StyleRefinement,
 }
 
 impl CircularProgress {
@@ -213,6 +229,7 @@ impl CircularProgress {
             stroke_width: px(4.0),
             variant: ProgressVariant::Default,
             spinner_type: SpinnerType::Dot,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -224,6 +241,7 @@ impl CircularProgress {
             stroke_width: px(4.0),
             variant: ProgressVariant::Default,
             spinner_type: SpinnerType::Dot,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -247,9 +265,16 @@ impl CircularProgress {
     }
 }
 
+impl Styled for CircularProgress {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for CircularProgress {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         let stroke_color = match self.variant {
             ProgressVariant::Default => theme.tokens.primary,
@@ -437,5 +462,10 @@ impl RenderOnce for CircularProgress {
                         }
                     })
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

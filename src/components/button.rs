@@ -298,7 +298,7 @@ impl RenderOnce for Button {
             })
             .map(|this| {
                 let mut div = this;
-                *div.style() = user_style;
+                div.style().refine(&user_style);
                 div
             })
             .on_mouse_down(MouseButton::Left, |_, window, _| {

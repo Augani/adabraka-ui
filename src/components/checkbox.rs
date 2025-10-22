@@ -2,7 +2,10 @@
 
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
+use crate::{
+    theme::use_theme,
+    components::icon::{Icon, IconSize as IconSizeEnum},
+};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CheckboxSize {
@@ -19,6 +22,10 @@ pub struct Checkbox {
     label: Option<SharedString>,
     on_click: Option<Rc<dyn Fn(&bool, &mut Window, &mut App)>>,
     size: CheckboxSize,
+    style: StyleRefinement,
+    // Icon customization
+    checked_icon: SharedString,
+    indeterminate_icon: SharedString,
 }
 
 impl Checkbox {
@@ -33,6 +40,9 @@ impl Checkbox {
             label: None,
             on_click: None,
             size: CheckboxSize::Md,
+            style: StyleRefinement::default(),
+            checked_icon: "check".into(),
+            indeterminate_icon: "minus".into(),
         }
     }
 
@@ -67,6 +77,22 @@ impl Checkbox {
     pub fn size(mut self, size: CheckboxSize) -> Self {
         self.size = size;
         self
+    }
+
+    pub fn checked_icon(mut self, icon: impl Into<SharedString>) -> Self {
+        self.checked_icon = icon.into();
+        self
+    }
+
+    pub fn indeterminate_icon(mut self, icon: impl Into<SharedString>) -> Self {
+        self.indeterminate_icon = icon.into();
+        self
+    }
+}
+
+impl Styled for Checkbox {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -116,6 +142,8 @@ impl RenderOnce for Checkbox {
             .read(cx)
             .clone();
 
+        let user_style = self.style;
+
         self.base
             .when(!self.disabled, |this| {
                 this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
@@ -150,6 +178,8 @@ impl RenderOnce for Checkbox {
                         indeterminate,
                         fg,
                         self.size,
+                        self.checked_icon.clone(),
+                        self.indeterminate_icon.clone(),
                         window,
                         cx,
                     ))
@@ -190,6 +220,11 @@ impl RenderOnce for Checkbox {
                     })
                 })
             })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 
@@ -199,6 +234,8 @@ fn checkbox_icon(
     indeterminate: bool,
     color: Hsla,
     size: CheckboxSize,
+    checked_icon: SharedString,
+    indeterminate_icon: SharedString,
     window: &mut Window,
     cx: &mut App,
 ) -> impl IntoElement {
@@ -233,12 +270,12 @@ fn checkbox_icon(
         if checked || indeterminate { 1.0 } else { 0.0 }
     };
 
-    let icon_text = if checked && !indeterminate {
-        "✓"
+    let icon_name = if checked && !indeterminate {
+        Some(checked_icon)
     } else if indeterminate {
-        "−"
+        Some(indeterminate_icon)
     } else {
-        ""
+        None
     };
 
     div()
@@ -246,9 +283,12 @@ fn checkbox_icon(
         .flex()
         .items_center()
         .justify_center()
-        .text_color(color)
-        .text_size(icon_size)
-        .font_weight(FontWeight::BOLD)
         .opacity(opacity)
-        .child(icon_text)
+        .when_some(icon_name, |this, icon| {
+            this.child(
+                Icon::new(icon.as_ref())
+                    .size(IconSizeEnum::Custom(icon_size))
+                    .color(color)
+            )
+        })
 }

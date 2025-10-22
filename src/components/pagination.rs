@@ -13,6 +13,7 @@ pub struct Pagination {
     siblings: usize,
     show_edges: bool,
     on_page_change: Option<Rc<dyn Fn(usize, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Pagination {
@@ -23,6 +24,7 @@ impl Pagination {
             siblings: 1,
             show_edges: true,
             on_page_change: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -109,6 +111,12 @@ impl Default for Pagination {
     }
 }
 
+impl Styled for Pagination {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 enum PageItem {
     Page(usize),
@@ -122,6 +130,7 @@ impl RenderOnce for Pagination {
         let total_pages = self.total_pages;
         let page_range = self.get_page_range();
         let on_change = self.on_page_change;
+        let user_style = self.style;
 
         let has_prev = current_page > 1;
         let has_next = current_page < total_pages;
@@ -196,6 +205,11 @@ impl RenderOnce for Pagination {
                             handler(current_page + 1, window, cx);
                         })
                     })
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

@@ -95,6 +95,7 @@ pub struct ToggleGroup {
     disabled: bool,
     on_change: Option<Rc<dyn Fn(&SharedString, &mut Window, &mut App)>>,
     on_multiple_change: Option<Rc<dyn Fn(&Vec<SharedString>, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl ToggleGroup {
@@ -109,6 +110,7 @@ impl ToggleGroup {
             disabled: false,
             on_change: None,
             on_multiple_change: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -190,6 +192,12 @@ impl Default for ToggleGroup {
     }
 }
 
+impl Styled for ToggleGroup {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for ToggleGroup {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -200,6 +208,7 @@ impl RenderOnce for ToggleGroup {
         let disabled = self.disabled;
         let size = self.size;
         let on_change = self.on_change;
+        let user_style = self.style;
 
         div()
             .flex()
@@ -273,5 +282,10 @@ impl RenderOnce for ToggleGroup {
                         .child(item.label)
                 })
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

@@ -44,6 +44,7 @@ pub struct Tooltip {
     child: Option<AnyElement>,
     disabled: bool,
     max_width: Option<Pixels>,
+    style: StyleRefinement,
 }
 
 impl Tooltip {
@@ -56,6 +57,7 @@ impl Tooltip {
             child: None,
             disabled: false,
             max_width: Some(px(300.0)),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -99,12 +101,19 @@ impl Tooltip {
     }
 }
 
+impl Styled for Tooltip {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl IntoElement for Tooltip {
     type Element = Div;
 
     fn into_element(self) -> Self::Element {
         let theme = use_theme();
         let placement = self.placement;
+        let user_style = self.style;
 
         // For now, we'll render a simplified version
         // In a full implementation, you'd use a stateful component with timers
@@ -144,6 +153,11 @@ impl IntoElement for Tooltip {
                                         style.opacity = Some(1.0);
                                         style.visibility = Some(gpui::Visibility::Visible);
                                         style
+                                    })
+                                    .map(|this| {
+                                        let mut div = this;
+                                        div.style().refine(&user_style);
+                                        div
                                     })
                                     .child(self.content)
                             )

@@ -13,6 +13,7 @@ pub struct Collapsible {
     disabled: bool,
     show_icon: bool,
     on_toggle: Option<Rc<dyn Fn(bool, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Collapsible {
@@ -24,6 +25,7 @@ impl Collapsible {
             disabled: false,
             show_icon: true,
             on_toggle: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -67,9 +69,16 @@ impl Default for Collapsible {
     }
 }
 
+impl Styled for Collapsible {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Collapsible {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
         let Collapsible {
             trigger,
             content,
@@ -77,6 +86,7 @@ impl RenderOnce for Collapsible {
             disabled,
             show_icon,
             on_toggle,
+            style: _,
         } = self;
 
         div()
@@ -139,6 +149,11 @@ impl RenderOnce for Collapsible {
                             .child(content)
                     )
                 })
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
     }
 }

@@ -39,3 +39,23 @@ path = "examples/scroll_test.rs"
 name = "label_styled_demo"
 path = "examples/label_styled_demo.rs"
 
+[[example]]
+name = "collapsible_styled_demo"
+path = "examples/collapsible_styled_demo.rs"
+
+[[example]]
+name = "calendar_styled_demo"
+path = "examples/calendar_styled_demo.rs"
+
+[[example]]
+name = "tooltip_styled_demo"
+path = "examples/tooltip_styled_demo.rs"
+
+[[example]]
+name = "toggle_group_styled_demo"
+path = "examples/toggle_group_styled_demo.rs"
+
+[[example]]
+name = "pagination_styled_demo"
+path = "examples/pagination_styled_demo.rs"
+

@@ -75,6 +75,7 @@ pub struct Calendar {
     selected_date: Option<DateValue>,
     on_date_select: Option<Rc<dyn Fn(&DateValue, &mut Window, &mut App)>>,
     on_month_change: Option<Rc<dyn Fn(&DateValue, &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Calendar {
@@ -86,6 +87,7 @@ impl Calendar {
             selected_date: None,
             on_date_select: None,
             on_month_change: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -137,6 +139,12 @@ impl Default for Calendar {
     }
 }
 
+impl Styled for Calendar {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 const DAYS_OF_WEEK: [&str; 7] = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 impl RenderOnce for Calendar {
@@ -153,6 +161,8 @@ impl RenderOnce for Calendar {
 
         let days_in_month = current_month.days_in_month();
         let first_day_of_week = current_month.first_day_of_week();
+
+        let user_style = self.style;
 
         div()
             .flex()
@@ -302,5 +312,10 @@ impl RenderOnce for Calendar {
                         })
                     })
             )
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

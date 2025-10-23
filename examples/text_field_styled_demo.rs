@@ -1,6 +1,9 @@
 use adabraka_ui::{
     prelude::*,
-    components::scrollable::scrollable_vertical,
+    components::{
+        scrollable::scrollable_vertical,
+        input::{Input, InputState},
+    },
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -45,7 +48,7 @@ fn main() {
             cx.open_window(
                 WindowOptions {
                     titlebar: Some(TitlebarOptions {
-                        title: Some("TextField Styled Trait Demo".into()),
+                        title: Some("Input Styled Trait Demo (TextField Component)".into()),
                         ..Default::default()
                     }),
                     window_bounds: Some(WindowBounds::Windowed(Bounds {
@@ -54,22 +57,33 @@ fn main() {
                     })),
                     ..Default::default()
                 },
-                |_, cx| cx.new(|_| TextFieldStyledDemo::new()),
+                |_, cx| {
+                    // Create Input states 
+                    let states: Vec<Entity<InputState>> = (0..10)
+                        .map(|_| cx.new(|cx| InputState::new(cx)))
+                        .collect();
+                    
+                    cx.new(|_| InputStyledDemo::new(states))
+                },
             )
             .unwrap();
         });
 }
 
-struct TextFieldStyledDemo;
+struct InputStyledDemo {
+    input_states: Vec<Entity<InputState>>,
+}
 
-impl TextFieldStyledDemo {
-    fn new() -> Self {
-        Self
+impl InputStyledDemo {
+    fn new(states: Vec<Entity<InputState>>) -> Self {
+        Self {
+            input_states: states,
+        }
     }
 }
 
-impl Render for TextFieldStyledDemo {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+impl Render for InputStyledDemo {
+    fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
         div()
@@ -81,410 +95,199 @@ impl Render for TextFieldStyledDemo {
                     div()
                         .flex()
                         .flex_col()
-                        .text_color(theme.tokens.foreground)
                         .p(px(32.0))
                         .gap(px(32.0))
-            .child(
-                VStack::new()
-                    .gap(px(8.0))
-                    .child(
-                        div()
-                            .text_size(px(24.0))
-                            .font_weight(FontWeight::BOLD)
-                            .child("TextField Styled Trait Customization Demo")
-                    )
-                    .child(
-                        div()
-                            .text_size(px(14.0))
-                            .text_color(theme.tokens.muted_foreground)
-                            .child("Demonstrating full GPUI styling control via Styled trait")
-                    )
-            )
-            // 1. Custom Width Examples
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("1. Custom Width (via Styled trait)")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Default width")
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom width 300px")
-                                    .w(px(300.0))  // <- Styled trait method
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom width 500px")
-                                    .w(px(500.0))  // <- Styled trait method
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Full width")
-                                    .w_full()  // <- Styled trait method
-                            )
-                    )
-            )
-            // 2. Custom Padding Examples
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("2. Custom Padding")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Default padding")
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom p_4()")
-                                    .p_4()  // <- Styled trait method
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom p_8()")
-                                    .p_8()  // <- Styled trait method
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom px(32)")
-                                    .px(px(32.0))  // <- Styled trait method
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 3. Custom Background Colors
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("3. Custom Background Colors")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Blue background")
-                                    .bg(rgb(0x1e3a5f))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Purple background")
-                                    .bg(rgb(0x3d2d5f))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Green background")
-                                    .bg(rgb(0x1a4d2e))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 4. Custom Border Styles
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("4. Custom Borders")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Border 2px")
-                                    .border_2()  // <- Styled trait
-                                    .border_color(rgb(0x3b82f6))
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Red border")
-                                    .border_2()  // <- Styled trait
-                                    .border_color(rgb(0xef4444))
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Purple thick border")
-                                    .border_4()  // <- Styled trait
-                                    .border_color(rgb(0x8b5cf6))
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 5. Custom Border Radius
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("5. Custom Border Radius")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("No radius")
-                                    .rounded(px(0.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Large radius")
-                                    .rounded(px(16.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Pill shape")
-                                    .rounded(px(999.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 6. Shadow Effects
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("6. Shadow Effects")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Shadow small")
-                                    .shadow_sm()  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Shadow medium")
-                                    .shadow_md()  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Shadow large")
-                                    .shadow_lg()  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 7. Height Control
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("7. Height Control")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Small height (size variant)")
-                                    .size(TextFieldSize::Sm)
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom height 60px")
-                                    .h(px(60.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom height 80px")
-                                    .h(px(80.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 8. Combined Styling
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("8. Combined Styling (Multiple Styled Trait Methods)")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Custom blue input with shadow")
-                                    .bg(rgb(0x1e3a5f))  // <- Styled trait
-                                    .border_2()  // <- Styled trait
-                                    .border_color(rgb(0x3b82f6))
-                                    .rounded(px(12.0))  // <- Styled trait
-                                    .shadow_md()  // <- Styled trait
-                                    .p(px(16.0))  // <- Styled trait
-                                    .w_full()  // <- Styled trait
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Purple pill input with large padding")
-                                    .bg(rgb(0x3d2d5f))  // <- Styled trait
-                                    .border_2()  // <- Styled trait
-                                    .border_color(rgb(0x8b5cf6))
-                                    .rounded(px(999.0))  // <- Styled trait
-                                    .px(px(32.0))  // <- Styled trait
-                                    .py(px(16.0))  // <- Styled trait
-                                    .w(px(500.0))  // <- Styled trait
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Ultra custom styled input")
-                                    .bg(rgb(0x1a4d2e))  // <- Styled trait
-                                    .border_4()  // <- Styled trait
-                                    .border_color(rgb(0x10b981))
-                                    .rounded(px(8.0))  // <- Styled trait
-                                    .shadow_lg()  // <- Styled trait
-                                    .p(px(20.0))  // <- Styled trait
-                                    .h(px(70.0))  // <- Styled trait
-                                    .w_full()  // <- Styled trait
-                            )
-                    )
-            )
-            // 9. Different Sizes with Custom Styles
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("9. Size Variants with Custom Styling")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Small with custom border")
-                                    .size(TextFieldSize::Sm)
-                                    .border_2()  // <- Styled trait
-                                    .border_color(rgb(0x3b82f6))
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Medium with custom background")
-                                    .size(TextFieldSize::Md)
-                                    .bg(rgb(0x1e3a5f))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Large with shadow")
-                                    .size(TextFieldSize::Lg)
-                                    .shadow_lg()  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // 10. State Combinations
-            .child(
-                VStack::new()
-                    .gap(px(16.0))
-                    .child(
-                        div()
-                            .text_size(px(18.0))
-                            .font_weight(FontWeight::SEMIBOLD)
-                            .child("10. State Variants with Custom Styling")
-                    )
-                    .child(
-                        VStack::new()
-                            .gap(px(12.0))
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Normal state with custom style")
-                                    .bg(rgb(0x1e3a5f))  // <- Styled trait
-                                    .rounded(px(8.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Disabled state with custom style")
-                                    .disabled(true)
-                                    .bg(rgb(0x1e3a5f))  // <- Styled trait
-                                    .rounded(px(8.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                            .child(
-                                TextField::new(cx)
-                                    .placeholder("Invalid state with custom border")
-                                    .invalid(true)
-                                    .border_4()  // <- Styled trait
-                                    .rounded(px(12.0))  // <- Styled trait
-                                    .w(px(400.0))
-                            )
-                    )
-            )
-            // Info Box
-            .child(
-                div()
-                    .mt(px(16.0))
-                    .p(px(16.0))
-                    .bg(theme.tokens.accent)
-                    .rounded(px(8.0))
-                    .child(
-                        div()
-                            .text_size(px(14.0))
-                            .text_color(theme.tokens.accent_foreground)
-                            .child("All customizations above use the Styled trait for full GPUI styling control!")
-                    )
-                    .child(
-                        div()
-                            .mt(px(8.0))
-                            .text_size(px(12.0))
-                            .text_color(theme.tokens.accent_foreground)
-                            .child("Methods used: .w(), .w_full(), .p_4(), .p_8(), .px(), .py(), .bg(), .border_2(), .border_4(), .rounded(), .shadow_sm/md/lg(), .h()")
-                    )
-            )
+                        // Header
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(8.0))
+                                .child(
+                                    div()
+                                        .text_size(px(24.0))
+                                        .font_weight(FontWeight::BOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("Input/TextField Styled Trait Demo")
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(14.0))
+                                        .text_color(theme.tokens.muted_foreground)
+                                        .child("Demonstrating full GPUI styling control via Styled trait")
+                                )
+                        )
+                        // Section 1: Custom Width
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("1. Custom Width")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[0])
+                                        .placeholder("Full width input field")
+                                        .w_full()
+                                )
+                                .child(
+                                    Input::new(&self.input_states[1])
+                                        .placeholder("Custom width 300px")
+                                        .w(px(300.0))
+                                )
+                        )
+                        // Section 2: Custom Padding
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("2. Custom Padding")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[2])
+                                        .placeholder("Large padding with .p_8()")
+                                        .p_8()
+                                        .w(px(400.0))
+                                )
+                        )
+                        // Section 3: Custom Background
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("3. Custom Background")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[3])
+                                        .placeholder("Dark blue background")
+                                        .bg(rgb(0x1e3a8a))
+                                        .w(px(400.0))
+                                )
+                        )
+                        // Section 4: Custom Borders
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("4. Custom Borders")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[4])
+                                        .placeholder("Thick blue border")
+                                        .border_4()
+                                        .border_color(rgb(0x3b82f6))
+                                        .w(px(400.0))
+                                )
+                        )
+                        // Section 5: Custom Border Radius
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("5. Custom Border Radius")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[5])
+                                        .placeholder("Large rounded corners")
+                                        .rounded(px(16.0))
+                                        .w(px(400.0))
+                                )
+                        )
+                        // Section 6: Shadow Effects
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("6. Shadow Effects")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[6])
+                                        .placeholder("Large shadow effect")
+                                        .shadow_lg()
+                                        .w(px(400.0))
+                                )
+                        )
+                        // Section 7: Combined Styling
+                        .child(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(16.0))
+                                .child(
+                                    div()
+                                        .text_size(px(16.0))
+                                        .font_weight(FontWeight::SEMIBOLD)
+                                        .text_color(theme.tokens.foreground)
+                                        .child("7. Combined Custom Styling")
+                                )
+                                .child(
+                                    Input::new(&self.input_states[7])
+                                        .placeholder("Ultra styled input field")
+                                        .p_8()
+                                        .bg(rgb(0x581c87))
+                                        .border_2()
+                                        .border_color(rgb(0xa855f7))
+                                        .rounded(px(12.0))
+                                        .shadow_md()
+                                        .w(px(500.0))
+                                )
+                        )
+                        // Info Box
+                        .child(
+                            div()
+                                .mt(px(16.0))
+                                .p(px(16.0))
+                                .bg(theme.tokens.accent)
+                                .rounded(px(8.0))
+                                .child(
+                                    div()
+                                        .text_size(px(14.0))
+                                        .text_color(theme.tokens.accent_foreground)
+                                        .child("All customizations use the Styled trait for full GPUI styling control!")
+                                )
+                                .child(
+                                    div()
+                                        .mt(px(8.0))
+                                        .text_size(px(12.0))
+                                        .text_color(theme.tokens.accent_foreground)
+                                        .child("Note: Using Input component (TextField uses same Styled trait pattern)")
+                                )
+                        )
                 )
             )
     }

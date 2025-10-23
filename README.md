@@ -1,9 +1,11 @@
 # adabraka-ui
 
 [![Crates.io](https://img.shields.io/crates/v/adabraka-ui.svg)](https://crates.io/crates/adabraka-ui)
+[![Downloads](https://img.shields.io/crates/d/adabraka-ui.svg)](https://crates.io/crates/adabraka-ui)
 [![Documentation](https://docs.rs/adabraka-ui/badge.svg)](https://docs.rs/adabraka-ui)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Rust](https://img.shields.io/badge/rust-1.70%2B-orange.svg)](https://www.rust-lang.org/)
+[![Rust](https://img.shields.io/badge/rust-nightly-orange.svg)](https://www.rust-lang.org/)
+[![GitHub Stars](https://img.shields.io/github/stars/Augani/adabraka-ui?style=social)](https://github.com/Augani/adabraka-ui)
 
 <a href="https://www.buymeacoffee.com/pythonxi" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
 

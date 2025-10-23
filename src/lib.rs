@@ -87,6 +87,7 @@ pub fn init(cx: &mut gpui::App) {
     // Initialize component systems
     components::input::init(cx);
     components::select::init_select(cx);
+    components::combobox::init_combobox(cx);
     components::editor::init(cx);
     navigation::sidebar::init_sidebar(cx);
     overlays::popover::init(cx);

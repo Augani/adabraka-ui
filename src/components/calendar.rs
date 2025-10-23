@@ -138,12 +138,22 @@ impl DateValue {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DateRange {
+    pub start: DateValue,
+    pub end: DateValue,
+}
+
 #[derive(IntoElement)]
 pub struct Calendar {
     current_month: DateValue,
     selected_date: Option<DateValue>,
+    selected_range: Option<DateRange>,
+    range_start_temp: Option<DateValue>,
     on_date_select: Option<Rc<dyn Fn(&DateValue, &mut Window, &mut App)>>,
     on_month_change: Option<Rc<dyn Fn(&DateValue, &mut Window, &mut App)>>,
+    disabled_dates: Vec<DateValue>,
+    is_date_disabled: Option<Rc<dyn Fn(&DateValue) -> bool>>,
     locale: CalendarLocale,
     style: StyleRefinement,
 }
@@ -155,8 +165,12 @@ impl Calendar {
         Self {
             current_month,
             selected_date: None,
+            selected_range: None,
+            range_start_temp: None,
             on_date_select: None,
             on_month_change: None,
+            disabled_dates: Vec::new(),
+            is_date_disabled: None,
             locale: CalendarLocale::default(),
             style: StyleRefinement::default(),
         }
@@ -192,6 +206,37 @@ impl Calendar {
         self.on_month_change = Some(Rc::new(handler));
         self
     }
+
+    pub fn is_date_disabled<F>(mut self, checker: F) -> Self
+    where
+        F: Fn(&DateValue) -> bool + 'static,
+    {
+        self.is_date_disabled = Some(Rc::new(checker));
+        self
+    }
+
+    pub fn disabled_dates(mut self, dates: Vec<DateValue>) -> Self {
+        self.disabled_dates = dates;
+        self
+    }
+
+    pub fn selected_range(mut self, range: Option<DateRange>) -> Self {
+        self.selected_range = range;
+        self
+    }
+
+    pub fn range_start_temp(mut self, date: Option<DateValue>) -> Self {
+        self.range_start_temp = date;
+        self
+    }
+
+    fn is_date_in_range(date: &DateValue, range: &DateRange) -> bool {
+        let date_num = date.year * 10000 + date.month as i32 * 100 + date.day as i32;
+        let start_num = range.start.year * 10000 + range.start.month as i32 * 100 + range.start.day as i32;
+        let end_num = range.end.year * 10000 + range.end.month as i32 * 100 + range.end.day as i32;
+        date_num >= start_num && date_num <= end_num
+    }
+
     fn prev_month(&self) -> DateValue {
         if self.current_month.month == 1 {
             DateValue::new(self.current_month.year - 1, 12, 1)
@@ -233,6 +278,10 @@ impl RenderOnce for Calendar {
 
         let on_month_change_handler = self.on_month_change.clone();
         let on_date_select_handler = self.on_date_select;
+        let is_date_disabled_fn = self.is_date_disabled;
+        let disabled_dates = self.disabled_dates;
+        let selected_range = self.selected_range;
+        let range_start_temp = self.range_start_temp;
 
         let days_in_month = current_month.days_in_month();
         let first_day_of_week = current_month.first_day_of_week();
@@ -335,8 +384,14 @@ impl RenderOnce for Calendar {
                         }
 
                         let on_date_select_for_weeks = on_date_select_handler.clone();
+                        let is_date_disabled_for_weeks = is_date_disabled_fn.clone();
+                        let disabled_dates_for_weeks = disabled_dates.clone();
                         weeks.into_iter().map(move |week| {
                             let on_date_select_for_days = on_date_select_for_weeks.clone();
+                            let is_date_disabled_for_days = is_date_disabled_for_weeks.clone();
+                            let disabled_dates_for_days = disabled_dates_for_weeks.clone();
+                            let range_for_week = selected_range;
+                            let range_start_for_week = range_start_temp;
                             div()
                                 .flex()
                                 .gap(px(4.0))
@@ -350,7 +405,30 @@ impl RenderOnce for Calendar {
                                                     day
                                                 );
                                                 let is_selected = selected_date.map_or(false, |sel| sel == date);
-                                                let handler = on_date_select_for_days.clone();
+
+                                                // Check if date is disabled
+                                                let is_disabled = is_date_disabled_for_days.as_ref()
+                                                    .map(|f| f(&date))
+                                                    .unwrap_or_else(|| disabled_dates_for_days.iter().any(|d| d == &date));
+
+                                                // Check if date is in selected range
+                                                let is_in_range = range_for_week
+                                                    .map(|r| Calendar::is_date_in_range(&date, &r))
+                                                    .unwrap_or(false);
+
+                                                // Check if date is the range start (first click in range mode)
+                                                let is_range_start = range_start_for_week.map_or(false, |start| start == date);
+
+                                                // Check if date is a range endpoint
+                                                let is_range_endpoint = range_for_week
+                                                    .map(|r| date == r.start || date == r.end)
+                                                    .unwrap_or(false);
+
+                                                let handler = if is_disabled {
+                                                    None
+                                                } else {
+                                                    on_date_select_for_days.clone()
+                                                };
 
                                                 div()
                                                     .flex_1()
@@ -360,18 +438,33 @@ impl RenderOnce for Calendar {
                                                     .h(px(36.0))
                                                     .text_size(px(14.0))
                                                     .rounded(theme.tokens.radius_sm)
-                                                    .cursor(CursorStyle::PointingHand)
-                                                    .when(is_selected, |this: Div| {
+                                                    // Disabled state styling
+                                                    .when(is_disabled, |this: Div| {
+                                                        this.text_color(theme.tokens.muted_foreground.opacity(0.4))
+                                                            .cursor(CursorStyle::OperationNotAllowed)
+                                                    })
+                                                    // Range middle dates styling (light background)
+                                                    .when(!is_disabled && is_in_range && !is_range_endpoint && !is_range_start, |this: Div| {
+                                                        this.bg(theme.tokens.primary.opacity(0.15))
+                                                            .text_color(theme.tokens.foreground)
+                                                            .cursor(CursorStyle::PointingHand)
+                                                    })
+                                                    // Range endpoints or single selected date styling
+                                                    .when(!is_disabled && (is_range_endpoint || is_selected || is_range_start), |this: Div| {
                                                         this.bg(theme.tokens.primary)
                                                             .text_color(theme.tokens.primary_foreground)
                                                             .font_weight(FontWeight::MEDIUM)
+                                                            .cursor(CursorStyle::PointingHand)
                                                     })
-                                                    .when(!is_selected, |this: Div| {
-                                                        this.text_color(theme.tokens.foreground)
+                                                    // Non-disabled, non-selected, non-range state
+                                                    .when(!is_disabled && !is_selected && !is_in_range && !is_range_start, |this: Div| {
+                                                        this.cursor(CursorStyle::PointingHand)
+                                                            .text_color(theme.tokens.foreground)
                                                             .hover(|style| {
                                                                 style.bg(theme.tokens.muted.opacity(0.5))
                                                             })
                                                     })
+                                                    // Click handler only for non-disabled dates
                                                     .when(handler.is_some(), |this: Div| {
                                                         let handler = handler.unwrap();
                                                         this.on_mouse_down(MouseButton::Left, move |_, window, cx| {

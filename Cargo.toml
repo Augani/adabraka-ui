@@ -183,3 +183,15 @@ path = "examples/data_table_styled_demo.rs"
 [[example]]
 name = "drag_drop_styled_demo"
 path = "examples/drag_drop_styled_demo.rs"
+
+[[example]]
+name = "date_picker_demo"
+path = "examples/date_picker_demo.rs"
+
+[[example]]
+name = "color_picker_demo"
+path = "examples/color_picker_demo.rs"
+
+[[example]]
+name = "combobox_demo"
+path = "examples/combobox_demo.rs"

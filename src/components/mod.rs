@@ -36,7 +36,10 @@ pub mod avatar;
 pub mod pagination;
 pub mod collapsible;
 pub mod calendar;
+pub mod date_picker;
 pub mod navigation_menu;
+pub mod combobox;
+pub mod color_picker;
 
 pub use crate::display::badge;
 

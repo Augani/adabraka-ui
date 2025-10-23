@@ -163,3 +163,23 @@ path = "examples/context_menu_styled_demo.rs"
 [[example]]
 name = "app_menu_styled_demo"
 path = "examples/app_menu_styled_demo.rs"
+
+[[example]]
+name = "select_styled_demo"
+path = "examples/select_styled_demo.rs"
+
+[[example]]
+name = "resizable_styled_demo"
+path = "examples/resizable_styled_demo.rs"
+
+[[example]]
+name = "editor_styled_demo"
+path = "examples/editor_styled_demo.rs"
+
+[[example]]
+name = "data_table_styled_demo"
+path = "examples/data_table_styled_demo.rs"
+
+[[example]]
+name = "drag_drop_styled_demo"
+path = "examples/drag_drop_styled_demo.rs"

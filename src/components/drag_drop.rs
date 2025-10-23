@@ -123,6 +123,7 @@ pub struct Draggable<T: Clone + Debug + 'static> {
     cursor_style: CursorStyle,
     hover_bg: Option<Hsla>,
     children: Vec<AnyElement>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + Debug + 'static> Draggable<T> {
@@ -135,6 +136,7 @@ impl<T: Clone + Debug + 'static> Draggable<T> {
             cursor_style: CursorStyle::PointingHand,
             hover_bg: None,
             children: Vec::new(),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -164,6 +166,12 @@ impl<T: Clone + Debug + 'static> Draggable<T> {
     }
 }
 
+impl<T: Clone + Debug + 'static> Styled for Draggable<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + Debug + 'static> ParentElement for Draggable<T> {
     fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
         self.children.extend(elements);
@@ -173,6 +181,7 @@ impl<T: Clone + Debug + 'static> ParentElement for Draggable<T> {
 impl<T: Clone + Debug + 'static> RenderOnce for Draggable<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let drag_data = self.drag_data.clone();
+        let user_style = self.style;
 
         self.base
             .cursor(self.cursor_style)
@@ -181,6 +190,11 @@ impl<T: Clone + Debug + 'static> RenderOnce for Draggable<T> {
             })
             .on_drag(drag_data, |data: &DragData<T>, position, _, cx| {
                 cx.new(|_| data.clone().with_position(position))
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
             .children(self.children)
     }
@@ -197,10 +211,11 @@ pub enum DropZoneStyle {
 pub struct DropZone<T: Clone + Debug + 'static> {
     id: ElementId,
     base: Stateful<Div>,
-    style: DropZoneStyle,
+    drop_style: DropZoneStyle,
     active: bool,
     min_height: Option<Pixels>,
     children: Vec<AnyElement>,
+    user_style: StyleRefinement,
     _phantom: std::marker::PhantomData<T>,
 }
 
@@ -210,16 +225,17 @@ impl<T: Clone + Debug + 'static> DropZone<T> {
         Self {
             base: div().id(id.clone()),
             id,
-            style: DropZoneStyle::Dashed,
+            drop_style: DropZoneStyle::Dashed,
             active: false,
             min_height: None,
             children: Vec::new(),
+            user_style: StyleRefinement::default(),
             _phantom: std::marker::PhantomData,
         }
     }
 
-    pub fn style(mut self, style: DropZoneStyle) -> Self {
-        self.style = style;
+    pub fn drop_zone_style(mut self, style: DropZoneStyle) -> Self {
+        self.drop_style = style;
         self
     }
 
@@ -249,6 +265,12 @@ impl<T: Clone + Debug + 'static> DropZone<T> {
     }
 }
 
+impl<T: Clone + Debug + 'static> Styled for DropZone<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.user_style
+    }
+}
+
 impl<T: Clone + Debug + 'static> InteractiveElement for DropZone<T> {
     fn interactivity(&mut self) -> &mut Interactivity {
         self.base.interactivity()
@@ -266,8 +288,9 @@ impl<T: Clone + Debug + 'static> ParentElement for DropZone<T> {
 impl<T: Clone + Debug + 'static> RenderOnce for DropZone<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.user_style;
 
-        let (border_width, border_color, bg_color) = match (self.style, self.active) {
+        let (border_width, border_color, bg_color) = match (self.drop_style, self.active) {
             (DropZoneStyle::Dashed, false) => (
                 px(2.0),
                 theme.tokens.border,
@@ -312,11 +335,16 @@ impl<T: Clone + Debug + 'static> RenderOnce for DropZone<T> {
             .rounded(theme.tokens.radius_lg)
             .bg(bg_color)
             .border_color(border_color)
-            .when(self.style == DropZoneStyle::Dashed, |this| {
+            .when(self.drop_style == DropZoneStyle::Dashed, |this| {
                 this.border(border_width)
             })
-            .when(self.style != DropZoneStyle::Dashed, |this| {
+            .when(self.drop_style != DropZoneStyle::Dashed, |this| {
                 this.border(border_width)
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             })
             .children(self.children)
     }

@@ -2,12 +2,7 @@
 
 use std::{cell::Cell, ops::Range, rc::Rc};
 
-use gpui::{
-    canvas, div, prelude::FluentBuilder, px, Along, AnyElement, App, AppContext, Axis, Bounds,
-    Context, Element, ElementId, Empty, Entity, EventEmitter, GlobalElementId, InteractiveElement,
-    IntoElement, IsZero, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Pixels,
-    Point, Render, RenderOnce, StatefulInteractiveElement, Style, Styled, Window,
-};
+use gpui::{prelude::FluentBuilder as _, *};
 
 use crate::{theme::use_theme, util::AxisExt};
 
@@ -377,6 +372,7 @@ pub struct ResizablePanel {
     size_range: Range<Pixels>,
     children: Vec<AnyElement>,
     visible: bool,
+    style: StyleRefinement,
 }
 
 impl ResizablePanel {
@@ -389,6 +385,7 @@ impl ResizablePanel {
             axis: Axis::Horizontal,
             children: vec![],
             visible: true,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -426,6 +423,12 @@ impl ResizablePanel {
     pub fn max_size(mut self, max: impl Into<Pixels>) -> Self {
         self.size_range.end = max.into();
         self
+    }
+}
+
+impl Styled for ResizablePanel {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -482,7 +485,15 @@ impl RenderOnce for ResizablePanel {
             }
         }
 
+        // Apply user-defined styles
+        let user_style = self.style;
+
         panel_div
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
             .child({
                 let state = state.clone();
                 let index = self.index;

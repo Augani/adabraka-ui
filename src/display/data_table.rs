@@ -372,6 +372,7 @@ pub struct DataTable<T: Clone + 'static> {
     is_dragging_horizontal: bool,
     drag_start_x: f32,
     drag_scroll_start_x: f32,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + 'static> DataTable<T> {
@@ -439,6 +440,7 @@ impl<T: Clone + 'static> DataTable<T> {
             is_dragging_horizontal: false,
             drag_start_x: 0.0,
             drag_scroll_start_x: 0.0,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -524,6 +526,7 @@ impl<T: Clone + 'static> DataTable<T> {
             is_dragging_horizontal: false,
             drag_start_x: 0.0,
             drag_scroll_start_x: 0.0,
+            style: StyleRefinement::default(),
         }
         .with_virtual_backing(total_items, page_size)
     }
@@ -1220,9 +1223,18 @@ impl<T: Clone + 'static> DataTable<T> {
     }
 }
 
+impl<T: Clone + 'static> Styled for DataTable<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + 'static> Render for DataTable<T> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+
+        // Capture user styles early
+        let user_style = self.style.clone();
 
         let viewport_height = self.state.viewport_height();
 
@@ -1565,6 +1577,10 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                     div.child(self.render_search_bar(cx))
                 })
                 .child(scrollable_content)
+                .map(|mut this| {
+                    this.style().refine(&user_style);
+                    this
+                })
         } else {
             // Fallback to same structure; header remains visible like sticky variant for now
             div()
@@ -1581,6 +1597,10 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                     div.child(self.render_search_bar(cx))
                 })
                 .child(scrollable_content)
+                .map(|mut this| {
+                    this.style().refine(&user_style);
+                    this
+                })
         };
 
         let context_menu_elem = self.context_menu.map(|(row_idx, position)| {

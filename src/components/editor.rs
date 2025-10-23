@@ -20,7 +20,7 @@
 //!     .show_line_numbers(true)
 //! ```
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 use crate::components::scrollable::scrollable_vertical;
 use tree_sitter::{Parser, Tree, Node};
@@ -1470,6 +1470,12 @@ impl Editor {
     }
 }
 
+impl Styled for Editor {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Editor {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -1500,7 +1506,14 @@ impl RenderOnce for Editor {
             styled_base
         };
 
+        let user_style = self.style;
+
         final_base
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
             .font_family(theme.tokens.font_mono.clone())
             .on_action(window.listener_for(&self.state, EditorState::move_up))
             .on_action(window.listener_for(&self.state, EditorState::move_down))

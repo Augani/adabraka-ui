@@ -120,6 +120,7 @@ pub struct StatusBar {
     center_items: Vec<StatusItem>,
     right_items: Vec<StatusItem>,
     height: Pixels,
+    style: StyleRefinement,
 }
 
 impl StatusBar {
@@ -129,6 +130,7 @@ impl StatusBar {
             center_items: Vec::new(),
             right_items: Vec::new(),
             height: px(28.0),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -168,6 +170,12 @@ impl StatusBar {
     }
 }
 
+impl Styled for StatusBar {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Default for StatusBar {
     fn default() -> Self {
         Self::new()
@@ -177,6 +185,7 @@ impl Default for StatusBar {
 impl Render for StatusBar {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
 
         div()
             .flex()
@@ -189,6 +198,11 @@ impl Render for StatusBar {
             .bg(theme.tokens.card)
             .border_t_1()
             .border_color(theme.tokens.border)
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
             .child(
                 div()
                     .flex()

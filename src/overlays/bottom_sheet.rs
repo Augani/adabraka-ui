@@ -45,6 +45,7 @@ pub struct BottomSheet {
     show_drag_handle: bool,
     close_on_backdrop_click: bool,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl BottomSheet {
@@ -59,6 +60,7 @@ impl BottomSheet {
             show_drag_handle: true,
             close_on_backdrop_click: true,
             on_close: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -125,12 +127,19 @@ impl Default for BottomSheet {
     }
 }
 
+impl Styled for BottomSheet {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for BottomSheet {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let has_header = self.title.is_some() || self.description.is_some() || self.actions.is_some();
         let sheet_height = self.get_sheet_height();
         let on_close = self.on_close.clone();
+        let user_style = self.style;
 
         deferred(
             div()
@@ -169,6 +178,11 @@ impl RenderOnce for BottomSheet {
                             blur_radius: px(24.0),
                             spread_radius: px(0.0),
                         }])
+                        .map(|this| {
+                            let mut div = this;
+                            div.style().refine(&user_style);
+                            div
+                        })
                         .when(self.show_drag_handle, |this| {
                             this.child(
                                 div()

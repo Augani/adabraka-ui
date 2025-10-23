@@ -119,3 +119,47 @@ path = "examples/dialog_styled_demo.rs"
 name = "sheet_styled_demo"
 path = "examples/sheet_styled_demo.rs"
 
+[[example]]
+name = "alert_dialog_styled_demo"
+path = "examples/alert_dialog_styled_demo.rs"
+
+[[example]]
+name = "command_palette_styled_demo"
+path = "examples/command_palette_styled_demo.rs"
+
+[[example]]
+name = "status_bar_styled_demo"
+path = "examples/status_bar_styled_demo.rs"
+
+[[example]]
+name = "tree_styled_demo"
+path = "examples/tree_styled_demo.rs"
+
+[[example]]
+name = "toast_styled_demo"
+path = "examples/toast_styled_demo.rs"
+
+[[example]]
+name = "bottom_sheet_styled_demo"
+path = "examples/bottom_sheet_styled_demo.rs"
+
+[[example]]
+name = "popover_styled_demo"
+path = "examples/popover_styled_demo.rs"
+
+[[example]]
+name = "popover_menu_styled_demo"
+path = "examples/popover_menu_styled_demo.rs"
+
+[[example]]
+name = "hover_card_styled_demo"
+path = "examples/hover_card_styled_demo.rs"
+
+
+[[example]]
+name = "context_menu_styled_demo"
+path = "examples/context_menu_styled_demo.rs"
+
+[[example]]
+name = "app_menu_styled_demo"
+path = "examples/app_menu_styled_demo.rs"

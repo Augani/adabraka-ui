@@ -194,6 +194,7 @@ pub struct CommandPalette {
     search_input: Entity<InputState>,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     focus_handle: FocusHandle,
+    style: StyleRefinement,
 }
 
 impl CommandPalette {
@@ -223,6 +224,7 @@ impl CommandPalette {
             search_input,
             on_close: None,
             focus_handle,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -232,6 +234,12 @@ impl CommandPalette {
     {
         self.on_close = Some(Rc::new(handler));
         self
+    }
+}
+
+impl Styled for CommandPalette {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -247,6 +255,7 @@ impl Render for CommandPalette {
         let state = self.state.read(cx);
         let filtered = state.filtered_commands();
         let selected_idx = state.selected_index();
+        let user_style = self.style.clone();
 
         div()
             .absolute()
@@ -301,6 +310,11 @@ impl Render for CommandPalette {
                     .shadow_lg()
                     .overflow_hidden()
                     .on_mouse_down(MouseButton::Left, |_event, _window, _cx| {})
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
+                    })
                     .child(
                         div()
                             .flex()

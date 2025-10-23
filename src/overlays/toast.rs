@@ -32,6 +32,7 @@ pub struct ToastItem {
     pub description: Option<SharedString>,
     pub variant: ToastVariant,
     pub duration: Option<Duration>,
+    pub style: StyleRefinement,
 }
 
 impl ToastItem {
@@ -42,6 +43,7 @@ impl ToastItem {
             description: None,
             variant: ToastVariant::Default,
             duration: Some(Duration::from_secs(5)),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -63,6 +65,12 @@ impl ToastItem {
     pub fn persistent(mut self) -> Self {
         self.duration = None;
         self
+    }
+}
+
+impl Styled for ToastItem {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 
@@ -213,6 +221,8 @@ impl Render for ToastManager {
                         ),
                     };
 
+                    let user_style = toast.style.clone();
+
                     div()
                         .id(("toast", toast.id))
                         .flex()
@@ -226,6 +236,11 @@ impl Render for ToastManager {
                         .rounded(theme.tokens.radius_md)
                         .p(px(16.0))
                         .shadow_lg()
+                        .map(|this| {
+                            let mut div = this;
+                            div.style().refine(&user_style);
+                            div
+                        })
                         .child(
                             Icon::new(icon)
                                 .size(px(20.0))

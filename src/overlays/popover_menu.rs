@@ -49,6 +49,7 @@ pub struct PopoverMenu {
     position: Point<Pixels>,
     items: Vec<PopoverMenuItem>,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App) + 'static>>,
+    style: StyleRefinement,
 }
 
 impl PopoverMenu {
@@ -57,6 +58,7 @@ impl PopoverMenu {
             position,
             items,
             on_close: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -69,10 +71,17 @@ impl PopoverMenu {
     }
 }
 
+impl Styled for PopoverMenu {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for PopoverMenu {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let on_close_backdrop = self.on_close.clone();
+        let user_style = self.style;
 
         div()
             .absolute()
@@ -105,6 +114,11 @@ impl RenderOnce for PopoverMenu {
                                         .rounded(theme.tokens.radius_md)
                                         .shadow_lg()
                                         .p(px(4.0))
+                                        .map(|this| {
+                                            let mut div = this;
+                                            div.style().refine(&user_style);
+                                            div
+                                        })
                                         .on_mouse_down(MouseButton::Left, |_, _, cx| {
                                             cx.stop_propagation();
                                         })

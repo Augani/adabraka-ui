@@ -41,6 +41,7 @@ pub struct HoverCard {
     _close_delay: Duration,
     is_open: bool,
     _arrow: bool,
+    style: StyleRefinement,
 }
 
 impl HoverCard {
@@ -54,6 +55,7 @@ impl HoverCard {
             _close_delay: Duration::from_millis(300),
             is_open: false,
             _arrow: true,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -104,9 +106,16 @@ impl Default for HoverCard {
     }
 }
 
+impl Styled for HoverCard {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for HoverCard {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         div()
             .relative()
@@ -151,6 +160,11 @@ impl RenderOnce for HoverCard {
                                     blur_radius: px(12.0),
                                     spread_radius: px(0.0),
                                 }])
+                                .map(|this| {
+                                    let mut div = this;
+                                    div.style().refine(&user_style);
+                                    div
+                                })
                                 .child(self.content)
                         )
                 )

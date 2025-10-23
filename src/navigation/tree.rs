@@ -224,6 +224,7 @@ pub struct TreeList<T: Clone + PartialEq + Eq + Hash + 'static> {
     on_toggle: Option<Arc<dyn Fn(&T, bool, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_right_click: Option<Arc<dyn Fn(&T, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>>,
     scroll_handle: ScrollHandle,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
@@ -239,6 +240,7 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
             on_toggle: None,
             on_right_click: None,
             scroll_handle: ScrollHandle::new(),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -493,6 +495,12 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
 
 }
 
+impl<T: Clone + PartialEq + Eq + Hash + 'static> Styled for TreeList<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for TreeList<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -541,12 +549,17 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for TreeList<T> {
         let on_toggle = self.on_toggle.clone();
         let on_right_click = self.on_right_click.clone();
         let highlight_matches = self.highlight_matches;
+        let user_style = self.style.clone();
 
         div()
             .flex()
             .flex_col()
             .w_full()
             .bg(theme.tokens.background)
+            .map(|mut this| {
+                this.style().refine(&user_style);
+                this
+            })
             .child(
                 div()
                     .w_full()

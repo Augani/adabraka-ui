@@ -67,6 +67,7 @@ pub struct ContextMenu {
     position: Point<Pixels>,
     items: Vec<ContextMenuItem>,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl ContextMenu {
@@ -75,6 +76,7 @@ impl ContextMenu {
             position,
             items: Vec::new(),
             on_close: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -97,11 +99,18 @@ impl ContextMenu {
     }
 }
 
+impl Styled for ContextMenu {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for ContextMenu {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
         let position = self.position;
         let on_close_handler = self.on_close.clone();
+        let user_style = self.style;
 
         div()
             .absolute()
@@ -134,6 +143,11 @@ impl RenderOnce for ContextMenu {
                         spread_radius: px(0.0),
                     }])
                     .p(px(4.0))
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
+                    })
                     .on_mouse_down(MouseButton::Left, |_, _, _| {})
                     .children(
                         self.items.into_iter().map(|item| {

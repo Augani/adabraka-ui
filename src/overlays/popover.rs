@@ -69,6 +69,7 @@ pub struct Popover {
     trigger: Option<Box<dyn FnOnce(bool, &Window, &App) -> AnyElement + 'static>>,
     content: Option<Rc<dyn Fn(&mut Window, &mut App) -> Entity<PopoverContent> + 'static>>,
     mouse_button: MouseButton,
+    style: StyleRefinement,
 }
 
 impl Popover {
@@ -79,6 +80,7 @@ impl Popover {
             trigger: None,
             content: None,
             mouse_button: MouseButton::Left,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -114,7 +116,16 @@ impl Popover {
         let Some(trigger) = self.trigger.take() else {
             return div().child("Trigger").into_any_element();
         };
-        (trigger)(open, window, cx)
+        let user_style = self.style.clone();
+        let trigger_element = (trigger)(open, window, cx);
+
+        div()
+            .map(|mut this| {
+                this.style().refine(&user_style);
+                this
+            })
+            .child(trigger_element)
+            .into_any_element()
     }
 
     fn resolved_corner(&self, bounds: Bounds<Pixels>) -> Point<Pixels> {
@@ -149,6 +160,12 @@ impl IntoElement for Popover {
 
     fn into_element(self) -> Self::Element {
         self
+    }
+}
+
+impl Styled for Popover {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
     }
 }
 

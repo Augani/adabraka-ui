@@ -1,6 +1,6 @@
 //! Alert dialog component for confirmations.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
 use crate::theme::use_theme;
@@ -18,6 +18,7 @@ pub struct AlertDialog {
     on_cancel: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     on_action: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     focused: bool,
+    style: StyleRefinement,
 }
 
 impl AlertDialog {
@@ -32,6 +33,7 @@ impl AlertDialog {
             on_cancel: None,
             on_action: None,
             focused: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -96,9 +98,16 @@ impl AlertDialog {
 pub fn init_alert_dialog(_cx: &mut App) {
 }
 
+impl Styled for AlertDialog {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for AlertDialog {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style.clone();
         let title = self.title.clone();
         let description = self.description.clone();
         let cancel_text = self.cancel_text.clone();
@@ -175,6 +184,11 @@ impl Render for AlertDialog {
                                     )
                             )
                     )
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
+                    })
             )
     }
 }

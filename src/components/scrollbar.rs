@@ -27,7 +27,6 @@ const THUMB_ACTIVE_RADIUS: Pixels = px(4.);
 const THUMB_ACTIVE_INSET: Pixels = px(2.);
 
 const FADE_OUT_DURATION: f32 = 3.0;
-const FADE_OUT_DELAY: f32 = 2.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ScrollbarAxis {
@@ -74,27 +73,23 @@ pub struct ScrollbarState(Rc<Cell<ScrollbarStateInner>>);
 
 #[derive(Debug, Clone, Copy)]
 pub struct ScrollbarStateInner {
-    hovered_axis: Option<Axis>,
     hovered_on_thumb: Option<Axis>,
     dragged_axis: Option<Axis>,
     drag_pos: Point<Pixels>,
     last_scroll_offset: Point<Pixels>,
     last_scroll_time: Option<Instant>,
     last_update: Instant,
-    idle_timer_scheduled: bool,
 }
 
 impl Default for ScrollbarState {
     fn default() -> Self {
         Self(Rc::new(Cell::new(ScrollbarStateInner {
-            hovered_axis: None,
             hovered_on_thumb: None,
             dragged_axis: None,
             drag_pos: point(px(0.), px(0.)),
             last_scroll_offset: point(px(0.), px(0.)),
             last_scroll_time: None,
             last_update: Instant::now(),
-            idle_timer_scheduled: false,
         })))
     }
 }
@@ -124,15 +119,6 @@ impl ScrollbarStateInner {
         state
     }
 
-    fn with_hovered(&self, axis: Option<Axis>) -> Self {
-        let mut state = *self;
-        state.hovered_axis = axis;
-        if axis.is_some() {
-            state.last_scroll_time = Some(Instant::now());
-        }
-        state
-    }
-
     fn with_hovered_on_thumb(&self, axis: Option<Axis>) -> Self {
         let mut state = *self;
         state.hovered_on_thumb = axis;
@@ -152,12 +138,6 @@ impl ScrollbarStateInner {
     fn with_last_update(&self, t: Instant) -> Self {
         let mut state = *self;
         state.last_update = t;
-        state
-    }
-
-    fn with_idle_timer_scheduled(&self, scheduled: bool) -> Self {
-        let mut state = *self;
-        state.idle_timer_scheduled = scheduled;
         state
     }
 

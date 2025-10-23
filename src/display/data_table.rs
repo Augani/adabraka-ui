@@ -53,19 +53,15 @@ pub enum SortDirection {
 
 #[derive(Debug, Clone)]
 struct ViewportState {
-    scroll_y: f32,
     viewport_height: f32,
     row_height: f32,
-    overscan: usize,
 }
 
 impl ViewportState {
     fn new(row_height: f32, viewport_height: f32) -> Self {
         Self {
-            scroll_y: 0.0,
             viewport_height,
             row_height,
-            overscan: 5,
         }
     }
 }
@@ -83,24 +79,6 @@ impl VirtualScroller {
         }
     }
 
-    fn visible_range(&self) -> Range<usize> {
-        if self.total_items == 0 {
-            return 0..0;
-        }
-
-        let row_height = self.viewport.row_height;
-        let first_visible = (self.viewport.scroll_y / row_height).floor() as usize;
-        let last_visible = ((self.viewport.scroll_y + self.viewport.viewport_height) / row_height).ceil() as usize;
-        let start = first_visible.saturating_sub(self.viewport.overscan);
-        let end = (last_visible + self.viewport.overscan).min(self.total_items);
-
-        start..end
-    }
-
-    fn row_position(&self, index: usize) -> f32 {
-        index as f32 * self.viewport.row_height
-    }
-
     fn total_height(&self) -> f32 {
         self.total_items as f32 * self.viewport.row_height
     }
@@ -108,13 +86,6 @@ impl VirtualScroller {
     fn set_total_items(&mut self, count: usize) {
         self.total_items = count;
     }
-}
-
-#[derive(Debug, Clone)]
-struct VirtualRow {
-    index: usize,
-    y_position: f32,
-    height: f32,
 }
 
 pub struct ColumnDef<T: 'static> {
@@ -210,20 +181,6 @@ impl<T: Clone + 'static> DataTableState<T> {
             selected_rows: Vec::new(),
             backing: DataBacking::InMemory { data },
         }
-    }
-
-    fn visible_range(&self) -> Range<usize> {
-        self.scroller.visible_range()
-    }
-
-    fn visible_rows(&self) -> Vec<VirtualRow> {
-        self.scroller.visible_range()
-            .map(|index| VirtualRow {
-                index,
-                y_position: self.scroller.row_position(index),
-                height: self.scroller.viewport.row_height,
-            })
-            .collect()
     }
 
     fn total_height(&self) -> f32 {
@@ -354,7 +311,6 @@ pub struct DataTable<T: Clone + 'static> {
     edit_input: Option<Entity<InputState>>,
     edit_column_id: SharedString,
     edit_old_value: SharedString,
-    show_confirm_dialog: bool,
     use_edit_dialog: bool,
     on_cell_edit: Option<Box<dyn Fn(usize, SharedString, SharedString, SharedString, &mut Context<Self>) + 'static>>,
     on_cell_double_click: Option<Box<dyn Fn(&T, SharedString, SharedString, &mut Window, &mut Context<Self>) + 'static>>,
@@ -421,7 +377,6 @@ impl<T: Clone + 'static> DataTable<T> {
             edit_input: None,
             edit_column_id: SharedString::from(""),
             edit_old_value: SharedString::from(""),
-            show_confirm_dialog: false,
             use_edit_dialog: true,
             on_cell_edit: None,
             on_cell_double_click: None,
@@ -506,7 +461,6 @@ impl<T: Clone + 'static> DataTable<T> {
             edit_input: None,
             edit_column_id: SharedString::from(""),
             edit_old_value: SharedString::from(""),
-            show_confirm_dialog: false,
             use_edit_dialog: true,
             on_cell_edit: None,
             on_cell_double_click: None,
@@ -777,12 +731,6 @@ impl<T: Clone + 'static> DataTable<T> {
         }
     }
 
-    fn cancel_edit(&mut self, cx: &mut Context<Self>) {
-        self.editing_cell = None;
-        self.edit_input = None;
-        cx.notify();
-    }
-
     fn render_search_bar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
@@ -830,205 +778,6 @@ impl<T: Clone + 'static> DataTable<T> {
                             })
                     )
             )
-    }
-
-    fn build_visible_rows(&self, virtual_rows: &[VirtualRow], theme: &crate::theme::Theme, cx: &mut Context<Self>) -> Vec<Div> {
-        virtual_rows
-            .iter()
-            .map(|vrow| {
-                if let Some(row_data) = self.state.get_row(vrow.index) {
-                    let is_selected = self.state.is_row_selected(vrow.index);
-                    let row_idx = vrow.index;
-
-                    let mut row_div = div()
-                        .flex()
-                        .w_full()
-                        .absolute()
-                        .top(px(vrow.y_position))
-                        .left(px(0.0))
-                        .bg(if is_selected {
-                            theme.tokens.accent.opacity(0.2)
-                        } else if vrow.index % 2 == 0 {
-                            theme.tokens.background
-                        } else {
-                            theme.tokens.muted.opacity(0.3)
-                        })
-                        .hover(|style| style.bg(theme.tokens.accent.opacity(0.1)));
-
-                    if !self.row_actions.is_empty() {
-                        row_div = row_div.on_mouse_down(MouseButton::Right, cx.listener(move |this, event: &MouseDownEvent, _window, cx| {
-                            this.context_menu = Some((row_idx, event.position));
-                            cx.notify();
-                        }));
-                    }
-
-                    if self.show_selection {
-                        row_div = row_div.child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .w(px(50.0))
-                                .px(px(16.0))
-                                .py(px(12.0))
-                                .border_b_1()
-                                .border_r_1()
-                                .border_color(theme.tokens.border.opacity(0.5))
-                                .cursor(CursorStyle::PointingHand)
-                                .on_mouse_down(MouseButton::Left, cx.listener(move |this, _event, window, cx| {
-                                    this.toggle_row_selection(row_idx, window, cx);
-                                }))
-                                .child(
-                                    div()
-                                        .w(px(16.0))
-                                        .h(px(16.0))
-                                        .rounded(px(3.0))
-                                        .border_1()
-                                        .border_color(if is_selected {
-                                            theme.tokens.primary
-                                        } else {
-                                            theme.tokens.border
-                                        })
-                                        .bg(if is_selected {
-                                            theme.tokens.primary
-                                        } else {
-                                            theme.tokens.background
-                                        })
-                                )
-                        );
-                    }
-
-                    let cells = self.state.columns.iter().enumerate().map(|(col_idx, column)| {
-                        let width = self.state.column_widths[col_idx];
-                        let cell_value = (column.accessor)(row_data);
-                        let is_editable = column.editable;
-                        let is_editing = self.editing_cell == Some((row_idx, col_idx));
-
-                        let mut cell_div = div()
-                            .flex()
-                            .items_center()
-                            .px(px(16.0))
-                            .py(px(12.0))
-                            .w(width)
-                            .text_size(px(13.0))
-                            .text_color(theme.tokens.foreground)
-                            .border_b_1()
-                            .border_r_1()
-                            .border_color(theme.tokens.border.opacity(0.5))
-                            .overflow_hidden()
-                            .text_ellipsis();
-
-                        if is_editable && !is_editing {
-                            let cell_value_for_closure = cell_value.clone();
-                            let column_id = column.id.clone();
-
-                            cell_div = cell_div
-                                .cursor(CursorStyle::IBeam)
-                                .on_mouse_down(MouseButton::Left, cx.listener(move |this, event: &MouseDownEvent, window, cx| {
-                                    if event.click_count < 2 {
-                                        return;
-                                    }
-                                    let input_state = cx.new(|cx| {
-                                        let mut state = InputState::new(cx);
-                                        state.set_value(cell_value_for_closure.clone(), window, cx);
-                                        state
-                                    });
-
-                                    use crate::components::input::InputEvent;
-                                    cx.subscribe(&input_state, |this, _, event: &InputEvent, cx| {
-                                        match event {
-                                            InputEvent::Enter => {
-                                                this.save_edit(cx);
-                                            }
-                                            InputEvent::Blur => {
-                                                if !this.use_edit_dialog {
-                                                    this.save_edit(cx);
-                                                }
-                                            }
-                                            _ => {}
-                                        }
-                                    }).detach();
-
-                                    this.editing_cell = Some((row_idx, col_idx));
-                                    this.edit_input = Some(input_state);
-                                    this.edit_column_id = column_id.clone();
-                                    this.edit_old_value = cell_value_for_closure.clone();
-
-                                    if let Some(ref input) = this.edit_input {
-                                        window.focus(&input.read(cx).focus_handle(cx));
-                                    }
-
-                                    cx.notify();
-                                }));
-                        }
-
-                        if is_editing {
-                            if let Some(ref input_state) = self.edit_input {
-                                cell_div.child(
-                                    Input::new(input_state)
-                                        .size(InputSize::Sm)
-                                )
-                            } else {
-                                cell_div.child(cell_value)
-                            }
-                        } else {
-                            cell_div.child(cell_value)
-                        }
-                    });
-
-                    row_div.children(cells)
-                } else {
-                    let mut skeleton_row = div()
-                        .flex()
-                        .w_full()
-                        .absolute()
-                        .top(px(vrow.y_position))
-                        .left(px(0.0))
-                        .bg(if vrow.index % 2 == 0 {
-                            theme.tokens.background
-                        } else {
-                            theme.tokens.muted.opacity(0.3)
-                        });
-
-                    if self.show_selection {
-                        skeleton_row = skeleton_row.child(
-                            div()
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .w(px(50.0))
-                                .px(px(16.0))
-                                .py(px(12.0))
-                                .border_b_1()
-                                .border_r_1()
-                                .border_color(theme.tokens.border.opacity(0.5))
-                        );
-                    }
-
-                    let cells = self.state.columns.iter().enumerate().map(|(col_idx, _column)| {
-                        let width = self.state.column_widths[col_idx];
-                        div()
-                            .flex()
-                            .items_center()
-                            .px(px(16.0))
-                            .py(px(12.0))
-                            .w(width)
-                            .border_b_1()
-                            .border_r_1()
-                            .border_color(theme.tokens.border.opacity(0.5))
-                            .child(
-                                div()
-                                    .w(px(96.0))
-                                    .h(px(12.0))
-                                    .rounded(px(4.0))
-                                    .bg(theme.tokens.muted.opacity(0.6))
-                            )
-                    });
-
-                    skeleton_row.children(cells)
-                }
-            })
-            .collect()
     }
 
     fn render_header(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -1171,42 +920,6 @@ impl<T: Clone + 'static> DataTable<T> {
         });
 
         header_row.children(header_cells)
-    }
-
-    fn render_row(&self, row_index: usize, row_data: &T) -> impl IntoElement {
-        let theme = use_theme();
-        let is_selected = self.state.is_row_selected(row_index);
-
-        let cells = self.state.columns.iter().enumerate().map(|(col_idx, column)| {
-            let width = self.state.column_widths[col_idx];
-            let cell_value = (column.accessor)(row_data);
-
-            div()
-                .flex()
-                .items_center()
-                .px(px(16.0))
-                .py(px(12.0))
-                .w(width)
-                .text_size(px(13.0))
-                .text_color(theme.tokens.foreground)
-                .border_b_1()
-                .border_r_1()
-                .border_color(theme.tokens.border.opacity(0.5))
-                .child(cell_value)
-        });
-
-        div()
-            .flex()
-            .w_full()
-            .bg(if is_selected {
-                theme.tokens.accent.opacity(0.2)
-            } else if row_index % 2 == 0 {
-                theme.tokens.background
-            } else {
-                theme.tokens.muted.opacity(0.3)
-            })
-            .hover(|style| style.bg(theme.tokens.accent.opacity(0.1)))
-            .children(cells)
     }
 }
 

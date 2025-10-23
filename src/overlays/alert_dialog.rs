@@ -17,7 +17,6 @@ pub struct AlertDialog {
     destructive: bool,
     on_cancel: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     on_action: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
-    focused: bool,
     style: StyleRefinement,
 }
 
@@ -32,7 +31,6 @@ impl AlertDialog {
             destructive: false,
             on_cancel: None,
             on_action: None,
-            focused: false,
             style: StyleRefinement::default(),
         }
     }

@@ -168,53 +168,6 @@ impl<T: Clone + PartialEq + 'static> Sidebar<T> {
         self
     }
 
-    fn toggle(&mut self, window: &mut Window, cx: &mut App) {
-        self.is_expanded = !self.is_expanded;
-        if let Some(on_toggle) = &self.on_toggle {
-            on_toggle(self.is_expanded, window, cx);
-        }
-    }
-
-    fn focus_next(&mut self) -> bool {
-        if self.items.is_empty() {
-            return false;
-        }
-
-        let next_index = match self.focused_index {
-            Some(current) if current < self.items.len() - 1 => current + 1,
-            _ => 0,
-        };
-
-        self.focused_index = Some(next_index);
-        true
-    }
-
-    fn focus_previous(&mut self) -> bool {
-        if self.items.is_empty() {
-            return false;
-        }
-
-        let prev_index = match self.focused_index {
-            Some(current) if current > 0 => current - 1,
-            _ => self.items.len() - 1,
-        };
-
-        self.focused_index = Some(prev_index);
-        true
-    }
-
-    fn activate_focused(&mut self, window: &mut Window, cx: &mut App) {
-        if let Some(index) = self.focused_index {
-            if let Some(item) = self.items.get(index) {
-                if !item.disabled && !item.separator {
-                    if let Some(on_select) = &self.on_select {
-                        on_select(&item.id, window, cx);
-                    }
-                }
-            }
-        }
-    }
-
     fn current_width(&self) -> Pixels {
         if self.is_expanded {
             self.expanded_width

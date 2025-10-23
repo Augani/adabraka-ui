@@ -7,7 +7,6 @@ use crate::theme::use_theme;
 
 #[derive(Clone)]
 pub struct ContextMenuItem {
-    id: SharedString,
     label: SharedString,
     icon: Option<SharedString>,
     disabled: bool,
@@ -16,9 +15,8 @@ pub struct ContextMenuItem {
 }
 
 impl ContextMenuItem {
-    pub fn new(id: impl Into<SharedString>, label: impl Into<SharedString>) -> Self {
+    pub fn new(_id: impl Into<SharedString>, label: impl Into<SharedString>) -> Self {
         Self {
-            id: id.into(),
             label: label.into(),
             icon: None,
             disabled: false,
@@ -52,7 +50,6 @@ impl ContextMenuItem {
 
     pub fn separator() -> Self {
         Self {
-            id: "separator".into(),
             label: "".into(),
             icon: None,
             disabled: true,

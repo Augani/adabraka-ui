@@ -39,14 +39,6 @@ impl TextFieldState {
         self.cursor_position += text.len();
         cx.notify();
     }
-
-    fn delete_backwards(&mut self, cx: &mut Context<Self>) {
-        if self.cursor_position > 0 {
-            self.text.remove(self.cursor_position - 1);
-            self.cursor_position -= 1;
-            cx.notify();
-        }
-    }
 }
 
 impl Focusable for TextFieldState {

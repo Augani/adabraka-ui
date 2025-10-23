@@ -172,7 +172,6 @@ impl Styled for Popover {
 #[derive(Default)]
 pub struct PopoverElementState {
     trigger_layout_id: Option<LayoutId>,
-    popover_layout_id: Option<LayoutId>,
     popover_element: Option<AnyElement>,
     trigger_element: Option<AnyElement>,
     content_view: Rc<RefCell<Option<Entity<PopoverContent>>>>,
@@ -265,7 +264,6 @@ impl Element for Popover {
                     layout_id,
                     PopoverElementState {
                         trigger_layout_id: Some(trigger_layout_id),
-                        popover_layout_id,
                         popover_element,
                         trigger_element: Some(trigger_element),
                         content_view: element_state.content_view.clone(),

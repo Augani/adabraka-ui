@@ -20,14 +20,12 @@ impl Default for TooltipPlacement {
 
 pub struct TooltipState {
     is_visible: bool,
-    show_timer: Option<TaskLabel>,
 }
 
 impl TooltipState {
     pub fn new() -> Self {
         Self {
             is_visible: false,
-            show_timer: None,
         }
     }
 
@@ -89,15 +87,6 @@ impl Tooltip {
     pub fn max_width(mut self, width: Pixels) -> Self {
         self.max_width = Some(width);
         self
-    }
-
-    fn get_offset(&self, placement: TooltipPlacement) -> (Pixels, Pixels) {
-        match placement {
-            TooltipPlacement::Top => (px(0.0), px(-8.0)),
-            TooltipPlacement::Bottom => (px(0.0), px(8.0)),
-            TooltipPlacement::Left => (px(-8.0), px(0.0)),
-            TooltipPlacement::Right => (px(8.0), px(0.0)),
-        }
     }
 }
 

@@ -1029,7 +1029,6 @@ struct EditorElement {
 }
 
 struct PrepaintState {
-    bounds: Bounds<Pixels>,
     gutter_width: Pixels,
     line_height: Pixels,
 }
@@ -1079,13 +1078,12 @@ impl Element for EditorElement {
         &mut self,
         _id: Option<&GlobalElementId>,
         _inspector_id: Option<&gpui::InspectorElementId>,
-        bounds: Bounds<Pixels>,
+        _bounds: Bounds<Pixels>,
         _request_layout: &mut Self::RequestLayoutState,
         _window: &mut Window,
         _cx: &mut App,
     ) -> Self::PrepaintState {
         PrepaintState {
-            bounds,
             gutter_width: px(60.0),
             line_height: px(20.0),
         }

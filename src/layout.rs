@@ -3,14 +3,9 @@
 use gpui::*;
 use crate::components::scrollbar::{ScrollbarState, ScrollbarAxis, Scrollbar};
 use std::panic::Location;
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::AtomicUsize;
 
 static SCROLL_CONTAINER_COUNTER: AtomicUsize = AtomicUsize::new(0);
-
-fn next_scroll_id() -> ElementId {
-    let id = SCROLL_CONTAINER_COUNTER.fetch_add(1, Ordering::Relaxed);
-    ElementId::Name(format!("scroll-container-{}", id).into())
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Align {

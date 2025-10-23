@@ -69,7 +69,6 @@ struct FlatTreeNode<T: Clone> {
 #[derive(Clone)]
 struct FilteredNode<T: Clone> {
     node: TreeNode<T>,
-    matches: bool,
     match_ranges: Vec<(usize, usize)>,
     children: Vec<FilteredNode<T>>,
 }
@@ -81,7 +80,6 @@ fn filter_tree<T: Clone>(
     if filter.is_empty() {
         return nodes.iter().map(|node| FilteredNode {
             node: node.clone(),
-            matches: false,
             match_ranges: Vec::new(),
             children: filter_tree(&node.children, filter),
         }).collect();
@@ -99,7 +97,6 @@ fn filter_tree<T: Clone>(
         if matches || !filtered_children.is_empty() {
             filtered.push(FilteredNode {
                 node: node.clone(),
-                matches,
                 match_ranges,
                 children: filtered_children,
             });
@@ -223,7 +220,6 @@ pub struct TreeList<T: Clone + PartialEq + Eq + Hash + 'static> {
     on_select: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_toggle: Option<Arc<dyn Fn(&T, bool, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_right_click: Option<Arc<dyn Fn(&T, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>>,
-    scroll_handle: ScrollHandle,
     style: StyleRefinement,
 }
 
@@ -239,7 +235,6 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
             on_select: None,
             on_toggle: None,
             on_right_click: None,
-            scroll_handle: ScrollHandle::new(),
             style: StyleRefinement::default(),
         }
     }
@@ -303,14 +298,6 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
         self
     }
 
-    fn is_expanded(&self, node_id: &T) -> bool {
-        self.expanded_ids.iter().any(|id| id == node_id)
-    }
-
-    fn is_selected(&self, node_id: &T) -> bool {
-        self.selected_id.as_ref() == Some(node_id)
-    }
-
     fn render_highlighted_text(
         &self,
         text: &str,
@@ -364,133 +351,6 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
                 }
             }))
             .into_any_element()
-    }
-
-    fn calculate_visible_range(&self, viewport_height: Pixels, scroll_offset: Pixels, total_items: usize) -> (usize, usize) {
-        let row_height_px = px(ROW_HEIGHT);
-
-        let scroll_y = -scroll_offset;
-        let first_visible = (scroll_y / row_height_px).floor().max(0.0) as usize;
-
-        let visible_rows = (viewport_height / row_height_px).ceil() as usize;
-        let buffer = 3; // Render 3 extra rows above and below for smooth scrolling
-        let last_visible = (first_visible + visible_rows + buffer).min(total_items);
-
-        (first_visible.saturating_sub(buffer), last_visible)
-    }
-
-    fn render_node(&self, node: &TreeNode<T>, level: usize, theme: &crate::theme::Theme) -> impl IntoElement {
-        let is_expanded = self.is_expanded(&node.id);
-        let is_selected = self.is_selected(&node.id);
-        let has_children = !node.children.is_empty();
-        let indent = px((level as f32) * 16.0);
-
-        let base = div()
-            .flex()
-            .items_center()
-            .w_full()
-            .px(px(12.0))
-            .py(px(8.0))
-            .pl(indent + px(8.0))
-            .cursor(if node.disabled {
-                CursorStyle::Arrow
-            } else {
-                CursorStyle::PointingHand
-            });
-
-        let styled = base
-            .bg(if is_selected {
-                theme.tokens.accent
-            } else {
-                gpui::transparent_black()
-            })
-            .text_color(if is_selected {
-                theme.tokens.accent_foreground
-            } else if node.disabled {
-                theme.tokens.muted_foreground
-            } else {
-                theme.tokens.primary
-            })
-            .when(!node.disabled && !is_selected, |div| {
-                div.hover(|mut style| {
-                    style.background = Some(theme.tokens.accent.opacity(0.5).into());
-                    style
-                })
-            });
-
-        let mut content_container = div().flex().items_center().gap(px(8.0));
-        if let Some(icon) = node.icon.as_ref() {
-            content_container = content_container.child(
-                Icon::new(icon.clone())
-                    .size(px(16.0))
-                    .color(if let Some(custom_color) = node.icon_color {
-                            custom_color
-                        } else if is_selected {
-                            theme.tokens.accent_foreground
-                        } else if node.disabled {
-                            theme.tokens.muted_foreground
-                        } else {
-                            theme.tokens.primary
-                        })
-            );
-        }
-
-        content_container = content_container.child(
-            div()
-                .flex_1()
-                .text_size(px(14.0))
-                .font_family(theme.tokens.font_family.clone())
-                .font_weight(if is_selected {
-                    FontWeight::SEMIBOLD
-                } else {
-                    FontWeight::NORMAL
-                })
-                .child(node.label.clone())
-        );
-
-        if has_children {
-            content_container = content_container.child(
-                div()
-                    .w(px(16.0))
-                    .h(px(16.0))
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .child(Icon::new(if is_expanded { "arrow-down" } else { "arrow-right" })
-                            .size(px(12.0))
-                            .color(theme.tokens.primary)
-                    )
-            );
-        }
-
-        let element = styled.child(content_container);
-
-        element.when(!node.disabled, |this| {
-            let on_select = self.on_select.clone();
-            let on_toggle = self.on_toggle.clone();
-            let on_right_click = self.on_right_click.clone();
-            let node_id = node.id.clone();
-            let node_id_for_right_click = node.id.clone();
-            let has_children = has_children;
-            let is_expanded = is_expanded;
-
-            this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                if let Some(on_select) = on_select.clone() {
-                    on_select(&node_id, window, cx);
-                }
-
-                if has_children {
-                    if let Some(on_toggle) = on_toggle.clone() {
-                        on_toggle(&node_id, !is_expanded, window, cx);
-                    }
-                }
-            })
-            .on_mouse_down(MouseButton::Right, move |event, window, cx| {
-                if let Some(on_right_click) = on_right_click.clone() {
-                    on_right_click(&node_id_for_right_click, event, window, cx);
-                }
-            })
-        })
     }
 
 }

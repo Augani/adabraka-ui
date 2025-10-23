@@ -499,7 +499,7 @@ impl RenderOnce for ResizablePanel {
                 this.child(ResizeHandle::new(
                     ("resizable-handle", handle_index),
                     self.axis,
-                    DragPanel((handle_index, self.axis)),
+                    DragPanel,
                     move |drag_panel, _, _, cx| {
                         cx.stop_propagation();
                         state.update(cx, |state, _| {
@@ -514,7 +514,7 @@ impl RenderOnce for ResizablePanel {
 }
 
 #[derive(Clone)]
-struct DragPanel((usize, Axis));
+struct DragPanel;
 
 impl Render for DragPanel {
     fn render(&mut self, _: &mut Window, _: &mut Context<'_, Self>) -> impl IntoElement {

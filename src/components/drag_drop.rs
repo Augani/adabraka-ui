@@ -117,7 +117,6 @@ impl<T: Clone + Debug + 'static> Render for DragData<T> {
 
 #[derive(IntoElement)]
 pub struct Draggable<T: Clone + Debug + 'static> {
-    id: ElementId,
     base: Stateful<Div>,
     drag_data: DragData<T>,
     cursor_style: CursorStyle,
@@ -128,10 +127,8 @@ pub struct Draggable<T: Clone + Debug + 'static> {
 
 impl<T: Clone + Debug + 'static> Draggable<T> {
     pub fn new(id: impl Into<ElementId>, drag_data: DragData<T>) -> Self {
-        let id = id.into();
         Self {
-            base: div().id(id.clone()),
-            id,
+            base: div().id(id.into()),
             drag_data,
             cursor_style: CursorStyle::PointingHand,
             hover_bg: None,
@@ -209,7 +206,6 @@ pub enum DropZoneStyle {
 
 #[derive(IntoElement)]
 pub struct DropZone<T: Clone + Debug + 'static> {
-    id: ElementId,
     base: Stateful<Div>,
     drop_style: DropZoneStyle,
     active: bool,
@@ -221,10 +217,8 @@ pub struct DropZone<T: Clone + Debug + 'static> {
 
 impl<T: Clone + Debug + 'static> DropZone<T> {
     pub fn new(id: impl Into<ElementId>) -> Self {
-        let id = id.into();
         Self {
-            base: div().id(id.clone()),
-            id,
+            base: div().id(id.into()),
             drop_style: DropZoneStyle::Dashed,
             active: false,
             min_height: None,

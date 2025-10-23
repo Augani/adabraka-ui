@@ -173,17 +173,6 @@ impl ToggleGroup {
         self.on_multiple_change = Some(Rc::new(handler));
         self
     }
-
-    fn is_selected(&self, item_value: &SharedString) -> bool {
-        match self.variant {
-            ToggleGroupVariant::Single => {
-                self.value.as_ref().map_or(false, |v| v == item_value)
-            }
-            ToggleGroupVariant::Multiple => {
-                self.values.contains(item_value)
-            }
-        }
-    }
 }
 
 impl Default for ToggleGroup {

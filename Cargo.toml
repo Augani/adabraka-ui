@@ -1,10 +1,10 @@
 [package]
 name = "adabraka-ui"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 authors = ["Adabraka Team"]
 license = "MIT"
-description = "A comprehensive, professional UI component library for GPUI inspired by shadcn/ui. 70+ accessible components for building beautiful desktop applications."
+description = "A comprehensive, professional UI component library for GPUI inspired by shadcn/ui. 73+ accessible components for building beautiful desktop applications."
 repository = "https://github.com/augani/adabraka-ui"
 homepage = "https://github.com/augani/adabraka-ui"
 documentation = "https://docs.rs/adabraka-ui"

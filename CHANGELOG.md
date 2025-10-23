@@ -7,6 +7,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2025-10-23
+
+### Added - 🎉 MAJOR RELEASE: 100% Styled Trait Coverage!
+
+#### Icon System Enhancements
+- **Icon Phase 1**: Consolidated IconSource module across all components
+- **Icon Phase 2**: Added IconSize enum with named sizes (XSmall, Small, Medium, Large, Custom)
+- Added rotation support for Icon component using Transformation API
+- Improved icon path detection with separator-first logic
+- Added comprehensive unit tests for IconSource
+
+#### Component Enhancements
+- **Text Component**: Fixed italic and strikethrough rendering using HighlightStyle API
+- **Button Component**: Improved API with better ID parameter handling
+- **Checkbox Component**: Replaced emoji icons with customizable Icon components
+- **Calendar Component**: Added full internationalization (i18n) support with CalendarLocale
+  - Built-in locales: English, French, Spanish, German, Portuguese, Italian
+  - Support for custom locales
+
+#### Styled Trait Implementation - **ALL 54 COMPONENTS!**
+- **Components (14)**: Button, Input, Checkbox, IconButton, Label, Radio, Toggle, Textarea, Avatar, Progress, Slider, Separator, SearchInput, Select
+- **Display (6)**: Card, Badge, Accordion, Table, DataTable, Collapsible
+- **Navigation (9)**: Menu, Tabs, Toolbar, Sidebar, Breadcrumbs, NavigationMenu, StatusBar, Tree, AppMenu
+- **Overlays (11)**: Dialog, Sheet, AlertDialog, Toast, BottomSheet, CommandPalette, ContextMenu, HoverCard, Popover, PopoverMenu, Tooltip
+- **Advanced (9)**: TextField, Pagination, ToggleGroup, KeyboardShortcuts, Calendar, Resizable, Editor, Draggable, DropZone
+
+#### 54 New Styled Demos
+Created comprehensive styled demonstration examples for every component showing full customization capabilities
+
+### Changed
+- **BREAKING**: Icon component now returns AnyElement instead of Div for non-clickable icons (performance improvement)
+- All components now support full GPUI styling methods via Styled trait
+- User styles now properly override component defaults using `.refine()` pattern
+- Removed 3,274 inline comments for cleaner, production-ready code
+
+### Fixed
+- Fixed Editor component `.when()` pattern to `.map()` for style application
+- Fixed DropZone naming conflict by renaming internal `style` field to `drop_style`
+- Fixed Button API usage across 21 example files
+- Fixed various component compilation errors and import issues
+- Fixed sidebar_demo and menu_demo import paths
+
+### Improved
+- **shadcn Philosophy Alignment**: All components now follow "good defaults with complete user control"
+- Every component supports customization: `.bg()`, `.border_2()`, `.rounded_lg()`, `.p_4()`, `.shadow_lg()`, and hundreds more
+- Added SHADCN_DESIGN_PHILOSOPHY.md documenting design principles
+- Better developer experience with consistent Styled trait API across all components
+- Production-ready code quality with clean, documented implementations
+
 ## [0.1.1] - 2025-10-22
 
 ### Changed
@@ -56,5 +105,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Platform-aware UI elements
 - Responsive layout utilities (VStack, HStack, Grid)
 
-[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.0
+[0.1.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.0

@@ -62,6 +62,7 @@ pub struct Sheet {
     show_close_button: bool,
     close_on_backdrop_click: bool,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Sheet {
@@ -79,6 +80,7 @@ impl Sheet {
             show_close_button: true,
             close_on_backdrop_click: true,
             on_close: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -166,11 +168,18 @@ impl Sheet {
 pub fn init_sheet(_cx: &mut App) {
 }
 
+impl Styled for Sheet {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for Sheet {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let has_header = self.title.is_some() || self.description.is_some() || self.show_close_button;
         let sheet_size = self.get_sheet_size();
+        let user_style = self.style.clone();
 
         div()
             .track_focus(&self.focus_handle)
@@ -283,6 +292,11 @@ impl Render for Sheet {
                                 .overflow_hidden()
                                 .child(content)
                         )
+                    })
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
                     })
                     .when_some(self.footer.take(), |this: Div, footer| {
                         this.child(

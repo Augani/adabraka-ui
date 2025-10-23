@@ -1,12 +1,13 @@
 //! Card - Content container with header, body, and footer sections.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 
 pub struct Card {
     header: Option<AnyElement>,
     content: Option<AnyElement>,
     footer: Option<AnyElement>,
+    style: StyleRefinement,
 }
 
 impl Card {
@@ -15,6 +16,7 @@ impl Card {
             header: None,
             content: None,
             footer: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -34,11 +36,18 @@ impl Card {
     }
 }
 
+impl Styled for Card {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl IntoElement for Card {
     type Element = Div;
 
     fn into_element(self) -> Self::Element {
         let theme = use_theme();
+        let user_style = self.style;
 
         let shadow_sm = BoxShadow {
             offset: theme.tokens.shadow_sm.offset,
@@ -86,6 +95,10 @@ impl IntoElement for Card {
             );
         }
 
-        base
+        base.map(|this| {
+            let mut div = this;
+            div.style().refine(&user_style);
+            div
+        })
     }
 }

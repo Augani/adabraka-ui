@@ -1,6 +1,6 @@
 //! Tab navigation component with multiple visual variants.
 
-use gpui::{prelude::*, *};
+use gpui::{prelude::FluentBuilder as _, *};
 use std::sync::Arc;
 use crate::theme::use_theme;
 use crate::components::icon::Icon;
@@ -92,6 +92,7 @@ pub struct Tabs<T: Clone + PartialEq + 'static> {
     variant: TabVariant,
     on_change: Option<Arc<dyn Fn(&usize, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_close: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + PartialEq + 'static> Tabs<T> {
@@ -103,6 +104,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
             variant: TabVariant::default(),
             on_change: None,
             on_close: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -160,13 +162,14 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
             .map(|tab| &tab.id)
     }
 
-
     fn render_tab_button(
-        &self,
+        variant: TabVariant,
         tab: &TabItem<T>,
         index: usize,
         is_active: bool,
         theme: &crate::theme::Theme,
+        on_change: Option<Arc<dyn Fn(&usize, &mut Window, &mut App) + Send + Sync + 'static>>,
+        on_close: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
     ) -> impl IntoElement {
         let base = div()
             .flex()
@@ -182,7 +185,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                 CursorStyle::PointingHand
             });
 
-        let styled = match self.variant {
+        let styled = match variant {
             TabVariant::Underline => base
                 .text_color(if tab.disabled {
                     theme.tokens.muted_foreground
@@ -258,7 +261,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                 div.child(
                     Icon::new(icon.clone())
                         .size(px(14.0))
-                        .color(if is_active && self.variant == TabVariant::Pills {
+                        .color(if is_active && variant == TabVariant::Pills {
                             theme.tokens.primary_foreground
                         } else if tab.disabled {
                             theme.tokens.muted_foreground
@@ -276,7 +279,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                     .px(px(6.0))
                     .py(px(2.0))
                     .rounded(px(10.0))
-                    .bg(if is_active && self.variant == TabVariant::Pills {
+                    .bg(if is_active && variant == TabVariant::Pills {
                         theme.tokens.primary_foreground.opacity(0.2)
                     } else {
                         theme.tokens.muted
@@ -284,7 +287,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                     .text_size(px(11.0))
                     .font_family(theme.tokens.font_family.clone())
                     .font_weight(FontWeight::SEMIBOLD)
-                    .text_color(if is_active && self.variant == TabVariant::Pills {
+                    .text_color(if is_active && variant == TabVariant::Pills {
                         theme.tokens.primary_foreground
                     } else {
                         theme.tokens.muted_foreground
@@ -301,7 +304,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                     .rounded(px(4.0))
                     .cursor(CursorStyle::PointingHand)
                     .hover(|mut style| {
-                        style.background = Some(if is_active && self.variant == TabVariant::Pills {
+                        style.background = Some(if is_active && variant == TabVariant::Pills {
                             theme.tokens.primary_foreground.opacity(0.2).into()
                         } else {
                             theme.tokens.muted.into()
@@ -309,7 +312,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                         style
                     })
                     .on_mouse_down(MouseButton::Left, {
-                        let on_close = self.on_close.clone();
+                        let on_close = on_close.clone();
                         let tab_id = tab.id.clone();
                         move |_, window, cx| {
                             if let Some(on_close) = on_close.clone() {
@@ -320,7 +323,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                     .child(
                         Icon::new("x")
                             .size(px(12.0))
-                            .color(if is_active && self.variant == TabVariant::Pills {
+                            .color(if is_active && variant == TabVariant::Pills {
                                 theme.tokens.primary_foreground
                             } else {
                                 theme.tokens.muted_foreground
@@ -331,7 +334,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
 
         with_close.when(!tab.disabled, |this| {
             this.on_mouse_down(MouseButton::Left, {
-                let on_change = self.on_change.clone();
+                let on_change = on_change.clone();
                 move |_, window, cx| {
                     if let Some(on_change) = on_change.clone() {
                         on_change(&index, window, cx);
@@ -342,9 +345,16 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
     }
 }
 
+impl<T: Clone + PartialEq + 'static> Styled for Tabs<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + PartialEq + 'static> RenderOnce for Tabs<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         if self.tabs.is_empty() {
             return div().child("No tabs");
@@ -364,7 +374,15 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Tabs<T> {
 
         for (index, tab) in self.tabs.iter().enumerate() {
             let is_active = Some(index) == self.selected_index;
-            tab_list = tab_list.child(self.render_tab_button(tab, index, is_active, &theme));
+            tab_list = tab_list.child(Self::render_tab_button(
+                self.variant,
+                tab,
+                index,
+                is_active,
+                &theme,
+                self.on_change.clone(),
+                self.on_close.clone(),
+            ));
         }
 
         let tab_list = tab_list;
@@ -391,7 +409,11 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Tabs<T> {
             );
         }
 
-        root
+        root.map(|this| {
+            let mut div = this;
+            div.style().refine(&user_style);
+            div
+        })
     }
 }
 

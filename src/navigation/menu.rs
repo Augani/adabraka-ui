@@ -119,6 +119,7 @@ pub struct Menu {
     items: Vec<MenuItem>,
     min_width: Pixels,
     max_height: Option<Pixels>,
+    style: StyleRefinement,
 }
 
 impl Menu {
@@ -127,6 +128,7 @@ impl Menu {
             items,
             min_width: px(200.0),
             max_height: Some(px(400.0)),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -141,9 +143,16 @@ impl Menu {
     }
 }
 
+impl Styled for Menu {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Menu {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         div()
             .min_w(self.min_width)
@@ -159,6 +168,11 @@ impl RenderOnce for Menu {
             .children(self.items.into_iter().map(|item| {
                 render_menu_item(item)
             }))
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 

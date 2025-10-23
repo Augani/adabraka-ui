@@ -1,6 +1,6 @@
 //! Table - Simple table component for structured data display.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 
 #[derive(Clone)]
@@ -46,6 +46,7 @@ impl TableRow {
 pub struct Table {
     columns: Vec<TableColumn>,
     rows: Vec<TableRow>,
+    style: StyleRefinement,
 }
 
 impl Table {
@@ -53,6 +54,7 @@ impl Table {
         Self {
             columns: Vec::new(),
             rows: Vec::new(),
+            style: StyleRefinement::default(),
         }
     }
 
@@ -67,11 +69,18 @@ impl Table {
     }
 }
 
+impl Styled for Table {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl IntoElement for Table {
     type Element = Div;
 
     fn into_element(self) -> Self::Element {
         let theme = use_theme();
+        let user_style = self.style;
 
         let header_cells = self.columns.iter().map(|column| {
             let width = column.width.unwrap_or(px(120.0));
@@ -133,5 +142,10 @@ impl IntoElement for Table {
             .overflow_hidden()
             .child(header)
             .children(row_elements)
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

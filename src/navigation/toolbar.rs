@@ -142,6 +142,7 @@ impl Default for ToolbarGroup {
 pub struct Toolbar {
     groups: Vec<ToolbarGroup>,
     size: ToolbarSize,
+    style: StyleRefinement,
 }
 
 impl Toolbar {
@@ -149,6 +150,7 @@ impl Toolbar {
         Self {
             groups: Vec::new(),
             size: ToolbarSize::Md,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -174,11 +176,18 @@ impl Default for Toolbar {
     }
 }
 
+impl Styled for Toolbar {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for Toolbar {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let button_size = self.size.button_size();
         let icon_size = self.size.icon_size();
+        let user_style = self.style.clone();
 
         div()
             .flex()
@@ -224,6 +233,11 @@ impl Render for Toolbar {
                         )
                     })
             }))
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 

@@ -49,6 +49,7 @@ pub struct Dialog {
     close_on_escape: bool,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     focused: bool,
+    style: StyleRefinement,
 }
 
 impl Dialog {
@@ -66,6 +67,7 @@ impl Dialog {
             close_on_escape: true,
             on_close: None,
             focused: false,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -136,6 +138,12 @@ impl Dialog {
     }
 }
 
+impl Styled for Dialog {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl Render for Dialog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
@@ -143,6 +151,7 @@ impl Render for Dialog {
         let has_header = has_slot_header || self.title.is_some() || self.description.is_some() || self.show_close_button;
 
         let dialog_entity = cx.entity().clone();
+        let user_style = self.style.clone();
 
         if !self.focused {
             window.focus(&self.focus_handle);
@@ -262,6 +271,11 @@ impl Render for Dialog {
                                 .flex_1()
                                 .children(children)
                         )
+                    })
+                    .map(|this| {
+                        let mut div = this;
+                        div.style().refine(&user_style);
+                        div
                     })
                     .when_some(self.footer.take(), |this, footer| {
                         this.child(

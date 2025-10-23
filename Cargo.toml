@@ -75,3 +75,47 @@ path = "examples/text_field_styled_demo.rs"
 name = "confirm_dialog_styled_demo"
 path = "examples/confirm_dialog_styled_demo.rs"
 
+[[example]]
+name = "card_styled_demo"
+path = "examples/card_styled_demo.rs"
+
+[[example]]
+name = "tabs_styled_demo"
+path = "examples/tabs_styled_demo.rs"
+
+[[example]]
+name = "table_styled_demo"
+path = "examples/table_styled_demo.rs"
+
+[[example]]
+name = "breadcrumbs_styled_demo"
+path = "examples/breadcrumbs_styled_demo.rs"
+
+[[example]]
+name = "badge_styled_demo"
+path = "examples/badge_styled_demo.rs"
+
+[[example]]
+name = "menu_styled_demo"
+path = "examples/menu_styled_demo.rs"
+
+[[example]]
+name = "accordion_styled_demo"
+path = "examples/accordion_styled_demo.rs"
+
+[[example]]
+name = "toolbar_styled_demo"
+path = "examples/toolbar_styled_demo.rs"
+
+[[example]]
+name = "sidebar_styled_demo"
+path = "examples/sidebar_styled_demo.rs"
+
+[[example]]
+name = "dialog_styled_demo"
+path = "examples/dialog_styled_demo.rs"
+
+[[example]]
+name = "sheet_styled_demo"
+path = "examples/sheet_styled_demo.rs"
+

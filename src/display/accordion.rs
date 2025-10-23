@@ -17,6 +17,7 @@ pub struct Accordion {
     disabled: bool,
     open_indices: Vec<usize>,
     on_change: Option<Rc<dyn Fn(&[usize], &mut Window, &mut App)>>,
+    style: StyleRefinement,
 }
 
 impl Accordion {
@@ -29,6 +30,7 @@ impl Accordion {
             disabled: false,
             open_indices: Vec::new(),
             on_change: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -68,9 +70,16 @@ impl Accordion {
     }
 }
 
+impl Styled for Accordion {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl RenderOnce for Accordion {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let _theme = use_theme();
+        let user_style = self.style;
         let open_indices = Rc::new(std::cell::RefCell::new(self.open_indices));
         let multiple = self.multiple;
         let on_change = self.on_change;
@@ -108,6 +117,11 @@ impl RenderOnce for Accordion {
                         }
                     })
             }))
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }
 

@@ -1,6 +1,6 @@
 //! Breadcrumb navigation component for hierarchical navigation.
 
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
@@ -16,6 +16,7 @@ pub struct BreadcrumbItem<T> {
 pub struct Breadcrumbs<T: Clone + 'static> {
     items: Vec<BreadcrumbItem<T>>,
     on_click: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + 'static> Breadcrumbs<T> {
@@ -23,6 +24,7 @@ impl<T: Clone + 'static> Breadcrumbs<T> {
         Self {
             items: Vec::new(),
             on_click: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -37,9 +39,16 @@ impl<T: Clone + 'static> Breadcrumbs<T> {
     }
 }
 
+impl<T: Clone + 'static> Styled for Breadcrumbs<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + 'static> RenderOnce for Breadcrumbs<T> {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
+        let user_style = self.style;
 
         if self.items.is_empty() {
             return div().into();
@@ -135,5 +144,10 @@ impl<T: Clone + 'static> RenderOnce for Breadcrumbs<T> {
             .flex_wrap()
             .gap(px(2.0))
             .children(elements)
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
     }
 }

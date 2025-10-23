@@ -1,6 +1,6 @@
 //! Sidebar navigation component with collapsible functionality.
 
-use gpui::{prelude::*, *};
+use gpui::{prelude::FluentBuilder as _, prelude::*, *};
 use std::sync::Arc;
 use crate::theme::use_theme;
 use crate::components::icon::Icon;
@@ -90,6 +90,7 @@ pub struct Sidebar<T: Clone + PartialEq + 'static> {
     on_toggle: Option<Arc<dyn Fn(bool, &mut Window, &mut App) + Send + Sync + 'static>>,
     focus_handle: FocusHandle,
     focused_index: Option<usize>,
+    style: StyleRefinement,
 }
 
 impl<T: Clone + PartialEq + 'static> Sidebar<T> {
@@ -107,6 +108,7 @@ impl<T: Clone + PartialEq + 'static> Sidebar<T> {
             on_toggle: None,
             focus_handle: cx.focus_handle(),
             focused_index: None,
+            style: StyleRefinement::default(),
         }
     }
 
@@ -222,6 +224,12 @@ impl<T: Clone + PartialEq + 'static> Sidebar<T> {
     }
 }
 
+impl<T: Clone + PartialEq + 'static> Styled for Sidebar<T> {
+    fn style(&mut self) -> &mut StyleRefinement {
+        &mut self.style
+    }
+}
+
 impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
@@ -230,6 +238,45 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
 
         let on_toggle_for_button = self.on_toggle.clone();
         let on_toggle_for_keyboard = self.on_toggle.clone();
+
+        // Extract all data we need before moving self.style
+        let variant = self.variant;
+        let position = self.position;
+        let show_toggle_button = self.show_toggle_button;
+        let is_expanded = self.is_expanded;
+        let selected_id = self.selected_id.clone();
+        let focused_index = self.focused_index;
+
+        // Render all items before moving self
+        let mut item_elements = Vec::new();
+        for (index, item) in self.items.iter().enumerate() {
+            if item.separator {
+                item_elements.push(
+                    div()
+                        .w_full()
+                        .h(px(1.0))
+                        .bg(theme.tokens.border.opacity(0.5))
+                        .my(px(8.0))
+                        .into_any_element()
+                );
+            } else {
+                let is_selected = matches!(selected_id.as_ref(), Some(id) if id == &item.id);
+                let is_focused = Some(index) == focused_index;
+
+                let item_element = self.render_sidebar_item(
+                    item,
+                    index,
+                    is_selected,
+                    is_focused,
+                    is_expanded,
+                    &theme,
+                    cx,
+                );
+                item_elements.push(item_element);
+            }
+        }
+
+        let user_style = self.style;
 
         let mut sidebar = div()
             .flex()
@@ -240,16 +287,16 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
             .border_color(theme.tokens.border)
             .w(current_width);
 
-        sidebar = match self.variant {
+        sidebar = match variant {
             SidebarVariant::Overlay => sidebar
                 .absolute()
                 .shadow_lg()
-                .when(self.position == SidebarPosition::Right, |s| s.right_0())
-                .when(self.position == SidebarPosition::Left, |s| s.left_0()),
+                .when(position == SidebarPosition::Right, |s| s.right_0())
+                .when(position == SidebarPosition::Left, |s| s.left_0()),
             _ => sidebar,
         };
 
-        let header = if self.show_toggle_button && is_collapsible {
+        let header = if show_toggle_button && is_collapsible {
             let toggle_button = div()
                 .flex()
                 .items_center()
@@ -260,11 +307,11 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
                 .hover(|style| style.bg(theme.tokens.muted.opacity(0.5)))
                 .on_mouse_down(MouseButton::Left, move |_, window, cx| {
                     if let Some(on_toggle) = on_toggle_for_button.clone() {
-                        on_toggle(!self.is_expanded, window, cx);
+                        on_toggle(!is_expanded, window, cx);
                     }
                 })
                 .child(
-                    Icon::new(if self.is_expanded { "chevron-left" } else { "chevron-right" })
+                    Icon::new(if is_expanded { "chevron-left" } else { "chevron-right" })
                         .size(px(16.0))
                         .color(theme.tokens.muted_foreground)
                 );
@@ -282,44 +329,17 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
             .px(px(8.0))
             .py(px(16.0));
 
-        let mut item_elements = Vec::new();
-        for (index, item) in self.items.iter().enumerate() {
-            if item.separator {
-                item_elements.push(
-                    div()
-                        .w_full()
-                        .h(px(1.0))
-                        .bg(theme.tokens.border.opacity(0.5))
-                        .my(px(8.0))
-                        .into_any_element()
-                );
-            } else {
-                let is_selected = matches!(self.selected_id.as_ref(), Some(id) if id == &item.id);
-                let is_focused = Some(index) == self.focused_index;
-                let is_expanded = self.is_expanded;
-
-                let item_element = self.render_sidebar_item(
-                    item,
-                    index,
-                    is_selected,
-                    is_focused,
-                    is_expanded,
-                    &theme,
-                    cx,
-                );
-
-                item_elements.push(item_element);
-            }
-        }
-
         content = content.children(item_elements);
 
+        // Extract focus_handle before using self
+        let focus_handle = self.focus_handle.clone();
+
         sidebar = sidebar
-            .track_focus(&self.focus_handle)
+            .track_focus(&focus_handle)
             .on_key_down(move |event: &KeyDownEvent, window, cx| {
                 match event.keystroke.key.as_str() {
                     "escape" => {
-                        if is_collapsible && self.is_expanded {
+                        if is_collapsible && is_expanded {
                             if let Some(on_toggle) = on_toggle_for_keyboard.clone() {
                                 on_toggle(false, window, cx);
                             }
@@ -327,6 +347,11 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
                     }
                     _ => {}
                 }
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
             });
 
         sidebar.children(vec![

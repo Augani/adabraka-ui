@@ -15,10 +15,6 @@ use gpui::{
 use smallvec::SmallVec;
 use crate::util::{AxisExt, PixelsExt};
 
-// -------------------------------------------------------------------------------------------------
-// Uniform (fixed-extent) Virtual List
-// -------------------------------------------------------------------------------------------------
-
 pub struct UniformVirtualList {
     id: ElementId,
     axis: Axis,
@@ -119,7 +115,6 @@ impl UniformVirtualList {
                 }
             }
             gpui::ScrollStrategy::Center => {
-                // Center the item within current viewport
                 if self.axis.is_vertical() {
                     let viewport: f32 = (-self.scroll_handle.offset().y).into();
                     let _ = viewport; // not available: need viewport size at call site; fall back to Top
@@ -129,7 +124,6 @@ impl UniformVirtualList {
                 }
             }
             _ => {
-                // Default to top alignment for simplicity
                 if self.axis.is_vertical() {
                     offset.y = -target_origin;
                 } else {
@@ -225,19 +219,16 @@ impl Element for UniformVirtualList {
         let border = style.border_widths.to_pixels(window.rem_size());
         let padding = style.padding.to_pixels(bounds.size.into(), window.rem_size());
 
-        // Compute content bounds inside border+padding
         let content_bounds = Bounds::from_corners(
             bounds.origin + point(border.left + padding.left, border.top + padding.top),
             bounds.bottom_right()
                 - point(border.right + padding.right, border.bottom + padding.bottom),
         );
 
-        // Visible range calculation (uniform extent)
         let offset = self.scroll_handle.offset();
         let viewport_len = content_bounds.size.along(self.axis);
         let extent = self.item_extent;
 
-        // Negative offset indicates scrolled forward
         let base = -offset.along(self.axis);
         let first = if extent.as_f32() > 0.0 {
             (base.as_f32() / extent.as_f32()).floor().max(0.0) as usize
@@ -272,7 +263,6 @@ impl Element for UniformVirtualList {
             }
         }
 
-        // Build items
         let items = (self.renderer)(visible.clone(), window, cx);
 
         self.base.interactivity().prepaint(
@@ -340,10 +330,6 @@ impl Element for UniformVirtualList {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// Variable-size Virtual List (chunked prefix sums)
-// -------------------------------------------------------------------------------------------------
-
 pub trait ItemExtentProvider {
     fn extent(&self, index: usize) -> Pixels;
 }
@@ -353,11 +339,8 @@ const CHUNK_SIZE: usize = 1024;
 struct ChunkedExtents<P: ItemExtentProvider> {
     provider: P,
     item_count: usize,
-    // Per-chunk total extent
     chunk_totals: Vec<Pixels>,
-    // Cumulative offset for each chunk (prefix of chunk_totals)
     chunk_offsets: Vec<Pixels>,
-    // Optional per-chunk intra-prefix caches: index -> origin within chunk
     intra_prefix: HashMap<usize, Rc<Vec<Pixels>>>,
 }
 
@@ -385,7 +368,6 @@ impl<P: ItemExtentProvider> ChunkedExtents<P> {
             }
             self.chunk_totals[c] = px(sum);
         }
-        // Build chunk_offsets prefix
         let mut accum = 0.0;
         self.chunk_offsets[0] = px(0.0);
         for c in 0..chunk_count {
@@ -416,7 +398,6 @@ impl<P: ItemExtentProvider> ChunkedExtents<P> {
 
     fn find_index_for_offset(&mut self, offset: Pixels) -> usize {
         if self.item_count == 0 { return 0; }
-        // Binary search chunk_offsets
         let target = offset.as_f32();
         let mut lo = 0usize;
         let mut hi = self.chunk_offsets.len() - 1;
@@ -432,7 +413,6 @@ impl<P: ItemExtentProvider> ChunkedExtents<P> {
         let chunk_base = self.chunk_offsets[chunk].as_f32();
         let within = target - chunk_base;
         let intra = self.ensure_intra_prefix(chunk);
-        // Binary search within chunk for first origin > within
         let mut lo_i = 0usize;
         let mut hi_i = intra.len();
         while lo_i < hi_i {
@@ -604,22 +584,18 @@ impl<P: ItemExtentProvider + 'static> Element for VariableVirtualList<P> {
 
         let total = self.engine.total_extent();
         let min_scroll_offset = viewport_len - total;
-        // If content is smaller than viewport, reset offset
         if min_scroll_offset.as_f32() >= 0.0 { offset.x = px(0.); offset.y = px(0.); }
 
-        // Clamp scrolling within bounds
         if self.axis.is_vertical() {
             if offset.y < min_scroll_offset { offset.y = min_scroll_offset; }
         } else if offset.x < min_scroll_offset { offset.x = min_scroll_offset; }
 
-        // Compute visible range by pixel offsets
         let start_px = -offset.along(self.axis);
         let end_px = start_px + viewport_len;
 
         let mut start_ix = self.engine.find_index_for_offset(start_px.max(px(0.)));
         start_ix = start_ix.saturating_sub(self.overscan);
 
-        // For end index, add overscan after computing
         let mut end_ix = self.engine.find_index_for_offset(end_px.max(px(0.)));
         end_ix = (end_ix + 1 + self.overscan).min(self.engine.item_count);
 
@@ -633,7 +609,6 @@ impl<P: ItemExtentProvider + 'static> Element for VariableVirtualList<P> {
             if progress < *threshold { *was_fired = false; }
         }
 
-        // Build items and prepaint
         let items = (self.renderer)(visible.clone(), window, cx);
 
         let content_size = if self.axis.is_horizontal() {
@@ -657,7 +632,6 @@ impl<P: ItemExtentProvider + 'static> Element for VariableVirtualList<P> {
                         Axis::Vertical => content_bounds.origin + point(offset.x, origin_along + offset.y),
                     };
 
-                    // We do not know the cross extent per item; layout with max available along axis slice
                     let available = match self.axis {
                         Axis::Horizontal => size(AvailableSpace::Definite(px(CHUNK_SIZE as f32)), AvailableSpace::Definite(content_bounds.size.height)),
                         Axis::Vertical => size(AvailableSpace::Definite(content_bounds.size.width), AvailableSpace::Definite(px(CHUNK_SIZE as f32))),
@@ -696,10 +670,6 @@ impl<P: ItemExtentProvider + 'static> Element for VariableVirtualList<P> {
     }
 }
 
-// -------------------------------------------------------------------------------------------------
-// Sugar helpers
-// -------------------------------------------------------------------------------------------------
-
 pub fn vlist_uniform<R: IntoElement + 'static>(
     id: impl Into<ElementId>,
     item_count: usize,
@@ -735,10 +705,6 @@ pub fn hlist_variable<R: IntoElement + 'static, P: ItemExtentProvider + 'static>
 ) -> VariableVirtualList<P> {
     VariableVirtualList::new(id, Axis::Horizontal, item_count, provider, renderer)
 }
-
-// -------------------------------------------------------------------------------------------------
-// View-integrated helpers (allow building items with &mut Context<V>)
-// -------------------------------------------------------------------------------------------------
 
 pub fn vlist_uniform_view<R, V>(
     view: Entity<V>,

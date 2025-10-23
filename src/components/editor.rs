@@ -28,7 +28,6 @@ use once_cell::sync::Lazy;
 use std::cmp::min;
 use std::ops::Range;
 
-// Initialize tree-sitter SQL parser once at startup
 static SQL_PARSER: Lazy<std::sync::Mutex<Parser>> = Lazy::new(|| {
     let mut parser = Parser::new();
     parser
@@ -37,39 +36,28 @@ static SQL_PARSER: Lazy<std::sync::Mutex<Parser>> = Lazy::new(|| {
     std::sync::Mutex::new(parser)
 });
 
-// Helper function to traverse tree-sitter nodes and collect highlights
 fn collect_highlights(node: Node, highlights: &mut Vec<(usize, usize, String)>) {
     let start = node.start_byte();
     let end = node.end_byte();
     let kind = node.kind();
 
-    // Map node kinds to syntax categories
     // tree-sitter-sequel uses these specific node kinds
     let syntax_category = if kind.starts_with("keyword_") {
-        // All SQL keywords start with "keyword_"
         Some("keyword")
     } else {
         match kind {
-            // String literals (appears for quoted strings like '2024-01-01')
             "literal" => Some("literal"),
-
-            // Comments
             "comment" | "line_comment" | "block_comment" | "marginal_comment" => Some("comment"),
-
-            // Functions (COUNT, SUM, etc.)
             "invocation" => Some("function"),
-
             // Don't highlight structural nodes, only leaf nodes
             _ => None,
         }
     };
 
-    // Add this node's highlight if it has a category
     if let Some(category) = syntax_category {
         highlights.push((start, end, category.to_string()));
     }
 
-    // Recursively process children
     let mut cursor = node.walk();
     for child in node.children(&mut cursor) {
         collect_highlights(child, highlights);
@@ -79,31 +67,18 @@ fn collect_highlights(node: Node, highlights: &mut Vec<(usize, usize, String)>) 
 /// Get color for a specific syntax token type using standard SQL editor colors
 fn get_highlight_color(capture_name: &str, _theme: &crate::theme::Theme) -> Hsla {
     match capture_name {
-        // SQL Keywords - Blue (like in most SQL editors)
-        "keyword" => hsla(0.58, 0.85, 0.65, 1.0),                 // Bright blue for SELECT, FROM, WHERE, etc.
-
-        // String literals - Orange/Red (standard for strings)
-        "literal" => hsla(0.08, 0.90, 0.65, 1.0),                 // Orange for 'strings' and numbers
-
-        // Comments - Green (muted, like in most editors)
-        "comment" => hsla(0.33, 0.50, 0.55, 1.0),                 // Muted green for comments
-
-        // Functions - Purple/Magenta (standard for function calls)
-        "function" => hsla(0.83, 0.70, 0.70, 1.0),                // Purple for COUNT(), SUM(), etc.
-
-        // Identifiers - Light gray/white (default text color)
-        "identifier" => hsla(0.0, 0.0, 0.9, 1.0),                 // Light gray for column/table names
-
-        // Default text
-        _ => hsla(0.0, 0.0, 0.9, 1.0),                            // Light gray default
+        "keyword" => hsla(0.58, 0.85, 0.65, 1.0),
+        "literal" => hsla(0.08, 0.90, 0.65, 1.0),
+        "comment" => hsla(0.33, 0.50, 0.55, 1.0),
+        "function" => hsla(0.83, 0.70, 0.70, 1.0),
+        "identifier" => hsla(0.0, 0.0, 0.9, 1.0),
+        _ => hsla(0.0, 0.0, 0.9, 1.0),
     }
 }
 
-// Actions for editor keyboard shortcuts
 actions!(
     editor,
     [
-        // Movement
         MoveUp,
         MoveDown,
         MoveLeft,
@@ -114,7 +89,6 @@ actions!(
         MoveToDocEnd,
         PageUp,
         PageDown,
-        // Selection
         SelectUp,
         SelectDown,
         SelectLeft,
@@ -122,12 +96,10 @@ actions!(
         SelectToLineStart,
         SelectToLineEnd,
         SelectAll,
-        // Editing
         Backspace,
         Delete,
         Enter,
         Tab,
-        // Clipboard
         Copy,
         Cut,
         Paste,
@@ -137,7 +109,6 @@ actions!(
 /// Initialize editor key bindings
 pub fn init(cx: &mut App) {
     cx.bind_keys([
-        // Movement
         KeyBinding::new("up", MoveUp, Some("Editor")),
         KeyBinding::new("down", MoveDown, Some("Editor")),
         KeyBinding::new("left", MoveLeft, Some("Editor")),
@@ -154,7 +125,6 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("ctrl-end", MoveToDocEnd, Some("Editor")),
         KeyBinding::new("pageup", PageUp, Some("Editor")),
         KeyBinding::new("pagedown", PageDown, Some("Editor")),
-        // Selection
         KeyBinding::new("shift-up", SelectUp, Some("Editor")),
         KeyBinding::new("shift-down", SelectDown, Some("Editor")),
         KeyBinding::new("shift-left", SelectLeft, Some("Editor")),
@@ -165,12 +135,10 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-a", SelectAll, Some("Editor")),
         #[cfg(not(target_os = "macos"))]
         KeyBinding::new("ctrl-a", SelectAll, Some("Editor")),
-        // Editing
         KeyBinding::new("backspace", Backspace, Some("Editor")),
         KeyBinding::new("delete", Delete, Some("Editor")),
         KeyBinding::new("enter", Enter, Some("Editor")),
         KeyBinding::new("tab", Tab, Some("Editor")),
-        // Clipboard
         #[cfg(target_os = "macos")]
         KeyBinding::new("cmd-c", Copy, Some("Editor")),
         #[cfg(not(target_os = "macos"))]
@@ -236,20 +204,17 @@ pub struct EditorState {
     cursor: Position,
     selection: Option<Selection>,
     selection_reversed: bool,
-    scroll_offset: usize, // First visible line
-    marked_range: Option<Range<usize>>, // For IME composition
+    scroll_offset: usize,
+    marked_range: Option<Range<usize>>,
 
-    // Rendering cache
     last_bounds: Option<Bounds<Pixels>>,
     line_layouts: Vec<Option<ShapedLine>>,
     syntax_tree: Option<Tree>,
 
-    // Configuration
     pub show_line_numbers: bool,
     tab_size: usize,
     read_only: bool,
 
-    // Mouse interaction
     is_selecting: bool,
     last_click_time: Option<std::time::Instant>,
 
@@ -314,7 +279,7 @@ impl EditorState {
     fn position_to_offset(&self, pos: Position) -> usize {
         let mut offset = 0;
         for line_idx in 0..pos.line {
-            offset += self.lines[line_idx].len() + 1; // +1 for newline
+            offset += self.lines[line_idx].len() + 1;
         }
         offset + pos.col
     }
@@ -322,7 +287,7 @@ impl EditorState {
     /// Convert flat byte offset to position
     fn offset_to_position(&self, mut offset: usize) -> Position {
         for (line_idx, line) in self.lines.iter().enumerate() {
-            let line_len = line.len() + 1; // +1 for newline
+            let line_len = line.len() + 1;
             if offset <= line_len {
                 return Position::new(line_idx, min(offset, line.len()));
             }
@@ -390,7 +355,6 @@ impl EditorState {
         self.cursor.col = min(self.cursor.col, line_len);
     }
 
-    // Movement methods
     pub fn move_up(&mut self, _: &MoveUp, _: &mut Window, cx: &mut Context<Self>) {
         if self.cursor.line > 0 {
             self.cursor.line -= 1;
@@ -473,7 +437,6 @@ impl EditorState {
         cx.notify();
     }
 
-    // Selection methods
     fn start_selection_if_needed(&mut self) {
         if self.selection.is_none() {
             self.selection = Some(Selection::new(self.cursor, self.cursor));
@@ -562,7 +525,6 @@ impl EditorState {
         cx.notify();
     }
 
-    // Editing methods
     pub fn backspace(&mut self, _: &Backspace, _: &mut Window, cx: &mut Context<Self>) {
         if self.read_only {
             return;
@@ -640,7 +602,6 @@ impl EditorState {
         self.insert_text(&spaces, cx);
     }
 
-    // Clipboard methods
     pub fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
         if let Some(selection) = &self.selection {
             let text = self.get_selection_text(selection);
@@ -675,7 +636,6 @@ impl EditorState {
         }
     }
 
-    // Helper methods
     fn insert_text(&mut self, text: &str, cx: &mut Context<Self>) {
         if text.contains('\n') {
             let lines: Vec<&str> = text.split('\n').collect();
@@ -708,32 +668,25 @@ impl EditorState {
 
     /// Ensure the caret is visible after creating a new line by scrolling minimally.
     fn ensure_cursor_visible_after_newline(&mut self, cx: &mut Context<Self>) {
-        // Derive layout metrics used in paint/layout
         let line_height = px(20.0);
         let padding_top = px(12.0);
 
-        // Viewport information from the tracked scroll container
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
 
-        // Current scroll offset (negative when scrolled down)
         let offset = self.scroll_handle.offset();
         let mut new_offset_y = offset.y;
 
-        // Y position of the caret within the scrollable content
         let cursor_y = padding_top + line_height * (self.cursor.line as f32);
 
-        // Current visible range in content coordinates
         let current_top = -offset.y;
         let current_bottom = current_top + viewport_height;
 
-        // If the caret moved below the viewport, scroll just enough to bring it into view
         if cursor_y + line_height > current_bottom {
             let target_top = cursor_y + line_height - viewport_height;
             new_offset_y = -target_top;
         }
 
-        // Clamp to valid scroll range
         let max_offset = self.scroll_handle.max_offset().height;
         if new_offset_y < -max_offset { new_offset_y = -max_offset; }
         if new_offset_y > px(0.0) { new_offset_y = px(0.0); }
@@ -746,36 +699,28 @@ impl EditorState {
 
     /// Ensure the cursor stays visible during mouse selection by scrolling if needed.
     fn ensure_cursor_visible_during_selection(&mut self, cx: &mut Context<Self>) {
-        // Derive layout metrics used in paint/layout
         let line_height = px(20.0);
         let padding_top = px(12.0);
 
-        // Viewport information from the tracked scroll container
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
 
-        // Current scroll offset (negative when scrolled down)
         let offset = self.scroll_handle.offset();
         let mut new_offset_y = offset.y;
 
-        // Y position of the cursor within the scrollable content
         let cursor_y = padding_top + line_height * (self.cursor.line as f32);
 
-        // Current visible range in content coordinates
         let current_top = -offset.y;
         let current_bottom = current_top + viewport_height;
 
-        // Check if cursor is above the visible area (needs to scroll up)
         if cursor_y < current_top {
             new_offset_y = -cursor_y;
         }
-        // Check if cursor is below the visible area (needs to scroll down)
         else if cursor_y + line_height > current_bottom {
             let target_top = cursor_y + line_height - viewport_height;
             new_offset_y = -target_top;
         }
 
-        // Clamp to valid scroll range
         let max_offset = self.scroll_handle.max_offset().height;
         if new_offset_y < -max_offset { new_offset_y = -max_offset; }
         if new_offset_y > px(0.0) { new_offset_y = px(0.0); }
@@ -825,7 +770,6 @@ impl EditorState {
         }
     }
 
-    // Mouse interaction
     fn position_for_mouse(&self, mouse_pos: Point<Pixels>, bounds: Bounds<Pixels>, gutter_width: Pixels, line_height: Pixels, _font_size: Pixels, _window: &Window) -> Position {
         let padding_top = px(12.0);
         let relative_y = mouse_pos.y - bounds.top() - padding_top;
@@ -1162,19 +1106,16 @@ impl Element for EditorElement {
 
         let padding_top = px(12.0);
 
-        // Register input handler
         window.handle_input(
             &focus_handle,
             ElementInputHandler::new(bounds, self.state.clone()),
             cx,
         );
 
-        // Store bounds
         self.state.update(cx, |state, _| {
             state.last_bounds = Some(bounds);
         });
 
-        // Paint background
         window.paint_quad(fill(bounds, theme.tokens.card));
 
         let (lines, show_line_numbers, cursor, selection, syntax_tree) = {
@@ -1193,20 +1134,17 @@ impl Element for EditorElement {
         let gutter_width = prepaint.gutter_width;
         let font_size = px(14.0);
 
-        // Get syntax highlights using tree-sitter node traversal
         let mut highlights: Vec<(usize, usize, String)> = Vec::new();
         if let Some(tree) = syntax_tree {
             let root = tree.root_node();
             collect_highlights(root, &mut highlights);
         }
 
-        // Build shaped layouts for hit testing
         let mut shaped_layouts: Vec<Option<ShapedLine>> = Vec::with_capacity(lines.len());
 
         for (idx, line) in lines.iter().enumerate() {
             let y = bounds.top() + padding_top + line_height * idx as f32;
 
-            // Paint line number
             if show_line_numbers {
                 let line_num_text = format!("{:>3}", idx + 1);
                 let line_num_run = TextRun {
@@ -1233,7 +1171,6 @@ impl Element for EditorElement {
                 );
             }
 
-            // Create plain shaped layout for hit-testing
             if line.is_empty() {
                 shaped_layouts.push(None);
             } else {
@@ -1254,13 +1191,10 @@ impl Element for EditorElement {
                 shaped_layouts.push(Some(shaped_plain));
             }
 
-            // Paint line text with tree-sitter highlighting
             if !line.is_empty() {
-                // Calculate line byte offset in document
                 let line_start_offset: usize = lines[..idx].iter().map(|l| l.len() + 1).sum();
                 let line_end_offset = line_start_offset + line.len();
 
-                // Find highlights for this line
                 let mut line_highlights: Vec<(usize, usize, String)> = highlights
                     .iter()
                     .filter(|(start, end, _)| *start < line_end_offset && *end > line_start_offset)
@@ -1271,15 +1205,12 @@ impl Element for EditorElement {
                     })
                     .collect();
 
-                // Sort by start position
                 line_highlights.sort_by_key(|(start, _, _)| *start);
 
-                // Build text runs with highlighting
                 let mut text_runs = Vec::new();
                 let mut current_pos = 0;
 
                 for (start, end, capture_name) in line_highlights {
-                    // Add unhighlighted text before this highlight
                     if current_pos < start {
                         text_runs.push(TextRun {
                             len: start - current_pos,
@@ -1291,7 +1222,6 @@ impl Element for EditorElement {
                         });
                     }
 
-                    // Add highlighted text
                     let color = get_highlight_color(&capture_name, &theme);
                     text_runs.push(TextRun {
                         len: end - start,
@@ -1305,7 +1235,6 @@ impl Element for EditorElement {
                     current_pos = end;
                 }
 
-                // Add remaining unhighlighted text
                 if current_pos < line.len() {
                     text_runs.push(TextRun {
                         len: line.len() - current_pos,
@@ -1317,7 +1246,6 @@ impl Element for EditorElement {
                     });
                 }
 
-                // If no highlights, use default color for entire line
                 if text_runs.is_empty() {
                     text_runs.push(TextRun {
                         len: line.len(),
@@ -1345,12 +1273,10 @@ impl Element for EditorElement {
             }
         }
 
-        // Store shaped layouts
         self.state.update(cx, |state, _| {
             state.line_layouts = shaped_layouts;
         });
 
-        // Paint selection
         if let Some(selection) = &selection {
             let (start, end) = selection.range();
 
@@ -1381,7 +1307,6 @@ impl Element for EditorElement {
             }
         }
 
-        // Paint cursor
         if focus_handle.is_focused(window) {
             let cursor_col = if cursor.line < lines.len() {
                 cursor.col.min(lines[cursor.line].len())

@@ -387,17 +387,16 @@ impl<T: Clone + 'static> DataTable<T> {
         let search_column_select = cx.new(|cx| {
             Select::new(cx)
                 .options(select_options)
-                .selected_index(Some(0)) // Default to "All Columns"
+                .selected_index(Some(0))
                 .placeholder("Select column...")
         });
 
-        // Subscribe to select changes
         cx.subscribe(&search_column_select, |this, _select, event: &SelectEvent, cx| {
             match event {
                 SelectEvent::Change => {
                     let selected = this.search_column_select.read(cx).selected_value().copied();
                     this.search_column = if selected == Some(usize::MAX) {
-                        None // "All Columns"
+                        None
                     } else {
                         selected
                     };
@@ -415,7 +414,7 @@ impl<T: Clone + 'static> DataTable<T> {
             resize_start_width: px(0.0),
             sticky_header: true,
             on_load_more: None,
-            load_more_threshold: 0.7, // 70% by default - triggers early for smooth loading
+            load_more_threshold: 0.7,
             load_more_triggered: false,
             scroll_handle: ScrollHandle::new(),
             editing_cell: None,
@@ -433,7 +432,7 @@ impl<T: Clone + 'static> DataTable<T> {
             show_search: true,
             search_column_select,
             search_input,
-            show_selection: false, // Hide selection checkboxes by default
+            show_selection: false,
             on_selection_change: None,
             row_actions: Vec::new(),
             context_menu: None,
@@ -473,17 +472,16 @@ impl<T: Clone + 'static> DataTable<T> {
         let search_column_select = cx.new(|cx| {
             Select::new(cx)
                 .options(select_options)
-                .selected_index(Some(0)) // Default to "All Columns"
+                .selected_index(Some(0))
                 .placeholder("Select column...")
         });
 
-        // Subscribe to select changes
         cx.subscribe(&search_column_select, |this, _select, event: &SelectEvent, cx| {
             match event {
                 SelectEvent::Change => {
                     let selected = this.search_column_select.read(cx).selected_value().copied();
                     this.search_column = if selected == Some(usize::MAX) {
-                        None // "All Columns"
+                        None
                     } else {
                         selected
                     };
@@ -501,7 +499,7 @@ impl<T: Clone + 'static> DataTable<T> {
             resize_start_width: px(0.0),
             sticky_header: true,
             on_load_more: None,
-            load_more_threshold: 0.7, // 70% by default
+            load_more_threshold: 0.7,
             load_more_triggered: false,
             scroll_handle: ScrollHandle::new(),
             editing_cell: None,
@@ -629,7 +627,6 @@ impl<T: Clone + 'static> DataTable<T> {
         let query_lower = self.search_query.to_lowercase();
 
         if let Some(col_idx) = self.search_column {
-            // Search in specific column
             if let Some(column) = self.state.columns.get(col_idx) {
                 let cell_value = (column.accessor)(row);
                 cell_value.to_string().to_lowercase().contains(&query_lower)
@@ -637,7 +634,6 @@ impl<T: Clone + 'static> DataTable<T> {
                 false
             }
         } else {
-            // Search in all columns
             self.state.columns.iter().any(|column| {
                 let cell_value = (column.accessor)(row);
                 cell_value.to_string().to_lowercase().contains(&query_lower)
@@ -660,18 +656,15 @@ impl<T: Clone + 'static> DataTable<T> {
     pub fn set_data(&mut self, data: Vec<T>, cx: &mut Context<Self>) {
         let _new_count = data.len();
         self.state.replace_in_memory_data(data);
-        // Reset load_more trigger when new data is added
         self.load_more_triggered = false;
         cx.notify();
     }
 
     pub fn append_data(&mut self, mut new_data: Vec<T>, cx: &mut Context<Self>) {
-        // Only valid in in-memory mode
         if let DataBacking::InMemory { data } = &mut self.state.backing {
             data.append(&mut new_data);
             let new_count = data.len();
             self.state.scroller.set_total_items(new_count);
-            // Reset load_more trigger so it can be triggered again for next batch
             self.load_more_triggered = false;
             cx.notify();
         }
@@ -803,7 +796,6 @@ impl<T: Clone + 'static> DataTable<T> {
             .border_color(theme.tokens.border)
             .bg(theme.tokens.muted.opacity(0.3))
             .child(
-                // Column selector using Select component
                 div()
                     .flex()
                     .items_center()
@@ -821,7 +813,6 @@ impl<T: Clone + 'static> DataTable<T> {
                     )
             )
             .child(
-                // Search input (interactive)
                 div()
                     .w(px(300.0))
                     .child(
@@ -928,7 +919,6 @@ impl<T: Clone + 'static> DataTable<T> {
                             .text_ellipsis();
 
                         if is_editable && !is_editing {
-                            // Clone values for the closure
                             let cell_value_for_closure = cell_value.clone();
                             let column_id = column.id.clone();
 
@@ -944,7 +934,6 @@ impl<T: Clone + 'static> DataTable<T> {
                                         state
                                     });
 
-                                    // Subscribe to input events for save/cancel
                                     use crate::components::input::InputEvent;
                                     cx.subscribe(&input_state, |this, _, event: &InputEvent, cx| {
                                         match event {
@@ -965,7 +954,6 @@ impl<T: Clone + 'static> DataTable<T> {
                                     this.edit_column_id = column_id.clone();
                                     this.edit_old_value = cell_value_for_closure.clone();
 
-                                    // Focus the input
                                     if let Some(ref input) = this.edit_input {
                                         window.focus(&input.read(cx).focus_handle(cx));
                                     }
@@ -1145,7 +1133,6 @@ impl<T: Clone + 'static> DataTable<T> {
 
             if sortable {
                 header_cell = header_cell.on_mouse_down(MouseButton::Left, cx.listener(move |this, _event, _window, cx| {
-                    // Toggle sort direction if clicking same column, otherwise ascending
                     let new_direction = if this.state.sort_column == Some(col_idx) {
                         match this.state.sort_direction {
                             SortDirection::Ascending => SortDirection::Descending,
@@ -1233,12 +1220,10 @@ impl<T: Clone + 'static> Render for DataTable<T> {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
-        // Capture user styles early
         let user_style = self.style.clone();
 
         let viewport_height = self.state.viewport_height();
 
-        // Compute filtered indices for in-memory mode; for virtual mode, pass-through mapping
         let (total_items, filtered_indices): (usize, Option<Rc<Vec<usize>>>) = match &self.state.backing {
             DataBacking::InMemory { .. } => {
                 let indices = Rc::new(self.get_filtered_indices());
@@ -1255,7 +1240,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
             let theme = use_theme();
             range
                 .map(|row_idx| {
-                    // Map visible position to actual data index
                     let actual_idx = if let Some(ref map) = filtered_indices_for_render {
                         map.get(row_idx).copied().unwrap_or(row_idx)
                     } else { row_idx };
@@ -1280,7 +1264,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
 
                         if this.on_row_click.is_some() {
                             row_div = row_div.on_mouse_down(MouseButton::Left, cx.listener(move |this, event: &MouseDownEvent, window, cx| {
-                                // Avoid starting inline editing on single-click when editable
                                 if event.click_count > 1 { return; }
                                 if let Some(row) = this.state.get_row(actual_idx) {
                                     if let Some(ref cb) = this.on_row_click {
@@ -1347,7 +1330,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                                     .on_mouse_down(MouseButton::Left, cx.listener(move |this, event: &MouseDownEvent, window, cx| {
                                         if event.click_count < 2 { return; }
 
-                                        // If parent has custom double-click handler, use that instead of inline editing
                                         if this.on_cell_double_click.is_some() {
                                             if let Some(ref cb) = this.on_cell_double_click {
                                                 (cb)(&row_data_clone, column_id.clone(), cell_value_for_closure.clone(), window, cx);
@@ -1355,7 +1337,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                                             return;
                                         }
 
-                                        // Default inline editing behavior
                                         let input_state = cx.new(|cx| {
                                             let mut state = InputState::new(cx);
                                             state.set_value(cell_value_for_closure.clone(), window, cx);
@@ -1430,10 +1411,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                 .collect::<Vec<_>>()
         };
 
-        // TODO: Add Dialog for inline editing confirmation
-        // The Dialog component needs to be integrated properly with GPUI's type system
-
-        // No custom Scrollable wrapper - GPUI handles nested scrolling natively with .id() and .overflow_scroll()
         let view_for_visible = view_entity.clone();
         let view_for_near_end = view_entity.clone();
         let body_scroll = vlist_uniform_view(view_entity, "data-table-body", total_items, row_extent, renderer)
@@ -1441,12 +1418,10 @@ impl<T: Clone + 'static> Render for DataTable<T> {
             .overscan(8)
             .h(px(viewport_height))
             .on_visible_range(move |range, window, app| {
-                // Drive virtual prefetch and any range-based logic using the view's context
                 let start = range.start;
                 let end = range.end;
                 let _ = window;
                 view_for_visible.update(app, |this: &mut DataTable<T>, cx| {
-                    // Determine the total items under current filter
                     let total_items = match &this.state.backing {
                         DataBacking::InMemory { .. } => this.get_filtered_indices().len(),
                         DataBacking::Virtual { .. } => this.state.total_items(),
@@ -1510,12 +1485,10 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                 let at_top = scroll_y <= 0.0 && delta_y > 0.0;
                 let at_bottom = scroll_y >= max_scroll && delta_y < 0.0;
 
-                // Stop propagation when we can scroll OR when at boundaries (prevents rubber-banding)
                 if can_scroll_down || can_scroll_up || at_top || at_bottom {
                     cx.stop_propagation();
                 }
 
-                // Trigger re-render on scroll to update visible range
                 cx.notify();
             }))
             .child(body_scroll);
@@ -1526,11 +1499,11 @@ impl<T: Clone + 'static> Render for DataTable<T> {
             .flex_col()
             .overflow_x_scroll()
             .w_full()
-            .cursor(CursorStyle::PointingHand)  // Hand cursor indicates draggable
+            .cursor(CursorStyle::PointingHand)
             .on_mouse_down(MouseButton::Left, cx.listener(|this, event: &MouseDownEvent, _window, cx| {
                 this.is_dragging_horizontal = true;
                 this.drag_start_x = event.position.x.into();
-                this.drag_scroll_start_x = 0.0; // We'll implement scroll position tracking
+                this.drag_scroll_start_x = 0.0;
                 cx.notify();
             }))
             .on_mouse_move(cx.listener(|this, event: &MouseMoveEvent, _window, cx| {
@@ -1538,10 +1511,8 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                     let current_x: f32 = event.position.x.into();
                     let delta_x = this.drag_start_x - current_x;
 
-                    // Calculate new scroll position
                     let _new_scroll_x = this.drag_scroll_start_x + delta_x;
 
-                    // TODO: Use scroll API to update horizontal scroll position
                     cx.notify();
                 }
             }))
@@ -1552,7 +1523,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                 }
             }))
             .child(
-                // Inner container with the actual table width
                 div()
                     .flex()
                     .flex_col()
@@ -1582,7 +1552,6 @@ impl<T: Clone + 'static> Render for DataTable<T> {
                     this
                 })
         } else {
-            // Fallback to same structure; header remains visible like sticky variant for now
             div()
                 .flex()
                 .flex_col()
@@ -1611,14 +1580,12 @@ impl<T: Clone + 'static> Render for DataTable<T> {
             .relative()
             .w_full()
             .on_mouse_move(cx.listener(|this, event: &MouseMoveEvent, _window, cx| {
-                // Handle column resizing
                 if let Some(col_idx) = this.resizing_column {
                     let current_x: f32 = event.position.x.into();
                     let delta_x = current_x - this.resize_start_x;
                     let new_width_f32: f32 = this.resize_start_width.into();
                     let new_width = px(new_width_f32 + delta_x);
 
-                    // Enforce minimum width
                     let min_width = this.state.columns[col_idx].min_width;
                     let final_width = if new_width > min_width {
                         new_width
@@ -1653,7 +1620,7 @@ impl<T: Clone + 'static> DataTable<T> {
                 .anchor(Corner::TopLeft)
                 .child(
                     div()
-                        .occlude() // Blocks interactions beneath the menu
+                        .occlude()
                         .min_w(px(200.0))
                         .bg(theme.tokens.popover)
                         .border_1()

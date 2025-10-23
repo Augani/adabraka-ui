@@ -207,7 +207,6 @@ impl InputState {
             last_click_time: None,
             last_click_position: None,
 
-            // Enhanced features
             input_type: InputType::Text,
             validation_rules: ValidationRules::default(),
             validation_error: None,
@@ -229,7 +228,6 @@ impl InputState {
     /// Set the input type
     pub fn input_type(mut self, input_type: InputType) -> Self {
         self.input_type = input_type;
-        // Apply default settings based on type
         match input_type {
             InputType::Email => {
                 self.placeholder = "email@example.com".into();
@@ -320,7 +318,6 @@ impl InputState {
         let value = value.into();
         let filtered_value = self.filter_input(&value);
         self.replace_text_in_range(None, &filtered_value, window, cx);
-        // Set cursor to end of text
         let len = filtered_value.len();
         self.selected_range = len..len;
 
@@ -335,7 +332,6 @@ impl InputState {
     pub fn validate(&mut self, cx: &mut Context<Self>) -> Result<(), ValidationError> {
         let value = self.content.as_ref();
 
-        // Required field check
         if self.validation_rules.required && value.trim().is_empty() {
             let error = ValidationError {
                 message: "This field is required".into(),
@@ -347,7 +343,6 @@ impl InputState {
             return Err(error);
         }
 
-        // Skip validation for empty optional fields
         if !self.validation_rules.required && value.trim().is_empty() {
             self.validation_error = None;
             self.success_message = None;
@@ -356,7 +351,6 @@ impl InputState {
             return Ok(());
         }
 
-        // Type-specific validation
         let type_result = match self.input_type {
             InputType::Email => self.validate_email(value),
             InputType::Number => self.validate_number(value),
@@ -375,7 +369,6 @@ impl InputState {
             return Err(error);
         }
 
-        // Length validation
         if let Some(min_length) = self.validation_rules.min_length {
             if value.len() < min_length {
                 let error = ValidationError {
@@ -402,7 +395,6 @@ impl InputState {
             }
         }
 
-        // Custom validation function
         if let Some(ref validator) = self.validation_rules.custom_validator {
             if let Err(error) = validator(value) {
                 self.validation_error = Some(error.clone());
@@ -412,7 +404,6 @@ impl InputState {
             }
         }
 
-        // Validation passed
         self.validation_error = None;
         self.success_message = Some("Valid input".into());
         cx.emit(InputEvent::Validate(Ok(())));
@@ -422,39 +413,32 @@ impl InputState {
 
     /// Filter input based on input type or custom filter
     fn filter_input(&self, input: &str) -> String {
-        // First apply custom filter if available
         if let Some(ref custom_filter) = self.validation_rules.custom_filter {
             return custom_filter(input);
         }
 
-        // Otherwise use built-in filters based on input type
         match self.input_type {
             InputType::Number => {
-                // Allow digits, decimal point, and minus sign
                 input.chars()
                     .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
                     .collect()
             }
             InputType::Tel => {
-                // Allow digits and common phone characters
                 input.chars()
                     .filter(|c| c.is_ascii_digit() || *c == '+' || *c == '-' || *c == '(' || *c == ')' || *c == ' ')
                     .collect()
             }
             InputType::Date => {
-                // Allow digits and date separators
                 input.chars()
                     .filter(|c| c.is_ascii_digit() || *c == '/' || *c == '-')
                     .collect()
             }
             InputType::Time => {
-                // Allow digits and time separator
                 input.chars()
                     .filter(|c| c.is_ascii_digit() || *c == ':')
                     .collect()
             }
             InputType::CreditCard => {
-                // Allow digits and spaces
                 input.chars()
                     .filter(|c| c.is_ascii_digit() || *c == ' ')
                     .collect()
@@ -511,7 +495,6 @@ impl InputState {
         }
     }
 
-    // Validation methods for different input types
     fn validate_email(&self, email: &str) -> Result<(), ValidationError> {
         let re = regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();
         if !re.is_match(email) {
@@ -644,7 +627,6 @@ impl InputState {
             });
         }
 
-        // Luhn algorithm for credit card validation
         let mut sum = 0;
         let mut alternate = false;
         for c in digits.chars().rev() {
@@ -668,7 +650,6 @@ impl InputState {
         Ok(())
     }
 
-    // Navigation methods
     pub fn left(&mut self, _: &Left, _: &mut Window, cx: &mut Context<Self>) {
         if self.selected_range.is_empty() {
             self.move_to(self.previous_boundary(self.cursor_offset()), cx);
@@ -721,12 +702,10 @@ impl InputState {
     }
 
     pub fn tab(&mut self, _: &Tab, _window: &mut Window, cx: &mut Context<Self>) {
-        // Emit tab event to let parent handle navigation
         cx.emit(InputEvent::Tab);
     }
 
     pub fn shift_tab(&mut self, _: &ShiftTab, _window: &mut Window, cx: &mut Context<Self>) {
-        // Emit shift-tab event to let parent handle reverse navigation
         cx.emit(InputEvent::ShiftTab);
     }
 
@@ -738,25 +717,20 @@ impl InputState {
     ) {
         self.is_selecting = true;
 
-        // Check for double-click (two clicks within 500ms at similar position)
         let now = std::time::Instant::now();
         let is_double_click = if let (Some(last_time), Some(last_pos)) = (self.last_click_time, self.last_click_position) {
             let time_diff = now.duration_since(last_time);
-            // Calculate distance between clicks
             let dx = event.position.x - last_pos.x;
             let dy = event.position.y - last_pos.y;
-            // Check if clicks are within 500ms and ~5px of each other
             let close_enough = dx < px(5.0) && dx > px(-5.0) && dy < px(5.0) && dy > px(-5.0);
             time_diff.as_millis() < 500 && close_enough
         } else {
             false
         };
 
-        // Update last click time and position
         self.last_click_time = Some(now);
         self.last_click_position = Some(event.position);
 
-        // Handle double-click: select all text
         if is_double_click && !self.content.is_empty() {
             self.selected_range = 0..self.content.len();
             self.selection_reversed = false;
@@ -764,8 +738,6 @@ impl InputState {
             return;
         }
 
-        // Position cursor at clicked position using the shaped line's closest_index_for_x
-        // This matches the behavior from the Editor component
         let click_index = self.index_for_mouse_position(event.position);
 
         if event.modifiers.shift {
@@ -814,9 +786,6 @@ impl InputState {
     }
 
     pub fn escape(&mut self, _: &Escape, _window: &mut Window, cx: &mut Context<Self>) {
-        // Blur the input by blurring the focus handle
-        // Note: GPUI doesn't have a direct blur() method, so we rely on parent handling
-        // or we can clear selection as a visual indicator
         self.selected_range = self.content.len()..self.content.len();
         cx.emit(InputEvent::Blur);
         cx.notify();
@@ -824,11 +793,9 @@ impl InputState {
 
     /// Called when the input gains focus
     pub fn on_focus(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
-        // Select all text if configured
         if self.select_on_focus && !self.content.is_empty() {
             self.selected_range = 0..self.content.len();
         }
-        // Or position cursor at end if there's text
         else if !self.content.is_empty() && self.cursor_position_override.is_none() {
             let len = self.content.len();
             self.selected_range = len..len;
@@ -840,7 +807,6 @@ impl InputState {
 
     /// Called when the input loses focus
     pub fn on_blur(&mut self, window: &mut Window, cx: &mut Context<Self>) {
-        // Trim whitespace if configured
         if self.trim_on_blur {
             let trimmed = self.content.trim().to_string();
             if trimmed != self.content.as_ref() {
@@ -848,7 +814,6 @@ impl InputState {
             }
         }
 
-        // Validate on blur if configured
         if self.validate_on_blur {
             self.validate(cx).ok();
         }
@@ -888,11 +853,8 @@ impl InputState {
 
         let display_index = line.closest_index_for_x(position.x - bounds.left());
 
-        // If masked, convert display index (in bullets) back to content byte position
         if self.masked {
-            // Each bullet character is 3 bytes, so divide by 3 to get character index
             let char_index = display_index / "•".len();
-            // Convert character index to byte index in the actual content
             self.content
                 .char_indices()
                 .nth(char_index)
@@ -1026,7 +988,6 @@ impl EntityInputHandler for InputState {
             .or(self.marked_range.clone())
             .unwrap_or(self.selected_range.clone());
 
-        // Filter and format the input
         let filtered_text = self.filter_input(new_text);
         let formatted_text = if self.input_mask != InputMask::None {
             self.apply_mask(&filtered_text)
@@ -1034,11 +995,9 @@ impl EntityInputHandler for InputState {
             filtered_text
         };
 
-        // Check max length
         if let Some(max_length) = self.validation_rules.max_length {
             let new_length = self.content.len() - (range.end - range.start) + formatted_text.len();
             if new_length > max_length {
-                // Truncate input to fit max length
                 let allowed_length = max_length.saturating_sub(self.content.len() - (range.end - range.start));
                 let truncated: String = formatted_text.chars().take(allowed_length).collect();
 
@@ -1061,7 +1020,6 @@ impl EntityInputHandler for InputState {
 
         self.marked_range.take();
 
-        // Validate on change if configured
         if self.validate_on_change {
             self.validate(cx).ok();
         }
@@ -1138,7 +1096,7 @@ impl EntityInputHandler for InputState {
     }
 }
 
-/// Custom element for rendering the input text with cursor and selection
+/// Custom element for rendering the input text with cursor and selection.
 /// This is THE KEY to text input - it calls window.handle_input() in the paint method
 struct InputTextElement {
     input: Entity<InputState>,
@@ -1194,16 +1152,13 @@ impl gpui::Element for InputTextElement {
     ) -> Self::PrepaintState {
         let input = self.input.read(cx);
         let (content, selected_range, cursor) = if input.masked {
-            // For masked input, we need to convert byte positions to character positions
             let char_count = input.content.chars().count();
             let masked_text = "•".repeat(char_count).into();
 
-            // Convert selected_range from byte positions to character positions
             let start_chars = input.content[..input.selected_range.start].chars().count();
             let end_chars = input.content[..input.selected_range.end].chars().count();
             let masked_selected_range = (start_chars * "•".len())..(end_chars * "•".len());
 
-            // Convert cursor position from byte position to character position
             let cursor_chars = if input.selection_reversed {
                 start_chars
             } else {
@@ -1234,7 +1189,6 @@ impl gpui::Element for InputTextElement {
         };
 
         let runs = if let Some(marked_range) = input.marked_range.as_ref() {
-            // Convert marked range for masked input
             let (marked_start, marked_end) = if input.masked {
                 let start_chars = input.content[..marked_range.start].chars().count();
                 let end_chars = input.content[..marked_range.end].chars().count();
@@ -1323,7 +1277,6 @@ impl gpui::Element for InputTextElement {
     ) {
         let focus_handle = self.input.read(cx).focus_handle.clone();
 
-        // This is THE critical call that enables text input!
         window.handle_input(
             &focus_handle,
             ElementInputHandler::new(bounds, self.input.clone()),
@@ -1391,5 +1344,4 @@ impl Focusable for InputState {
     }
 }
 
-// Add regex dependency for email validation
 use regex;

@@ -250,10 +250,6 @@ struct ResizablePanelState {
     bounds: Bounds<Pixels>,
 }
 
-// =============================================================================
-// Panel Group Component
-// =============================================================================
-
 /// A container for resizable panels with drag handles between them.
 #[derive(IntoElement)]
 pub struct ResizablePanelGroup {
@@ -273,19 +269,16 @@ impl ResizablePanelGroup {
         }
     }
 
-    /// Set the axis of the resizable panel group
     pub fn axis(mut self, axis: Axis) -> Self {
         self.axis = axis;
         self
     }
 
-    /// Add a panel to the group
     pub fn child(mut self, panel: impl Into<ResizablePanel>) -> Self {
         self.children.push(panel.into());
         self
     }
 
-    /// Add multiple panels to the group
     pub fn children<I>(mut self, panels: impl IntoIterator<Item = I>) -> Self
     where
         I: Into<ResizablePanel>,
@@ -294,7 +287,6 @@ impl ResizablePanelGroup {
         self
     }
 
-    /// Add a nested ResizablePanelGroup as a child panel
     pub fn group(self, group: ResizablePanelGroup) -> Self {
         self.child(resizable_panel().child(group.into_any_element()))
     }
@@ -358,10 +350,6 @@ impl RenderOnce for ResizablePanelGroup {
     }
 }
 
-// =============================================================================
-// Panel Component
-// =============================================================================
-
 /// A single resizable panel within a ResizablePanelGroup.
 #[derive(IntoElement)]
 pub struct ResizablePanel {
@@ -389,37 +377,31 @@ impl ResizablePanel {
         }
     }
 
-    /// Add a child element to the panel
     pub fn child(mut self, child: impl IntoElement) -> Self {
         self.children.push(child.into_any_element());
         self
     }
 
-    /// Set whether the panel is visible
     pub fn visible(mut self, visible: bool) -> Self {
         self.visible = visible;
         self
     }
 
-    /// Set the initial size of the panel
     pub fn size(mut self, size: impl Into<Pixels>) -> Self {
         self.initial_size = Some(size.into());
         self
     }
 
-    /// Set the allowed size range for the panel
     pub fn size_range(mut self, range: impl Into<Range<Pixels>>) -> Self {
         self.size_range = range.into();
         self
     }
 
-    /// Set the minimum size for the panel
     pub fn min_size(mut self, min: impl Into<Pixels>) -> Self {
         self.size_range.start = min.into();
         self
     }
 
-    /// Set the maximum size for the panel
     pub fn max_size(mut self, max: impl Into<Pixels>) -> Self {
         self.size_range.end = max.into();
         self
@@ -485,7 +467,6 @@ impl RenderOnce for ResizablePanel {
             }
         }
 
-        // Apply user-defined styles
         let user_style = self.style;
 
         panel_div
@@ -532,10 +513,6 @@ impl RenderOnce for ResizablePanel {
     }
 }
 
-// =============================================================================
-// Drag State
-// =============================================================================
-
 #[derive(Clone)]
 struct DragPanel((usize, Axis));
 
@@ -544,10 +521,6 @@ impl Render for DragPanel {
         Empty
     }
 }
-
-// =============================================================================
-// Resize Handle
-// =============================================================================
 
 struct ResizeHandle<T: 'static, E: 'static + Render> {
     id: ElementId,
@@ -723,10 +696,6 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
         });
     }
 }
-
-// =============================================================================
-// Internal Elements
-// =============================================================================
 
 struct ResizePanelGroupElement {
     state: Entity<ResizableState>,

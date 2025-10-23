@@ -9,12 +9,12 @@
 
 <a href="https://www.buymeacoffee.com/pythonxi" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 40px !important;width: 145px !important;" ></a>
 
-A comprehensive, professional UI component library for [GPUI](https://github.com/zed-industries/zed), the GPU-accelerated UI framework powering the Zed editor. Inspired by [shadcn/ui](https://ui.shadcn.com/), adabraka-ui provides 70+ polished, accessible components for building beautiful desktop applications in Rust.
+A comprehensive, professional UI component library for [GPUI](https://github.com/zed-industries/zed), the GPU-accelerated UI framework powering the Zed editor. Inspired by [shadcn/ui](https://ui.shadcn.com/), adabraka-ui provides 73+ polished, accessible components for building beautiful desktop applications in Rust.
 
 ## ✨ Features
 
 - 🎨 **Complete Theme System** - Built-in light/dark themes with semantic color tokens
-- 🧩 **70+ Components** - Comprehensive library covering all UI needs from buttons to data tables
+- 🧩 **73+ Components** - Comprehensive library covering all UI needs from buttons to data tables
 - 📱 **Responsive Layout** - Flexible layout utilities (VStack, HStack, Grid)
 - 🎭 **Professional Animations** - Smooth transitions with cubic-bezier easing and spring physics
 - ✍️ **Typography System** - Built-in Text component with semantic variants
@@ -504,6 +504,153 @@ let case_sensitive = search.read(cx).state().read(cx).case_sensitive();
 - ✓ Results count display
 - ✓ Real-time search callbacks
 - ✓ Platform-aware styling
+
+#### ColorPicker
+
+Full-featured color picker with multiple color modes and recent color history:
+
+```rust
+use adabraka_ui::components::color_picker::*;
+
+// Create color picker state
+let color_state = cx.new(|_| ColorPickerState::new(hsla(210.0, 0.7, 0.5, 1.0)));
+
+// Render color picker
+ColorPicker::new("picker-id", color_state.clone())
+    .show_alpha(true)
+    .on_change({
+        let state = color_state.clone();
+        move |color, _window, cx| {
+            state.update(cx, |s, cx| {
+                s.set_color(color);
+                cx.notify();
+            });
+            println!("Color changed: {:?}", color);
+        }
+    })
+
+// With custom swatches
+ColorPicker::new("custom-picker", color_state.clone())
+    .swatches(vec![
+        hsla(0.0, 0.8, 0.5, 1.0),   // Red
+        hsla(120.0, 0.7, 0.5, 1.0), // Green
+        hsla(240.0, 0.8, 0.6, 1.0), // Blue
+    ])
+    .show_alpha(false)
+```
+
+**Features:**
+- ✓ Three color modes: HSL, RGB, HEX with easy switching
+- ✓ Color preview with live updates
+- ✓ Recent colors history (stores last 10)
+- ✓ Custom color swatches
+- ✓ Optional alpha/opacity slider
+- ✓ Copy to clipboard (HEX format)
+- ✓ Popover-based UI for clean integration
+- ✓ Immediate UI updates without mouse movement
+
+#### DatePicker
+
+Advanced date picker with single date and date range selection:
+
+```rust
+use adabraka_ui::components::date_picker::*;
+use adabraka_ui::components::calendar::*;
+
+// Single date picker
+let single_state = cx.new(|cx| DatePickerState::new(cx));
+
+DatePicker::new(single_state.clone())
+    .placeholder("Select a date")
+    .on_select(cx.listener(|this, date, _window, cx| {
+        println!("Selected: {:?}", date);
+        cx.notify();
+    }))
+
+// Date range picker
+let range_state = cx.new(|cx|
+    DatePickerState::new_with_mode(DateSelectionMode::Range, cx)
+);
+
+DatePicker::new(range_state.clone())
+    .placeholder("Select date range")
+    .on_select(cx.listener(|this, _date, _window, cx| {
+        let state = this.range_state.read(cx);
+        if let Some(range) = state.selected_range {
+            println!("Range: {} to {}", range.start, range.end);
+        }
+        cx.notify();
+    }))
+
+// With disabled dates
+DatePicker::new(picker_state.clone())
+    .disable_weekends()
+    .disable_dates(vec![
+        DateValue::new(2024, 12, 25), // Christmas
+        DateValue::new(2024, 1, 1),   // New Year
+    ])
+```
+
+**Features:**
+- ✓ Single date and date range selection modes
+- ✓ Visual range highlighting with colored backgrounds
+- ✓ Disabled dates with greyed-out styling
+- ✓ Weekend disabling helper
+- ✓ Auto-close popover after selection
+- ✓ Multiple date formats (ISO, US, EU, custom)
+- ✓ Locale support for internationalization
+- ✓ Month navigation with year selection
+- ✓ Today button for quick selection
+- ✓ Immediate UI updates
+
+#### Combobox
+
+Searchable dropdown with single and multi-select support:
+
+```rust
+use adabraka_ui::components::combobox::*;
+
+// Create combobox state
+let combobox_state = cx.new(|_| ComboboxState::new());
+
+// Single select
+Combobox::new(combobox_state.clone())
+    .items(vec!["Apple", "Banana", "Cherry", "Date"])
+    .placeholder("Select a fruit...")
+    .on_select(cx.listener(|this, item, _window, cx| {
+        println!("Selected: {}", item);
+        cx.notify();
+    }))
+
+// Multi-select
+Combobox::new(multi_state.clone())
+    .items(vec!["Rust", "Python", "JavaScript", "Go"])
+    .placeholder("Select languages...")
+    .multi_select(true)
+    .on_select(cx.listener(|this, items, _window, cx| {
+        println!("Selected items: {:?}", items);
+        cx.notify();
+    }))
+
+// With custom display
+Combobox::new(custom_state.clone())
+    .items(users)
+    .display_fn(|user| format!("{} <{}>", user.name, user.email))
+    .search_fn(|user, query| {
+        user.name.contains(query) || user.email.contains(query)
+    })
+```
+
+**Features:**
+- ✓ Single and multi-select modes
+- ✓ Real-time search/filter with immediate updates
+- ✓ Keyboard navigation (arrow keys, Enter, Escape)
+- ✓ Custom display and search functions
+- ✓ Clear selection button
+- ✓ Badge display for multi-select
+- ✓ Popover-based dropdown
+- ✓ Empty state handling
+- ✓ Disabled state support
 
 #### Editor
 
@@ -1579,6 +1726,9 @@ cargo run --example file_explorer
 cargo run --example input_demo
 cargo run --example input_validation
 cargo run --example search_input_demo
+cargo run --example color_picker_demo
+cargo run --example date_picker_demo
+cargo run --example combobox_demo
 
 # Navigation
 cargo run --example sidebar_demo

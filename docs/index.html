@@ -462,6 +462,7 @@
                     <li><a href="#overview" class="active">Overview</a></li>
                     <li><a href="#installation">Installation</a></li>
                     <li><a href="#quick-start">Quick Start</a></li>
+                    <li><a href="#customization">Component Customization</a></li>
                 </ul>
             </div>
 
@@ -529,7 +530,7 @@
                 <div class="stat-label">Type-Safe</div>
             </div>
             <div class="stat">
-                <div class="stat-number">0.1</div>
+                <div class="stat-number">0.2.0</div>
                 <div class="stat-label">Version</div>
             </div>
         </div>
@@ -612,7 +613,7 @@
             <div class="code-block">
                 <div class="code-title">Cargo.toml</div>
                 <pre><code>[dependencies]
-adabraka-ui = "0.1.1"
+adabraka-ui = "0.2.0"
 gpui = "0.2.0"</code></pre>
             </div>
 
@@ -688,6 +689,135 @@ gpui = "0.2.0"</code></pre>
             ).<span class="function">unwrap</span>();
         });
 }</code></pre>
+            </div>
+        </section>
+
+        <!-- Component Customization -->
+        <section id="customization" class="code-section">
+            <h2 class="section-title">Component Customization</h2>
+            <p class="section-subtitle">
+                <span style="display: inline-block; background: var(--accent); color: var(--bg); padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.8125rem; font-weight: 600; margin-right: 0.5rem;">NEW in v0.2.0</span>
+                100% Styled Trait Coverage
+            </p>
+
+            <div style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg) 100%); border: 2px solid var(--accent); border-radius: 0.5rem; padding: 1.5rem; margin-bottom: 2rem;">
+                <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <span style="font-size: 2rem;">✨</span>
+                    <h3 style="font-size: 1.125rem; font-weight: 700; margin: 0;">All 54 components now implement the Styled trait!</h3>
+                </div>
+                <p style="font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.6; margin: 0;">
+                    Every component in adabraka-ui now supports GPUI's full styling API, giving you complete control over appearance and layout without wrapper elements or style conflicts.
+                </p>
+            </div>
+
+            <div style="margin-bottom: 2rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">What the Styled Trait Enables</h3>
+                <div class="features-grid" style="margin-bottom: 2rem;">
+                    <div class="feature">
+                        <h3>Direct Styling</h3>
+                        <p>Apply styles directly to components without wrapper divs. Chain methods for clean, readable code.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Full GPUI API</h3>
+                        <p>Access all GPUI styling methods: backgrounds, borders, spacing, sizing, effects, and more.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Type Safety</h3>
+                        <p>Compile-time validation ensures your styles are correct and properties are properly applied.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>No Overhead</h3>
+                        <p>Zero runtime cost. Styles are applied during rendering with no wrapper elements.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">Basic Component Customization</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::prelude::*;
+
+<span class="comment">// Style any component with GPUI's styling methods</span>
+Button::<span class="function">new</span>(<span class="string">"Save Changes"</span>)
+    .<span class="function">variant</span>(ButtonVariant::Default)
+    .<span class="function">p_4</span>()                    <span class="comment">// Padding</span>
+    .<span class="function">bg</span>(gpui::<span class="function">blue</span>())        <span class="comment">// Background color</span>
+    .<span class="function">rounded_lg</span>()              <span class="comment">// Rounded corners</span>
+    .<span class="function">border_2</span>()                <span class="comment">// Border width</span>
+    .<span class="function">border_color</span>(gpui::<span class="function">white</span>())  <span class="comment">// Border color</span>
+    .<span class="function">shadow_md</span>()               <span class="comment">// Drop shadow</span>
+
+Input::<span class="function">new</span>()
+    .<span class="function">placeholder</span>(<span class="string">"Enter email..."</span>)
+    .<span class="function">w_full</span>()                 <span class="comment">// Full width</span>
+    .<span class="function">px_4</span>()                   <span class="comment">// Horizontal padding</span>
+    .<span class="function">py_2</span>()                   <span class="comment">// Vertical padding</span>
+    .<span class="function">border_1</span>()                <span class="comment">// Border</span>
+    .<span class="function">rounded_md</span>()</code></pre>
+            </div>
+
+            <div style="margin-bottom: 2rem; margin-top: 2rem;">
+                <h3 style="font-size: 1rem; font-weight: 600; margin-bottom: 1rem;">Available Styling Categories</h3>
+                <ul class="components-list">
+                    <li>Backgrounds (colors, gradients)</li>
+                    <li>Spacing (padding, margin, gap)</li>
+                    <li>Borders (width, color, radius)</li>
+                    <li>Sizing (width, height, min/max)</li>
+                    <li>Effects (shadow, opacity, transforms)</li>
+                    <li>Typography (font, size, weight)</li>
+                    <li>Layout (flex, grid, position)</li>
+                    <li>Interactive (hover, active, focus)</li>
+                </ul>
+            </div>
+
+            <div class="code-block">
+                <div class="code-title">Advanced Customization Example</div>
+                <pre><code><span class="keyword">use</span> adabraka_ui::prelude::*;
+
+<span class="comment">// Build a fully customized card component</span>
+<span class="keyword">let</span> theme = <span class="function">use_theme</span>();
+
+Card::<span class="function">new</span>()
+    <span class="comment">// Layout & Sizing</span>
+    .<span class="function">w</span>(<span class="function">px</span>(400.0))
+    .<span class="function">h</span>(<span class="function">px</span>(250.0))
+    .<span class="function">p_6</span>()
+
+    <span class="comment">// Backgrounds & Borders</span>
+    .<span class="function">bg</span>(theme.tokens.background)
+    .<span class="function">border_1</span>()
+    .<span class="function">border_color</span>(theme.tokens.border)
+    .<span class="function">rounded_xl</span>()
+
+    <span class="comment">// Visual Effects</span>
+    .<span class="function">shadow_lg</span>()
+    .<span class="function">opacity</span>(0.95)
+
+    <span class="comment">// Content</span>
+    .<span class="function">child</span>(
+        VStack::<span class="function">new</span>()
+            .<span class="function">gap_4</span>()
+            .<span class="function">child</span>(
+                <span class="function">h2</span>(<span class="string">"Custom Card"</span>)
+                    .<span class="function">text_xl</span>()
+                    .<span class="function">font_weight</span>(FontWeight::BOLD)
+                    .<span class="function">text_color</span>(theme.tokens.foreground)
+            )
+            .<span class="function">child</span>(
+                Button::<span class="function">new</span>(<span class="string">"Action"</span>)
+                    .<span class="function">w_full</span>()
+                    .<span class="function">bg</span>(theme.tokens.primary)
+                    .<span class="function">hover</span>(|style| style.<span class="function">bg</span>(theme.tokens.primary_foreground))
+            )
+    )</code></pre>
+            </div>
+
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 0.5rem; padding: 1.25rem; margin-top: 1.5rem;">
+                <p style="margin: 0; font-size: 0.875rem; color: var(--text-secondary); line-height: 1.6;">
+                    <strong style="color: var(--text);">Want to see more examples?</strong>
+                    Check out the
+                    <a href="https://github.com/Augani/adabraka-ui/tree/main/examples" target="_blank" style="color: var(--accent); text-decoration: underline;">54 styled component demos</a>
+                    in the repository, showcasing every component with full customization examples.
+                </p>
             </div>
         </section>
 

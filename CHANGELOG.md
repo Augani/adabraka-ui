@@ -7,6 +7,77 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-10-23
+
+### Added - 🎉 Three New Production-Ready Components!
+
+#### ColorPicker Component 🎨
+- Full-featured color picker with HSL, RGB, and HEX mode switching
+- Recent colors history (stores last 10 colors automatically)
+- Custom color swatches support
+- Optional alpha/opacity slider
+- Copy to clipboard functionality (HEX format)
+- Popover-based clean UI integration
+- Immediate UI updates with `cx.notify()`
+
+#### DatePicker Component 📅
+- Single date and date range selection modes
+- Visual range highlighting with colored backgrounds
+  - Range endpoints: bold primary color
+  - Range middle dates: light background (15% opacity)
+- Disabled dates with greyed-out visual styling
+- Weekend disabling helper method (`disable_weekends()`)
+- Auto-close popover after selection
+- Multiple date formats (ISO, US, EU, custom)
+- Locale support for internationalization
+- Month navigation with year selection
+- Today button for quick selection
+- Immediate UI updates without mouse movement
+
+#### Combobox Component 🔍
+- Single and multi-select modes
+- Real-time search/filter with immediate updates
+- Full keyboard navigation (arrow keys, Enter, Escape)
+- Custom display and search functions
+- Clear selection button
+- Badge display for multi-select items
+- Popover-based dropdown UI
+- Empty state handling
+- Disabled state support
+
+#### Calendar Component Enhancements
+- Added `DateRange` support with visual styling
+- Disabled dates checker function (`is_date_disabled`)
+- Range endpoints with bold styling
+- Range middle dates with light background
+- Improved date selection feedback
+
+### Changed
+- Updated component count from 70+ to 73+
+- Updated examples count from 50+ to 53+
+- Enhanced Calendar component with range selection capabilities
+
+### Fixed
+- Fixed all compiler warnings (unused fields, variables, methods)
+- Removed unused `is_open` field from ColorPickerState
+- Fixed GPUI state lifecycle issues using proper `Entity<T>` pattern
+- Proper `DismissEvent` emission for popover closing
+- Added `cx.notify()` calls throughout for immediate UI updates
+
+### Improved
+- Zero compiler warnings - completely clean build
+- Immediate UI updates across all new components (no mouse movement required)
+- Comprehensive documentation with code examples for all new components
+- Updated README with detailed component documentation
+- Updated GitHub Pages with new component listings
+- Professional visual styling with theme integration
+- Full keyboard navigation support for all new components
+
+### Examples
+- Added `color_picker_demo.rs` - Demonstrates all ColorPicker features
+- Added `date_picker_demo.rs` - Shows single date and range selection
+- Added `combobox_demo.rs` - Illustrates search and multi-select
+
 ## [0.2.0] - 2025-10-23
 
 ### Added - 🎉 MAJOR RELEASE: 100% Styled Trait Coverage!
@@ -105,7 +176,8 @@ Created comprehensive styled demonstration examples for every component showing 
 - Platform-aware UI elements
 - Responsive layout utilities (VStack, HStack, Grid)
 
-[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.1
 [0.1.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.0

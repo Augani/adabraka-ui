@@ -737,7 +737,7 @@ gpui = "0.2.0"</code></pre>
                 <pre><code><span class="keyword">use</span> adabraka_ui::prelude::*;
 
 <span class="comment">// Style any component with GPUI's styling methods</span>
-Button::<span class="function">new</span>(<span class="string">"Save Changes"</span>)
+Button::<span class="function">new</span>(<span class="string">"save-changes"</span>, <span class="string">"Save Changes"</span>)
     .<span class="function">variant</span>(ButtonVariant::Default)
     .<span class="function">p_4</span>()                    <span class="comment">// Padding</span>
     .<span class="function">bg</span>(gpui::<span class="function">blue</span>())        <span class="comment">// Background color</span>
@@ -803,7 +803,7 @@ Card::<span class="function">new</span>()
                     .<span class="function">text_color</span>(theme.tokens.foreground)
             )
             .<span class="function">child</span>(
-                Button::<span class="function">new</span>(<span class="string">"Action"</span>)
+                Button::<span class="function">new</span>(<span class="string">"action"</span>, <span class="string">"Action"</span>)
                     .<span class="function">w_full</span>()
                     .<span class="function">bg</span>(theme.tokens.primary)
                     .<span class="function">hover</span>(|style| style.<span class="function">bg</span>(theme.tokens.primary_foreground))
@@ -830,7 +830,7 @@ Card::<span class="function">new</span>()
                 <div class="code-title">Creating a Button</div>
                 <pre><code><span class="keyword">use</span> adabraka_ui::components::button::*;
 
-Button::<span class="function">new</span>(<span class="string">"Click me"</span>)
+Button::<span class="function">new</span>(<span class="string">"click-me"</span>, <span class="string">"Click me"</span>)
     .<span class="function">variant</span>(ButtonVariant::Default)
     .<span class="function">size</span>(ButtonSize::Md)
     .<span class="function">on_click</span>(|_event, _window, _cx| {
@@ -849,8 +849,8 @@ VStack::<span class="function">new</span>()
     .<span class="function">child</span>(
         HStack::<span class="function">new</span>()
             .<span class="function">gap</span>(<span class="function">px</span>(12.0))
-            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"Cancel"</span>))
-            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"Save"</span>).<span class="function">variant</span>(ButtonVariant::Default))
+            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"cancel"</span>, <span class="string">"Cancel"</span>))
+            .<span class="function">child</span>(Button::<span class="function">new</span>(<span class="string">"save"</span>, <span class="string">"Save"</span>).<span class="function">variant</span>(ButtonVariant::Default))
     )</code></pre>
             </div>
 
@@ -897,7 +897,7 @@ Icon::<span class="function">new</span>(<span class="string">"search"</span>)
     .<span class="function">color</span>(theme.tokens.primary)
 
 <span class="comment">// Using icons in components</span>
-Button::<span class="function">new</span>(<span class="string">"Search"</span>)
+Button::<span class="function">new</span>(<span class="string">"search"</span>, <span class="string">"Search"</span>)
     .<span class="function">prefix</span>(IconSource::Named(<span class="string">"search"</span>.<span class="function">to_string</span>()))
 
 SidebarItem::<span class="function">new</span>(<span class="string">"dashboard"</span>, <span class="string">"Dashboard"</span>)

@@ -100,7 +100,7 @@ impl Render for MyApp {
                     .child("Welcome to adabraka-ui!")
             )
             .child(
-                Button::new("Get Started")
+                Button::new("get-started", "Get Started")
                     .variant(ButtonVariant::Default)
                     .on_click(|_event, _window, _cx| {
                         println!("Button clicked!");
@@ -251,8 +251,8 @@ HStack::new()
     .spacing(px(12.0))
     .justify(Justify::Between)  // Main-axis justification
     .align(Align::Center)
-    .child(Button::new("Cancel"))
-    .child(Button::new("Save").variant(ButtonVariant::Default))
+    .child(Button::new("cancel", "Cancel"))
+    .child(Button::new("save", "Save").variant(ButtonVariant::Default))
 ```
 
 ### Grid Layout
@@ -331,26 +331,26 @@ Text::new("Styled text")
 
 ```rust
 // Basic button
-Button::new("Click me")
+Button::new("click-me", "Click me")
     .on_click(|_event, _window, _cx| {
         println!("Clicked!");
     })
 
 // Styled variants
-Button::new("Primary").variant(ButtonVariant::Default)
-Button::new("Secondary").variant(ButtonVariant::Secondary)
-Button::new("Outline").variant(ButtonVariant::Outline)
-Button::new("Ghost").variant(ButtonVariant::Ghost)
-Button::new("Link").variant(ButtonVariant::Link)
-Button::new("Destructive").variant(ButtonVariant::Destructive)
+Button::new("primary", "Primary").variant(ButtonVariant::Default)
+Button::new("secondary", "Secondary").variant(ButtonVariant::Secondary)
+Button::new("outline", "Outline").variant(ButtonVariant::Outline)
+Button::new("ghost", "Ghost").variant(ButtonVariant::Ghost)
+Button::new("link", "Link").variant(ButtonVariant::Link)
+Button::new("destructive", "Destructive").variant(ButtonVariant::Destructive)
 
 // Sizes
-Button::new("Small").size(ButtonSize::Sm)
-Button::new("Medium").size(ButtonSize::Md)  // default
-Button::new("Large").size(ButtonSize::Lg)
+Button::new("small", "Small").size(ButtonSize::Sm)
+Button::new("medium", "Medium").size(ButtonSize::Md)  // default
+Button::new("large", "Large").size(ButtonSize::Lg)
 
 // States
-Button::new("Disabled").disabled(true)
+Button::new("disabled", "Disabled").disabled(true)
 
 // Icon buttons
 IconButton::new(IconSource::Named("search".to_string()))
@@ -384,7 +384,7 @@ Input::new(password_input, cx)
 // With prefix/suffix
 Input::new(input, cx)
     .prefix(div().child("🔍"))
-    .suffix(Button::new("Clear").size(ButtonSize::Sm))
+    .suffix(Button::new("clear", "Clear").size(ButtonSize::Sm))
 ```
 
 #### Checkbox
@@ -1107,14 +1107,14 @@ div()
                 .content(div().child("Are you sure you want to proceed?"))
                 .size(DialogSize::Md)
                 .confirm_button(
-                    Button::new("Confirm")
+                    Button::new("confirm", "Confirm")
                         .variant(ButtonVariant::Default)
                         .on_click(cx.listener(|view, _event, _window, cx| {
                             view.confirm_action(cx);
                         }))
                 )
                 .cancel_button(
-                    Button::new("Cancel")
+                    Button::new("cancel", "Cancel")
                         .on_click(cx.listener(|view, _event, _window, cx| {
                             view.show_dialog = false;
                             cx.notify();
@@ -1128,13 +1128,13 @@ div()
 
 ```rust
 Popover::new(cx)
-    .trigger(Button::new("Open Popover"))
+    .trigger(Button::new("open-popover", "Open Popover"))
     .content(
         VStack::new()
             .p(px(16.0))
             .gap(px(8.0))
             .child(div().child("Popover content"))
-            .child(Button::new("Action"))
+            .child(Button::new("action", "Action"))
     )
     .position(PopoverPosition::Bottom)
     .alignment(PopoverAlignment::Start)

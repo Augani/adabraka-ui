@@ -46,7 +46,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.2.0"
+adabraka-ui = "0.2.1"
 gpui = "0.2.0"
 ```
 

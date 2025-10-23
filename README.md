@@ -116,7 +116,7 @@ impl Render for MyApp {
 
 ## 🎨 Component Customization with Styled Trait
 
-**NEW in v0.2.0:** All 54 components now implement the `Styled` trait, giving you complete control over styling!
+**All 54 components implement the `Styled` trait**, giving you complete control over styling!
 
 ### Full Customization Support
 
@@ -168,8 +168,7 @@ Following the [shadcn/ui philosophy](https://ui.shadcn.com/docs):
 
 > Components ship with sensible defaults that you can completely override.
 
-**Before v0.2.0:** Good defaults, limited customization
-**After v0.2.0:** Great defaults AND 100% control!
+adabraka-ui provides **great defaults AND 100% control** over every component's styling!
 
 ### Examples
 

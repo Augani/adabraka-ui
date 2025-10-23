@@ -44,7 +44,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.1.1"
+adabraka-ui = "0.2.0"
 gpui = "0.2.0"
 ```
 
@@ -108,6 +108,74 @@ impl Render for MyApp {
             )
     }
 }
+```
+
+## 🎨 Component Customization with Styled Trait
+
+**NEW in v0.2.0:** All 54 components now implement the `Styled` trait, giving you complete control over styling!
+
+### Full Customization Support
+
+Every component can be customized using GPUI's powerful styling API. Apply any styling method to any component:
+
+```rust
+Button::new("custom-btn", "Click Me")
+    .variant(ButtonVariant::Primary)  // Use built-in variant
+    .bg(rgb(0x8b5cf6))                 // Custom background
+    .p_8()                              // Custom padding
+    .rounded_xl()                       // Custom border radius
+    .border_2()                         // Custom border
+    .border_color(rgb(0xa78bfa))        // Custom border color
+    .shadow_lg()                        // Shadow effect
+    .w_full()                           // Full width
+```
+
+### Available Styling Methods
+
+**Backgrounds & Colors:**
+- `.bg(color)` - Background color
+- `.text_color(color)` - Text color
+- `.border_color(color)` - Border color
+
+**Spacing:**
+- `.p_4()`, `.p_8()` - Padding (all sides)
+- `.px_6()`, `.py_4()` - Padding (horizontal/vertical)
+- `.m_4()`, `.mx_auto()` - Margins
+
+**Borders & Radius:**
+- `.border_2()`, `.border_4()` - Border width
+- `.rounded_sm()`, `.rounded_lg()`, `.rounded_xl()` - Border radius
+- `.rounded(px(16.0))` - Custom radius
+
+**Sizing:**
+- `.w_full()`, `.h_full()` - Full width/height
+- `.w(px(300.0))`, `.h(px(200.0))` - Custom dimensions
+- `.min_w()`, `.max_w()` - Min/max constraints
+
+**Effects:**
+- `.shadow_sm()`, `.shadow_lg()` - Shadow effects
+- `.opacity()` - Opacity control
+
+**And hundreds more!** Any GPUI styling method works.
+
+### Philosophy: Good Defaults, Complete Control
+
+Following the [shadcn/ui philosophy](https://ui.shadcn.com/docs):
+
+> Components ship with sensible defaults that you can completely override.
+
+**Before v0.2.0:** Good defaults, limited customization
+**After v0.2.0:** Great defaults AND 100% control!
+
+### Examples
+
+Every component now has a `*_styled_demo.rs` example showing full customization capabilities:
+
+```bash
+cargo +nightly run --example button_styled_demo
+cargo +nightly run --example input_styled_demo
+cargo +nightly run --example data_table_styled_demo
+# ... and 51 more!
 ```
 
 ## Theme System

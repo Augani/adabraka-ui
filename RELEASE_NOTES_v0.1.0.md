@@ -121,10 +121,6 @@ Special thanks to:
 - **[Lucide Icons](https://lucide.dev/)** - For the beautiful icon set
 - **[shadcn/ui](https://ui.shadcn.com/)** - For design inspiration
 
-## 💖 Support
-
-If you find adabraka-ui helpful, consider [buying me a coffee](https://www.buymeacoffee.com/pythonxi)!
-
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) for details.

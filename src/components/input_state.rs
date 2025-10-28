@@ -702,13 +702,11 @@ impl InputState {
     }
 
     pub fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
-        // Move focus to next focusable element
         window.focus_next();
         cx.emit(InputEvent::Tab);
     }
 
     pub fn shift_tab(&mut self, _: &ShiftTab, window: &mut Window, cx: &mut Context<Self>) {
-        // Move focus to previous focusable element
         window.focus_prev();
         cx.emit(InputEvent::ShiftTab);
     }

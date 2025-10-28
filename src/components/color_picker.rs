@@ -52,15 +52,12 @@ impl ColorPickerState {
     }
 
     pub fn add_to_recent(&mut self, color: Hsla) {
-        // Remove if already exists
         self.recent_colors.retain(|&c| {
             !(c.h == color.h && c.s == color.s && c.l == color.l && c.a == color.a)
         });
 
-        // Add to front
         self.recent_colors.insert(0, color);
 
-        // Keep only MAX_RECENT_COLORS
         if self.recent_colors.len() > MAX_RECENT_COLORS {
             self.recent_colors.truncate(MAX_RECENT_COLORS);
         }
@@ -137,7 +134,6 @@ impl ColorPicker {
 
     /// Convert HSLA color to HEX string
     fn hsla_to_hex(color: Hsla) -> String {
-        // Convert HSL to RGB
         let h = color.h;
         let s = color.s;
         let l = color.l;

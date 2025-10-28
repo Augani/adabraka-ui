@@ -173,9 +173,7 @@ impl RenderOnce for Transition {
         let duration = self.duration;
         let apply_fade = self.apply_fade;
 
-        // Apply slide if specified, otherwise fade
         if let Some(direction) = slide_direction {
-            // Slide animation with optional fade combined
             div()
                 .id(animation_id.clone())
                 .relative()
@@ -191,7 +189,6 @@ impl RenderOnce for Transition {
                             Direction::Left => el.left(-offset),
                             Direction::Right => el.left(offset),
                         };
-                        // Also apply fade if requested
                         if apply_fade {
                             positioned.opacity(delta)
                         } else {
@@ -200,7 +197,6 @@ impl RenderOnce for Transition {
                     },
                 )
         } else {
-            // Just fade
             div()
                 .id(animation_id.clone())
                 .relative()

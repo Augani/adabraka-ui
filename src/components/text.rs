@@ -238,7 +238,6 @@ impl RenderOnce for Text {
         let mut base = div();
         *base.style() = self.style;
 
-        // Build highlight style for italic/strikethrough if needed
         let needs_highlights = self.italic || self.strikethrough;
         let styled_text = if needs_highlights {
             let mut highlight_style = HighlightStyle::default();
@@ -253,7 +252,6 @@ impl RenderOnce for Text {
                 });
             }
 
-            // Apply highlight to entire text range
             let text_len = self.content.len();
             StyledText::new(self.content.clone())
                 .with_highlights(vec![(0..text_len, highlight_style)])

@@ -454,7 +454,6 @@ impl RenderOnce for Input {
                 state.input_type = InputType::Password;
             }
 
-            // Apply input type if specified
             if let Some(input_type) = self.input_type {
                 state.input_type = input_type;
                 match input_type {

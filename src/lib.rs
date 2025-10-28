@@ -81,10 +81,8 @@ pub use icon_config::set_icon_base_path;
 /// This registers all necessary keybindings and initializes component systems.
 /// Registers custom fonts for the component library.
 pub fn init(cx: &mut gpui::App) {
-    // Register fonts
     fonts::register_fonts(cx);
 
-    // Initialize component systems
     components::input::init(cx);
     components::select::init_select(cx);
     components::combobox::init_combobox(cx);

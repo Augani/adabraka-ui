@@ -1,14 +1,42 @@
 use adabraka_ui::{
     components::{
-        input::{Input, InputType, InputVariant, InputSize, ValidationRules},
+        input::{Input, InputType, InputVariant, InputSize},
         input_state::InputState,
         button::{Button, ButtonVariant, ButtonSize},
         scrollable::scrollable_vertical,
     },
-    layout::{VStack, HStack},
+    layout::VStack,
     theme::{install_theme, Theme},
 };
 use gpui::{*, prelude::FluentBuilder};
+use std::path::PathBuf;
+
+struct Assets {
+    base: PathBuf,
+}
+
+impl gpui::AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        std::fs::read(self.base.join(path))
+            .map(|data| Some(std::borrow::Cow::Owned(data)))
+            .map_err(|err| err.into())
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<gpui::SharedString>> {
+        std::fs::read_dir(self.base.join(path))
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| {
+                        entry
+                            .ok()
+                            .and_then(|entry| entry.file_name().into_string().ok())
+                            .map(gpui::SharedString::from)
+                    })
+                    .collect()
+            })
+            .map_err(|err| err.into())
+    }
+}
 
 struct ValidationDemoApp {
     // Various input types with validation
@@ -309,6 +337,7 @@ impl Render for ValidationDemoApp {
                                                 .child(
                                                     Input::new(&self.password_input)
                                                         .input_type(InputType::Password)
+                                                        .password(true)
                                                         .variant(InputVariant::Outline)
                                                         .required(true)
                                                         .min_length(8)
@@ -320,6 +349,7 @@ impl Render for ValidationDemoApp {
                                                             move |_value, cx| {
                                                                 entity.update(cx, |app, cx| {
                                                                     app.validate_form(cx);
+                                                                    cx.notify();
                                                                 });
                                                             }
                                                         })
@@ -340,15 +370,26 @@ impl Render for ValidationDemoApp {
                                                 .child(
                                                     Input::new(&self.confirm_password_input)
                                                         .input_type(InputType::Password)
+                                                        .password(true)
                                                         .variant(InputVariant::Outline)
                                                         .required(true)
                                                         .aria_label("Confirm password")
                                                         .autocomplete("new-password")
+                                                        .on_change({
+                                                            let entity = cx.entity();
+                                                            move |_value, cx| {
+                                                                entity.update(cx, |app, cx| {
+                                                                    app.validate_form(cx);
+                                                                    cx.notify();
+                                                                });
+                                                            }
+                                                        })
                                                         .on_blur({
                                                             let entity = cx.entity();
                                                             move |_value, cx| {
                                                                 entity.update(cx, |app, cx| {
                                                                     app.validate_form(cx);
+                                                                    cx.notify();
                                                                 });
                                                             }
                                                         })
@@ -567,12 +608,15 @@ impl Render for ValidationDemoApp {
 }
 
 fn main() {
-    Application::new().run(move |cx| {
+    Application::new()
+        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .run(move |cx| {
         // Install dark theme
         install_theme(cx, Theme::dark());
 
         // Initialize input system
         adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
 
         cx.open_window(
             WindowOptions {

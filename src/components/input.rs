@@ -73,7 +73,6 @@ pub struct Input {
     disabled: bool,
     error: bool,
     password: bool,
-    show_password: bool,
     clearable: bool,
     prefix: Option<AnyElement>,
     suffix: Option<AnyElement>,
@@ -116,7 +115,6 @@ impl Input {
             disabled: false,
             error: false,
             password: false,
-            show_password: false,
             clearable: false,
             prefix: None,
             suffix: None,
@@ -448,8 +446,13 @@ impl RenderOnce for Input {
 
         self.state.update(cx, |state, cx| {
             state.disabled = self.disabled;
-            state.masked = self.password && !self.show_password;
             state.placeholder = self.placeholder.clone();
+
+            // If password flag is enabled, ensure password input type is set.
+            // Do not force `masked` here so user interactions can toggle it.
+            if self.password {
+                state.input_type = InputType::Password;
+            }
 
             // Apply input type if specified
             if let Some(input_type) = self.input_type {
@@ -629,6 +632,7 @@ impl RenderOnce for Input {
         let content_length = input_state.content.len();
         let max_length = input_state.validation_rules.max_length;
         let is_focused = input_state.focus_handle(cx).is_focused(window);
+        let is_masked = input_state.masked;
 
         let shadow_xs = BoxShadow {
             offset: theme.tokens.shadow_xs.offset,
@@ -731,7 +735,6 @@ impl RenderOnce for Input {
                         )
                     })
                     .when(self.password, |h| {
-                        let is_masked = !self.show_password;
                         h.child(
                             div()
                                 .px(px(4.0))
@@ -739,14 +742,18 @@ impl RenderOnce for Input {
                                 .rounded(px(4.0))
                                 .cursor_pointer()
                                 .hover(|style| style.bg(theme.tokens.muted))
-                                .on_mouse_down(MouseButton::Left, move |_, _window, cx| {
-                                    state_for_password.update(cx, |state, cx| {
-                                        state.masked = !is_masked;
-                                        cx.notify();
-                                    })
+                                .on_mouse_down(MouseButton::Left, {
+                                    let state = state_for_password.clone();
+                                    move |_, window, cx| {
+                                        state.update(cx, |state, cx| {
+                                            state.masked = !state.masked;
+                                            cx.notify();
+                                        });
+                                        window.refresh();
+                                    }
                                 })
                                 .child(
-                                    Icon::new(if self.show_password { "eye" } else { "eye-off" })
+                                    Icon::new(if is_masked { "eye" } else { "eye-off" })
                                         .size(px(16.0))
                                         .color(theme.tokens.muted_foreground)
                                 ),

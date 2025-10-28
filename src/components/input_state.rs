@@ -701,11 +701,15 @@ impl InputState {
         self.replace_text_in_range(None, "", window, cx)
     }
 
-    pub fn tab(&mut self, _: &Tab, _window: &mut Window, cx: &mut Context<Self>) {
+    pub fn tab(&mut self, _: &Tab, window: &mut Window, cx: &mut Context<Self>) {
+        // Move focus to next focusable element
+        window.focus_next();
         cx.emit(InputEvent::Tab);
     }
 
-    pub fn shift_tab(&mut self, _: &ShiftTab, _window: &mut Window, cx: &mut Context<Self>) {
+    pub fn shift_tab(&mut self, _: &ShiftTab, window: &mut Window, cx: &mut Context<Self>) {
+        // Move focus to previous focusable element
+        window.focus_prev();
         cx.emit(InputEvent::ShiftTab);
     }
 

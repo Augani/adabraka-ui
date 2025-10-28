@@ -570,8 +570,12 @@ impl RenderOnce for Input {
                             callback(result.clone(), cx);
                         }
                     }
-                    InputEvent::Tab => {}
-                    InputEvent::ShiftTab => {}
+                    InputEvent::Tab => {
+                        // Focus navigation handled in InputState action handlers
+                    }
+                    InputEvent::ShiftTab => {
+                        // Focus navigation handled in InputState action handlers
+                    }
                 }
             })
             .detach();
@@ -655,7 +659,7 @@ impl RenderOnce for Input {
                 div()
                     .id(("input", self.state.entity_id()))
                     .key_context("Input")
-                    .track_focus(&self.state.read(cx).focus_handle(cx))
+                    .track_focus(&self.state.read(cx).focus_handle(cx).tab_index(0).tab_stop(true))
                     .when(!self.disabled, |this| {
                         this.on_action(window.listener_for(&self.state, InputState::backspace))
                             .on_action(window.listener_for(&self.state, InputState::delete))

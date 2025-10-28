@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2025-10-28
+
+### Added
+- Tab/Shift-Tab keyboard navigation between form inputs
+  - Implemented `tab()` and `shift_tab()` handlers in InputState
+  - Proper FocusHandle configuration with `.tab_index(0).tab_stop(true)`
+  - Window-level focus navigation using `window.focus_next()` and `window.focus_prev()`
+- Comprehensive ROADMAP.md with 90+ component inventory
+  - Complete component categorization and status tracking
+  - Phase-based development plan with desktop integration features
+  - Prioritized quick wins and improvements
+
+### Fixed
+- Password input eye icon toggle functionality
+  - Icon now properly toggles between "eye" and "eye-off"
+  - Password masking correctly switches between bullets (••••) and actual text
+  - Immediate UI updates with `window.refresh()` after state changes
+  - Fixed state reading to use dynamic `input_state.masked` value
+
+### Improved
+- Code quality improvements with removal of 13 unnecessary inline comments across 6 files
+  - Removed comments from: color_picker.rs, input_state.rs, input.rs, text.rs, lib.rs, transitions.rs
+  - Cleaner, more production-ready codebase
+
+### Examples
+- Added `password_test.rs` - Demonstrates password toggle functionality with clear instructions
+
 ## [0.2.1] - 2025-10-23
 
 ### Added - 🎉 Three New Production-Ready Components!
@@ -176,7 +203,8 @@ Created comprehensive styled demonstration examples for every component showing 
 - Platform-aware UI elements
 - Responsive layout utilities (VStack, HStack, Grid)
 
-[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.2
 [0.2.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.0
 [0.1.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.1.1

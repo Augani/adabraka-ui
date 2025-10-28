@@ -46,7 +46,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.2.1"
+adabraka-ui = "0.2.2"
 gpui = "0.2.0"
 ```
 
@@ -54,6 +54,37 @@ Build your project with nightly:
 ```bash
 cargo +nightly build
 ```
+
+## ✨ What's New in v0.2.2
+
+**Latest Release (October 28, 2025)** - Improved form usability and documentation!
+
+### 🔐 Password Input Fixed
+The password input eye icon now properly toggles between masked (••••) and visible text with immediate state updates. Click the eye icon to reveal or hide your password.
+
+```rust
+Input::new(password_input, cx)
+    .password(true)  // Enables eye icon toggle
+    .placeholder("Enter password")
+```
+
+### ⌨️ Tab Navigation
+Added full keyboard navigation support between form inputs. Press Tab to move to the next input, Shift-Tab to go back. Works automatically with proper FocusHandle configuration.
+
+```rust
+// Tab navigation works automatically
+Input::new(&email_input, cx).placeholder("Email")
+Input::new(&password_input, cx).password(true).placeholder("Password")
+// Press Tab to move between inputs!
+```
+
+### 🗺️ Comprehensive Roadmap
+New [ROADMAP.md](ROADMAP.md) with complete component inventory (73+ components), phase-based development plan, and prioritized quick wins for desktop integration features.
+
+### 🧹 Code Quality
+Removed 13 unnecessary inline comments across 6 files for a cleaner, more production-ready codebase.
+
+---
 
 ## Quick Start
 
@@ -377,9 +408,9 @@ Input::new(input_state, cx)
     .variant(InputVariant::Outline)
     .variant(InputVariant::Ghost)
 
-// Password input
+// Password input with eye icon toggle (fixed in v0.2.2!)
 Input::new(password_input, cx)
-    .input_type(InputType::Password)
+    .password(true)  // Enables eye icon toggle for show/hide
     .placeholder("Enter password")
 
 // With prefix/suffix
@@ -1724,6 +1755,7 @@ cargo run --example file_explorer
 # Input & Forms
 cargo run --example input_demo
 cargo run --example input_validation
+cargo run --example password_test
 cargo run --example search_input_demo
 cargo run --example color_picker_demo
 cargo run --example date_picker_demo

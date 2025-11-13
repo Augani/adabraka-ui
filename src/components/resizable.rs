@@ -475,22 +475,6 @@ impl RenderOnce for ResizablePanel {
                 div.style().refine(&user_style);
                 div
             })
-            .child({
-                let state = state.clone();
-                let index = self.index;
-                let size_range = self.size_range.clone();
-
-                canvas(
-                    move |bounds, _, cx| {
-                        state.update(cx, |state, cx| {
-                            state.update_panel_size(index, bounds, size_range.clone(), cx)
-                        })
-                    },
-                    |_, _, _, _| {},
-                )
-                .absolute()
-                .size_full()
-            })
             .children(self.children)
             .when(self.index > 0, |this| {
                 let handle_index = self.index - 1;
@@ -508,6 +492,22 @@ impl RenderOnce for ResizablePanel {
                         cx.new(|_| (*drag_panel).clone())
                     },
                 ))
+            })
+            .child({
+                let state = state.clone();
+                let index = self.index;
+                let size_range = self.size_range.clone();
+
+                canvas(
+                    move |bounds, _, cx| {
+                        state.update(cx, |state, cx| {
+                            state.update_panel_size(index, bounds, size_range.clone(), cx)
+                        })
+                    },
+                    |_, _, _, _| {},
+                )
+                .absolute()
+                .size_full()
             })
             .into_any_element()
     }

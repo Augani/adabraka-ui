@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "adabraka-ui"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "gpui",
  "once_cell",

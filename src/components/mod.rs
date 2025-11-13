@@ -32,6 +32,7 @@ pub mod label;
 pub mod skeleton;
 pub mod radio;
 pub mod slider;
+pub use slider::SliderAxis;
 pub mod avatar;
 pub mod pagination;
 pub mod collapsible;

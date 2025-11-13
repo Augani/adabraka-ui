@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2025-11-13
+
+### Added
+- Vertical slider orientation support
+  - New `SliderAxis` enum with `Horizontal` and `Vertical` variants
+  - `.vertical()` and `.horizontal()` builder methods
+  - Separate rendering logic for horizontal and vertical orientations
+  - Vertical sliders grow from bottom to top (0% at bottom, 100% at top)
+  - Adaptive thumb shape: horizontal oval for horizontal sliders, vertical oval for vertical sliders
+  - `update_from_position_vertical()` method for proper vertical drag handling
+
+### Fixed
+- Slider thumb vertical centering
+  - Container height now matches thumb height for proper alignment
+  - Thumb positioned at `top: 0` instead of calculated offset
+  - Track perfectly centered within container using flex layout
+  - Thumb now sits centered on the track line instead of above it
+
+### Improved
+- Slider component architecture with separate `render_horizontal()` and `render_vertical()` methods
+- Cleaner positioning logic using container dimensions matching thumb dimensions
+- Better visual consistency across all slider sizes (Sm, Md, Lg)
+
+### Examples
+- Updated `slider_styled_demo.rs` with 10 comprehensive examples
+  - 7 horizontal slider variations demonstrating sizes, styling, and features
+  - 3 vertical slider examples showcasing the new orientation support
+  - All examples fully interactive with drag support and onChange handlers
+
 ## [0.2.2] - 2025-10-28
 
 ### Added

@@ -46,7 +46,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.2.2"
+adabraka-ui = "0.2.3"
 gpui = "0.2.0"
 ```
 
@@ -55,34 +55,38 @@ Build your project with nightly:
 cargo +nightly build
 ```
 
-## ✨ What's New in v0.2.2
+## ✨ What's New in v0.2.3
 
-**Latest Release (October 28, 2025)** - Improved form usability and documentation!
+**Latest Release (November 13, 2025)** - Enhanced slider component with vertical orientation support!
 
-### 🔐 Password Input Fixed
-The password input eye icon now properly toggles between masked (••••) and visible text with immediate state updates. Click the eye icon to reveal or hide your password.
-
-```rust
-Input::new(password_input, cx)
-    .password(true)  // Enables eye icon toggle
-    .placeholder("Enter password")
-```
-
-### ⌨️ Tab Navigation
-Added full keyboard navigation support between form inputs. Press Tab to move to the next input, Shift-Tab to go back. Works automatically with proper FocusHandle configuration.
+### 📊 Vertical Slider Support
+The Slider component now supports both horizontal and vertical orientations. Perfect for volume controls, brightness adjustments, and other vertical UI patterns.
 
 ```rust
-// Tab navigation works automatically
-Input::new(&email_input, cx).placeholder("Email")
-Input::new(&password_input, cx).password(true).placeholder("Password")
-// Press Tab to move between inputs!
+// Horizontal slider (default)
+Slider::new(slider_state.clone())
+    .show_value(true)
+
+// Vertical slider
+Slider::new(slider_state.clone())
+    .vertical()
+    .size(SliderSize::Lg)
+    .show_value(true)
+    .on_change(|value, _, _| {
+        println!("Value: {}", value);
+    })
 ```
 
-### 🗺️ Comprehensive Roadmap
-New [ROADMAP.md](ROADMAP.md) with complete component inventory (73+ components), phase-based development plan, and prioritized quick wins for desktop integration features.
+### 🐛 Slider Thumb Centering Fixed
+The slider thumb is now perfectly centered on the track line, providing a more polished and professional appearance across all size variants (Sm, Md, Lg).
 
-### 🧹 Code Quality
-Removed 13 unnecessary inline comments across 6 files for a cleaner, more production-ready codebase.
+### 🎨 Improved Component Architecture
+- Separate `render_horizontal()` and `render_vertical()` methods for cleaner code
+- Adaptive thumb shape: horizontal oval for horizontal sliders, vertical oval for vertical sliders
+- Better positioning logic using container dimensions matching thumb dimensions
+
+### 📚 Enhanced Examples
+Updated `slider_styled_demo.rs` with 10 comprehensive examples showcasing horizontal and vertical sliders with various styling options.
 
 ---
 
@@ -452,6 +456,53 @@ Toggle::new("toggle-id")
     }))
 
 // Sizes and variants available
+```
+
+#### Slider
+
+Interactive slider for selecting numeric values with horizontal and vertical orientations:
+
+```rust
+// Create slider state
+let slider_state = cx.new(|cx| {
+    let mut state = SliderState::new(cx);
+    state.set_min(0.0, cx);
+    state.set_max(100.0, cx);
+    state.set_value(50.0, cx);
+    state.set_step(1.0, cx);
+    state
+});
+
+// Horizontal slider (default)
+Slider::new(slider_state.clone())
+    .size(SliderSize::Md)
+    .show_value(true)
+    .on_change(|value, _window, _cx| {
+        println!("Value changed: {}", value);
+    })
+
+// Vertical slider
+Slider::new(slider_state.clone())
+    .vertical()
+    .size(SliderSize::Lg)
+    .show_value(true)
+
+// Sizes
+Slider::new(slider_state.clone()).size(SliderSize::Sm)  // Small
+Slider::new(slider_state.clone()).size(SliderSize::Md)  // Medium (default)
+Slider::new(slider_state.clone()).size(SliderSize::Lg)  // Large
+
+// Disabled state
+Slider::new(slider_state.clone()).disabled(true)
+
+// Full Styled trait support for custom styling
+Slider::new(slider_state.clone())
+    .w(px(400.0))
+    .bg(rgb(0x1e293b))
+    .p(px(16.0))
+    .rounded(px(12.0))
+    .border_2()
+    .border_color(rgb(0x3b82f6))
 ```
 
 #### Select Dropdown

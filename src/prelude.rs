@@ -1,5 +1,6 @@
 //! Convenient re-exports for end users
 
+pub use crate::components::alert::{alert, Alert, AlertVariant};
 pub use crate::components::button::{Button, ButtonSize, ButtonVariant, IconPosition};
 pub use crate::components::calendar::{Calendar, CalendarLocale, DateValue};
 pub use crate::components::checkbox::{Checkbox, CheckboxSize};
@@ -8,9 +9,12 @@ pub use crate::components::combobox::{Combobox, ComboboxEvent, ComboboxState};
 pub use crate::components::date_picker::{DateFormat, DatePicker, DatePickerState};
 pub use crate::components::dropdown::{Dropdown, DropdownAlign, DropdownItem, DropdownState};
 pub use crate::components::editor::{Editor, EditorState};
+pub use crate::components::empty_state::{EmptyState, EmptyStateSize};
+pub use crate::components::hotkey_input::{HotkeyInput, HotkeyInputState, HotkeyValue};
 pub use crate::components::icon::{icon, icon_button, Icon, IconSize, IconVariant};
 pub use crate::components::icon_button::IconButton;
 pub use crate::components::icon_source::IconSource;
+pub use crate::components::inline_edit::{InlineEdit, InlineEditState, InlineEditTrigger};
 pub use crate::components::keyboard_shortcuts::{
     KeyboardShortcuts, ShortcutCategory, ShortcutItem,
 };
@@ -29,6 +33,9 @@ pub use crate::components::select::{Select, SelectOption};
 pub use crate::components::separator::{Separator, SeparatorOrientation};
 pub use crate::components::slider::{Slider, SliderAxis, SliderSize, SliderState};
 pub use crate::components::spinner::{Spinner, SpinnerSize, SpinnerVariant};
+pub use crate::components::split_pane::{
+    CollapsiblePane, SplitDirection, SplitPane, SplitPaneEvent, SplitPaneState,
+};
 pub use crate::components::tag_input::{TagInput, TagInputState};
 pub use crate::components::text::{
     body, body_large, body_small, caption, code, code_small, h1, h2, h3, h4, h5, h6, label,

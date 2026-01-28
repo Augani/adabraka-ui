@@ -1,5 +1,6 @@
 //! UI components module.
 
+pub mod alert;
 pub mod button;
 pub mod icon_source;
 pub mod icon_button;
@@ -47,6 +48,10 @@ pub mod combobox;
 pub mod color_picker;
 pub mod spinner;
 pub mod number_input;
+pub mod empty_state;
+pub mod hotkey_input;
+pub mod split_pane;
+pub mod inline_edit;
 
 pub use crate::display::badge;
 

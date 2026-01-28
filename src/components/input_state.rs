@@ -1,3 +1,4 @@
+use crate::theme::use_theme;
 /// Interactive text input state management with validation and accessibility
 ///
 /// Industry-standard input component with:
@@ -9,12 +10,16 @@
 /// - Pattern matching support
 /// - Auto-formatting for phone, date, credit card
 /// - ARIA support for screen readers
-
 use gpui::{prelude::*, *};
+use once_cell::sync::Lazy;
 use std::ops::Range;
 use std::sync::Arc;
 use unicode_segmentation::*;
-use crate::theme::use_theme;
+
+static EMAIL_REGEX: Lazy<regex::Regex> = Lazy::new(|| {
+    regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        .expect("Invalid email regex pattern")
+});
 
 actions!(
     input_state,
@@ -418,31 +423,33 @@ impl InputState {
         }
 
         match self.input_type {
-            InputType::Number => {
-                input.chars()
-                    .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
-                    .collect()
-            }
-            InputType::Tel => {
-                input.chars()
-                    .filter(|c| c.is_ascii_digit() || *c == '+' || *c == '-' || *c == '(' || *c == ')' || *c == ' ')
-                    .collect()
-            }
-            InputType::Date => {
-                input.chars()
-                    .filter(|c| c.is_ascii_digit() || *c == '/' || *c == '-')
-                    .collect()
-            }
-            InputType::Time => {
-                input.chars()
-                    .filter(|c| c.is_ascii_digit() || *c == ':')
-                    .collect()
-            }
-            InputType::CreditCard => {
-                input.chars()
-                    .filter(|c| c.is_ascii_digit() || *c == ' ')
-                    .collect()
-            }
+            InputType::Number => input
+                .chars()
+                .filter(|c| c.is_ascii_digit() || *c == '.' || *c == '-')
+                .collect(),
+            InputType::Tel => input
+                .chars()
+                .filter(|c| {
+                    c.is_ascii_digit()
+                        || *c == '+'
+                        || *c == '-'
+                        || *c == '('
+                        || *c == ')'
+                        || *c == ' '
+                })
+                .collect(),
+            InputType::Date => input
+                .chars()
+                .filter(|c| c.is_ascii_digit() || *c == '/' || *c == '-')
+                .collect(),
+            InputType::Time => input
+                .chars()
+                .filter(|c| c.is_ascii_digit() || *c == ':')
+                .collect(),
+            InputType::CreditCard => input
+                .chars()
+                .filter(|c| c.is_ascii_digit() || *c == ' ')
+                .collect(),
             _ => input.to_string(),
         }
     }
@@ -464,9 +471,16 @@ impl InputState {
             }
             InputMask::CreditCard => {
                 let digits: String = input.chars().filter(|c| c.is_ascii_digit()).collect();
-                digits.chars()
+                digits
+                    .chars()
                     .enumerate()
-                    .map(|(i, c)| if i > 0 && i % 4 == 0 { format!(" {}", c) } else { c.to_string() })
+                    .map(|(i, c)| {
+                        if i > 0 && i % 4 == 0 {
+                            format!(" {}", c)
+                        } else {
+                            c.to_string()
+                        }
+                    })
                     .collect::<String>()
             }
             InputMask::Date => {
@@ -496,8 +510,7 @@ impl InputState {
     }
 
     fn validate_email(&self, email: &str) -> Result<(), ValidationError> {
-        let re = regex::Regex::new(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$").unwrap();
-        if !re.is_match(email) {
+        if !EMAIL_REGEX.is_match(email) {
             return Err(ValidationError {
                 message: "Please enter a valid email address".into(),
                 field_name: self.aria_label.clone(),
@@ -630,7 +643,9 @@ impl InputState {
         let mut sum = 0;
         let mut alternate = false;
         for c in digits.chars().rev() {
-            let mut digit = c.to_digit(10).unwrap();
+            let Some(mut digit) = c.to_digit(10) else {
+                continue;
+            };
             if alternate {
                 digit *= 2;
                 if digit > 9 {
@@ -720,7 +735,9 @@ impl InputState {
         self.is_selecting = true;
 
         let now = std::time::Instant::now();
-        let is_double_click = if let (Some(last_time), Some(last_pos)) = (self.last_click_time, self.last_click_position) {
+        let is_double_click = if let (Some(last_time), Some(last_pos)) =
+            (self.last_click_time, self.last_click_position)
+        {
             let time_diff = now.duration_since(last_time);
             let dx = event.position.x - last_pos.x;
             let dy = event.position.y - last_pos.y;
@@ -797,8 +814,7 @@ impl InputState {
     pub fn on_focus(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         if self.select_on_focus && !self.content.is_empty() {
             self.selected_range = 0..self.content.len();
-        }
-        else if !self.content.is_empty() && self.cursor_position_override.is_none() {
+        } else if !self.content.is_empty() && self.cursor_position_override.is_none() {
             let len = self.content.len();
             self.selected_range = len..len;
         }
@@ -1000,24 +1016,30 @@ impl EntityInputHandler for InputState {
         if let Some(max_length) = self.validation_rules.max_length {
             let new_length = self.content.len() - (range.end - range.start) + formatted_text.len();
             if new_length > max_length {
-                let allowed_length = max_length.saturating_sub(self.content.len() - (range.end - range.start));
+                let allowed_length =
+                    max_length.saturating_sub(self.content.len() - (range.end - range.start));
                 let truncated: String = formatted_text.chars().take(allowed_length).collect();
 
-                self.content =
-                    (self.content[0..range.start].to_owned() + &truncated + &self.content[range.end..])
-                        .into();
+                self.content = (self.content[0..range.start].to_owned()
+                    + &truncated
+                    + &self.content[range.end..])
+                    .into();
                 self.selected_range = range.start + truncated.len()..range.start + truncated.len();
             } else {
-                self.content =
-                    (self.content[0..range.start].to_owned() + &formatted_text + &self.content[range.end..])
-                        .into();
-                self.selected_range = range.start + formatted_text.len()..range.start + formatted_text.len();
+                self.content = (self.content[0..range.start].to_owned()
+                    + &formatted_text
+                    + &self.content[range.end..])
+                    .into();
+                self.selected_range =
+                    range.start + formatted_text.len()..range.start + formatted_text.len();
             }
         } else {
-            self.content =
-                (self.content[0..range.start].to_owned() + &formatted_text + &self.content[range.end..])
-                    .into();
-            self.selected_range = range.start + formatted_text.len()..range.start + formatted_text.len();
+            self.content = (self.content[0..range.start].to_owned()
+                + &formatted_text
+                + &self.content[range.end..])
+                .into();
+            self.selected_range =
+                range.start + formatted_text.len()..range.start + formatted_text.len();
         }
 
         self.marked_range.take();
@@ -1057,7 +1079,9 @@ impl EntityInputHandler for InputState {
             .as_ref()
             .map(|range_utf16| self.range_from_utf16(range_utf16))
             .map(|new_range| new_range.start + range.start..new_range.end + range.end)
-            .unwrap_or_else(|| range.start + filtered_text.len()..range.start + filtered_text.len());
+            .unwrap_or_else(|| {
+                range.start + filtered_text.len()..range.start + filtered_text.len()
+            });
 
         cx.notify();
     }
@@ -1170,7 +1194,11 @@ impl gpui::Element for InputTextElement {
 
             (masked_text, masked_selected_range, masked_cursor)
         } else {
-            (input.content.clone(), input.selected_range.clone(), input.cursor_offset())
+            (
+                input.content.clone(),
+                input.selected_range.clone(),
+                input.cursor_offset(),
+            )
         };
         let style = window.text_style();
         let theme = use_theme();
@@ -1288,9 +1316,15 @@ impl gpui::Element for InputTextElement {
         if let Some(selection) = prepaint.selection.take() {
             window.paint_quad(selection)
         }
-        let line = prepaint.line.take().unwrap();
-        line.paint(bounds.origin, window.line_height(), window, cx)
-            .unwrap();
+        let Some(line) = prepaint.line.take() else {
+            return;
+        };
+        if line
+            .paint(bounds.origin, window.line_height(), window, cx)
+            .is_err()
+        {
+            return;
+        }
 
         if focus_handle.is_focused(window) {
             if let Some(cursor) = prepaint.cursor.take() {

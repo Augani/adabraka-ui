@@ -1,8 +1,10 @@
-//! Toggle component - Toggle/Switch component with animations.
+//! Toggle component - Toggle/Switch component with animations and keyboard support.
 
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use crate::theme::use_theme;
+
+actions!(toggle, [ToggleAction]);
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ToggleSize {
@@ -120,7 +122,17 @@ impl RenderOnce for Toggle {
 
         let radius = bg_height;
 
+        let focus_handle = window
+            .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
+            .read(cx)
+            .clone();
+
+        let is_focused = focus_handle.is_focused(window);
+
         self.base
+            .when(!self.disabled, |this| {
+                this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
+            })
             .flex()
             .items_center()
             .gap(px(8.0))
@@ -133,6 +145,11 @@ impl RenderOnce for Toggle {
                     .flex()
                     .items_center()
                     .bg(bg)
+                    .border_2()
+                    .border_color(gpui::transparent_black())
+                    .when(is_focused && !self.disabled, |this| {
+                        this.border_color(theme.tokens.ring)
+                    })
                     .cursor(if self.disabled {
                         CursorStyle::Arrow
                     } else {
@@ -160,7 +177,7 @@ impl RenderOnce for Toggle {
                         cx,
                     ))
             )
-            .when_some(self.label, |this, label| {
+            .when_some(self.label.clone(), |this, label| {
                 this.child(
                     div()
                         .text_size(match self.size {
@@ -187,12 +204,20 @@ impl RenderOnce for Toggle {
                 div
             })
             .when(!self.disabled, |this| {
-                this.when_some(self.on_click, |this, on_click| {
-                    let on_click = on_click.clone();
-                    this.on_click(move |_, window, cx| {
-                        let new_checked = !checked;
-                        (on_click)(&new_checked, window, cx);
-                    })
+                this.when_some(self.on_click.clone(), |this, on_click| {
+                    let on_click_for_key = on_click.clone();
+                    this
+                        .on_click(move |_, window, cx| {
+                            let new_checked = !checked;
+                            (on_click)(&new_checked, window, cx);
+                        })
+                        .on_key_down(move |event, window, cx| {
+                            if event.keystroke.key == "space" || event.keystroke.key == "enter" {
+                                let new_checked = !checked;
+                                (on_click_for_key)(&new_checked, window, cx);
+                                cx.stop_propagation();
+                            }
+                        })
                 })
             })
     }

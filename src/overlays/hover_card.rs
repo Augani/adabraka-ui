@@ -32,6 +32,7 @@ impl Default for HoverCardAlignment {
     }
 }
 
+#[derive(IntoElement)]
 pub struct HoverCard {
     trigger: AnyElement,
     content: AnyElement,
@@ -137,14 +138,16 @@ impl RenderOnce for HoverCard {
                             this.left_full().ml(px(8.0))
                         })
                         .when(
-                            (self.position == HoverCardPosition::Top || self.position == HoverCardPosition::Bottom)
+                            (self.position == HoverCardPosition::Top
+                                || self.position == HoverCardPosition::Bottom)
                                 && self.alignment == HoverCardAlignment::Start,
-                            |this: Div| this.left_0()
+                            |this: Div| this.left_0(),
                         )
                         .when(
-                            (self.position == HoverCardPosition::Top || self.position == HoverCardPosition::Bottom)
+                            (self.position == HoverCardPosition::Top
+                                || self.position == HoverCardPosition::Bottom)
                                 && self.alignment == HoverCardAlignment::End,
-                            |this: Div| this.right_0()
+                            |this: Div| this.right_0(),
                         )
                         .child(
                             div()
@@ -165,8 +168,8 @@ impl RenderOnce for HoverCard {
                                     div.style().refine(&user_style);
                                     div
                                 })
-                                .child(self.content)
-                        )
+                                .child(self.content),
+                        ),
                 )
             })
     }

@@ -1,8 +1,8 @@
 use adabraka_ui::{
+    overlays::hover_card::{HoverCard, HoverCardAlignment, HoverCardPosition},
     prelude::*,
-    overlays::hover_card::{HoverCard, HoverCardPosition, HoverCardAlignment},
 };
-use gpui::*;
+use gpui::{prelude::*, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -73,9 +73,10 @@ impl Render for HoverCardStyledDemo {
         let theme = use_theme();
 
         div()
+            .id("hover-card-demo-root")
             .size_full()
             .bg(theme.tokens.background)
-            .overflow_scroll()
+            .overflow_y_scroll()
             .child(
                 div()
                     .flex()

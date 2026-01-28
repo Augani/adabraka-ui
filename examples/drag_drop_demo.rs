@@ -1,8 +1,8 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
     components::drag_drop::{DragData, Draggable, DropZone, DropZoneStyle},
     theme::{install_theme, Theme},
 };
+use gpui::{prelude::FluentBuilder as _, *};
 
 /// File item that can be dragged
 #[derive(Clone, Debug)]
@@ -205,12 +205,17 @@ impl Render for DragDropDemo {
                                     )
                                     .child(
                                         DropZone::<FileItem>::new("upload-zone")
-                                            .style(DropZoneStyle::Dashed)
+                                            .drop_zone_style(DropZoneStyle::Dashed)
                                             .min_h(px(200.0))
-                                            .on_drop(cx.listener(|this, data: &DragData<FileItem>, _, cx| {
-                                                this.uploaded_files.push(data.data.clone());
-                                                cx.notify();
-                                            }))
+                                            .on_drop({
+                                                let entity = cx.entity().clone();
+                                                move |data: &DragData<FileItem>, _window, cx| {
+                                                    entity.update(cx, |this, cx| {
+                                                        this.uploaded_files.push(data.data.clone());
+                                                        cx.notify();
+                                                    });
+                                                }
+                                            })
                                             .child(
                                                 div()
                                                     .flex()
@@ -272,12 +277,17 @@ impl Render for DragDropDemo {
                                     )
                                     .child(
                                         DropZone::<FileItem>::new("trash-zone")
-                                            .style(DropZoneStyle::Filled)
+                                            .drop_zone_style(DropZoneStyle::Filled)
                                             .min_h(px(200.0))
-                                            .on_drop(cx.listener(|this, data: &DragData<FileItem>, _, cx| {
-                                                this.trash_files.push(data.data.clone());
-                                                cx.notify();
-                                            }))
+                                            .on_drop({
+                                                let entity = cx.entity().clone();
+                                                move |data: &DragData<FileItem>, _window, cx| {
+                                                    entity.update(cx, |this, cx| {
+                                                        this.trash_files.push(data.data.clone());
+                                                        cx.notify();
+                                                    });
+                                                }
+                                            })
                                             .child(
                                                 div()
                                                     .flex()

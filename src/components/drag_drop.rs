@@ -105,12 +105,8 @@ impl<T: Clone + Debug + 'static> Render for DragData<T> {
                         blur_radius: px(12.0),
                         spread_radius: px(0.0),
                     }])
-                    .when_some(self.label.clone(), |this, label| {
-                        this.child(label)
-                    })
-                    .when(self.label.is_none(), |this| {
-                        this.child("Dragging...")
-                    })
+                    .when_some(self.label.clone(), |this, label| this.child(label))
+                    .when(self.label.is_none(), |this| this.child("Dragging...")),
             )
     }
 }
@@ -212,6 +208,7 @@ pub struct DropZone<T: Clone + Debug + 'static> {
     min_height: Option<Pixels>,
     children: Vec<AnyElement>,
     user_style: StyleRefinement,
+    on_drop: Option<Rc<dyn Fn(&DragData<T>, &mut Window, &mut App)>>,
     _phantom: std::marker::PhantomData<T>,
 }
 
@@ -224,12 +221,21 @@ impl<T: Clone + Debug + 'static> DropZone<T> {
             min_height: None,
             children: Vec::new(),
             user_style: StyleRefinement::default(),
+            on_drop: None,
             _phantom: std::marker::PhantomData,
         }
     }
 
     pub fn drop_zone_style(mut self, style: DropZoneStyle) -> Self {
         self.drop_style = style;
+        self
+    }
+
+    pub fn on_drop<F>(mut self, handler: F) -> Self
+    where
+        F: Fn(&DragData<T>, &mut Window, &mut App) + 'static,
+    {
+        self.on_drop = Some(Rc::new(handler));
         self
     }
 
@@ -285,31 +291,23 @@ impl<T: Clone + Debug + 'static> RenderOnce for DropZone<T> {
         let user_style = self.user_style;
 
         let (border_width, border_color, bg_color) = match (self.drop_style, self.active) {
-            (DropZoneStyle::Dashed, false) => (
-                px(2.0),
-                theme.tokens.border,
-                gpui::transparent_black(),
-            ),
+            (DropZoneStyle::Dashed, false) => {
+                (px(2.0), theme.tokens.border, gpui::transparent_black())
+            }
             (DropZoneStyle::Dashed, true) => (
                 px(2.0),
                 theme.tokens.primary,
                 theme.tokens.primary.opacity(0.05),
             ),
-            (DropZoneStyle::Solid, false) => (
-                px(2.0),
-                theme.tokens.border,
-                gpui::transparent_black(),
-            ),
+            (DropZoneStyle::Solid, false) => {
+                (px(2.0), theme.tokens.border, gpui::transparent_black())
+            }
             (DropZoneStyle::Solid, true) => (
                 px(2.0),
                 theme.tokens.primary,
                 theme.tokens.primary.opacity(0.1),
             ),
-            (DropZoneStyle::Filled, false) => (
-                px(1.0),
-                theme.tokens.border,
-                theme.tokens.muted,
-            ),
+            (DropZoneStyle::Filled, false) => (px(1.0), theme.tokens.border, theme.tokens.muted),
             (DropZoneStyle::Filled, true) => (
                 px(2.0),
                 theme.tokens.primary,

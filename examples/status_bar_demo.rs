@@ -1,11 +1,11 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    navigation::status_bar::{StatusBar, StatusItem},
     components::badge::BadgeVariant,
-    components::icon::IconSource,
+    components::icon_source::IconSource,
     layout::VStack,
+    navigation::status_bar::{StatusBar, StatusItem},
     theme::use_theme,
 };
+use gpui::*;
 use std::path::PathBuf;
 
 struct Assets {
@@ -35,7 +35,17 @@ impl gpui::AssetSource for Assets {
     }
 }
 
-actions!(status_bar_demo, [Quit, ShowNotifications, ShowWarnings, ShowErrors, ChangeEncoding, ToggleGit]);
+actions!(
+    status_bar_demo,
+    [
+        Quit,
+        ShowNotifications,
+        ShowWarnings,
+        ShowErrors,
+        ChangeEncoding,
+        ToggleGit
+    ]
+);
 
 struct StatusBarDemo {
     notifications: usize,
@@ -78,7 +88,12 @@ impl StatusBarDemo {
                 println!("Opening errors panel ({} items)", self.errors);
             }
             "Change Encoding" => {
-                self.encoding = if self.encoding == "UTF-8" { "UTF-16" } else { "UTF-8" }.to_string();
+                self.encoding = if self.encoding == "UTF-8" {
+                    "UTF-16"
+                } else {
+                    "UTF-8"
+                }
+                .to_string();
             }
             "Toggle Git" => {
                 self.git_enabled = !self.git_enabled;
@@ -406,35 +421,35 @@ impl Render for StatusBarDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.on_action(|_: &Quit, cx| cx.quit());
+            cx.on_action(|_: &Quit, cx| cx.quit());
 
-        cx.bind_keys([
-            KeyBinding::new("cmd-q", Quit, None),
-        ]);
-        cx.activate(true);
+            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            cx.activate(true);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1000.0), px(800.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Status Bar Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1000.0), px(800.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Status Bar Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| StatusBarDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| StatusBarDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

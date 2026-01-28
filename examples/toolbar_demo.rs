@@ -1,10 +1,12 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    navigation::toolbar::{Toolbar, ToolbarButton, ToolbarGroup, ToolbarItem, ToolbarButtonVariant, ToolbarSize},
-    components::icon::IconSource,
+    components::icon_source::IconSource,
     layout::VStack,
+    navigation::toolbar::{
+        Toolbar, ToolbarButton, ToolbarButtonVariant, ToolbarGroup, ToolbarItem, ToolbarSize,
+    },
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -75,7 +77,10 @@ impl ToolbarDemo {
 
     fn toggle_underline(&mut self, cx: &mut Context<Self>) {
         self.underline_active = !self.underline_active;
-        self.last_action = format!("Underline {}", if self.underline_active { "ON" } else { "OFF" });
+        self.last_action = format!(
+            "Underline {}",
+            if self.underline_active { "ON" } else { "OFF" }
+        );
         cx.notify();
     }
 
@@ -513,32 +518,34 @@ impl Render for ToolbarDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.on_action(|_: &Quit, cx| cx.quit());
-        cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
-        cx.activate(true);
+            cx.on_action(|_: &Quit, cx| cx.quit());
+            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            cx.activate(true);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1000.0), px(700.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Toolbar Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1000.0), px(700.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Toolbar Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| ToolbarDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| ToolbarDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

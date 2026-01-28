@@ -1,11 +1,11 @@
-use gpui::*;
 use adabraka_ui::{
+    components::{icon_source::IconSource, scrollable::scrollable_vertical},
+    layout::{HStack, VStack},
+    navigation::breadcrumbs::{BreadcrumbItem, Breadcrumbs},
+    navigation::tabs::{init_tabs, TabItem, TabPanel, TabVariant, Tabs},
     prelude::*,
-    navigation::tabs::{Tabs, TabItem, TabPanel, TabVariant, init_tabs},
-    components::{icon::IconSource, scrollable::scrollable_vertical},
-    layout::{VStack, HStack},
-    navigation::breadcrumbs::{Breadcrumbs, BreadcrumbItem},
 };
+use gpui::*;
 use std::path::PathBuf;
 
 struct Assets {
@@ -47,8 +47,8 @@ impl TabsDemo {
     fn new() -> Self {
         Self {
             selected_underline_tab: 0, // "home" tab index
-            selected_enclosed_tab: 0, // "profile" tab index
-            selected_pills_tab: 0, // "dashboard" tab index
+            selected_enclosed_tab: 0,  // "profile" tab index
+            selected_pills_tab: 0,     // "dashboard" tab index
             closeable_tabs: vec![
                 "Tab 1".to_string(),
                 "Tab 2".to_string(),
@@ -590,29 +590,31 @@ impl Render for TabsDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
-        init_tabs(cx);
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
+            init_tabs(cx);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1200.0), px(900.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Tabs Component Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1200.0), px(900.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Tabs Component Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|_cx| TabsDemo::new()),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|_cx| TabsDemo::new()),
+            )
+            .unwrap();
+        });
 }

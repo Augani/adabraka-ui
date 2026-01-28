@@ -1,11 +1,13 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    overlays::command_palette::{CommandPalette, Command, NavigateUp, NavigateDown, SelectCommand, CloseCommand},
     components::button::{Button, ButtonVariant},
-    components::icon::IconSource,
+    components::icon_source::IconSource,
     layout::VStack,
+    overlays::command_palette::{
+        CloseCommand, Command, CommandPalette, NavigateDown, NavigateUp, SelectCommand,
+    },
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -124,7 +126,6 @@ impl CommandPaletteDemo {
                         });
                     }
                 }),
-
             // Edit commands
             Command::new("edit.undo", "Undo")
                 .icon(IconSource::Named("undo".into()))
@@ -165,7 +166,6 @@ impl CommandPaletteDemo {
                         });
                     }
                 }),
-
             // View commands
             Command::new("view.sidebar", "Toggle Sidebar")
                 .icon(IconSource::Named("sidebar".into()))
@@ -193,7 +193,6 @@ impl CommandPaletteDemo {
                         });
                     }
                 }),
-
             // Theme commands
             Command::new("theme.light", "Switch to Light Theme")
                 .icon(IconSource::Named("sun".into()))
@@ -219,7 +218,6 @@ impl CommandPaletteDemo {
                         });
                     }
                 }),
-
             // Settings commands
             Command::new("settings.open", "Open Settings")
                 .icon(IconSource::Named("settings".into()))
@@ -448,40 +446,42 @@ impl Render for CommandPaletteDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.on_action(|_: &Quit, cx| cx.quit());
+            cx.on_action(|_: &Quit, cx| cx.quit());
 
-        cx.bind_keys([
-            KeyBinding::new("cmd-q", Quit, None),
-            KeyBinding::new("cmd-k", TogglePalette, None),
-            KeyBinding::new("up", NavigateUp, None),
-            KeyBinding::new("down", NavigateDown, None),
-            KeyBinding::new("enter", SelectCommand, None),
-            KeyBinding::new("escape", CloseCommand, None),
-        ]);
-        cx.activate(true);
+            cx.bind_keys([
+                KeyBinding::new("cmd-q", Quit, None),
+                KeyBinding::new("cmd-k", TogglePalette, None),
+                KeyBinding::new("up", NavigateUp, None),
+                KeyBinding::new("down", NavigateDown, None),
+                KeyBinding::new("enter", SelectCommand, None),
+                KeyBinding::new("escape", CloseCommand, None),
+            ]);
+            cx.activate(true);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1000.0), px(800.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Command Palette Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1000.0), px(800.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Command Palette Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| CommandPaletteDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| CommandPaletteDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

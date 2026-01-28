@@ -1,7 +1,7 @@
 //! Layout components - High-level layout abstractions for common UI patterns.
 
+use crate::components::scrollbar::{Scrollbar, ScrollbarAxis, ScrollbarState};
 use gpui::*;
-use crate::components::scrollbar::{ScrollbarState, ScrollbarAxis, Scrollbar};
 use std::panic::Location;
 use std::sync::atomic::AtomicUsize;
 
@@ -498,7 +498,9 @@ impl Spacer {
     }
 
     pub fn fixed(size: impl Into<Pixels>) -> Self {
-        Self { size: Some(size.into()) }
+        Self {
+            size: Some(size.into()),
+        }
     }
 }
 
@@ -539,8 +541,13 @@ impl ScrollContainer {
     pub fn new(direction: ScrollDirection) -> Self {
         let location = Location::caller();
         let auto_id = ElementId::Name(
-            format!("scroll-container:{}:{}:{}", location.file(), location.line(), location.column())
-                .into(),
+            format!(
+                "scroll-container:{}:{}:{}",
+                location.file(),
+                location.line(),
+                location.column()
+            )
+            .into(),
         );
 
         Self {
@@ -674,9 +681,7 @@ impl IntoElement for ScrollContainer {
                 scrollbar = scrollbar.horizontal_top();
             }
 
-            let mut scrollable = self.base
-                .id(id_to_use.clone())
-                .track_scroll(&handle);
+            let mut scrollable = self.base.id(id_to_use.clone()).track_scroll(&handle);
 
             scrollable = match self.direction {
                 ScrollDirection::Vertical => scrollable.overflow_y_scroll(),
@@ -704,30 +709,21 @@ pub struct Panel {
 
 impl Panel {
     pub fn new() -> Self {
-        Self {
-            base: div(),
-        }
+        Self { base: div() }
     }
 
     pub fn card(mut self) -> Self {
-        self.base = self.base
-            .border_1()
-            .rounded(px(8.0))
-            .p(px(16.0));
+        self.base = self.base.border_1().rounded(px(8.0)).p(px(16.0));
         self
     }
 
     pub fn elevated(mut self) -> Self {
-        self.base = self.base
-            .border_1()
-            .rounded(px(8.0));
+        self.base = self.base.border_1().rounded(px(8.0));
         self
     }
 
     pub fn section(mut self) -> Self {
-        self.base = self.base
-            .border_b_1()
-            .p(px(12.0));
+        self.base = self.base.border_b_1().p(px(12.0));
         self
     }
 
@@ -801,33 +797,23 @@ impl Container {
     }
 
     pub fn sm() -> Self {
-        Self::new()
-            .max_w(px(640.0))
-            .centered()
+        Self::new().max_w(px(640.0)).centered()
     }
 
     pub fn md() -> Self {
-        Self::new()
-            .max_w(px(768.0))
-            .centered()
+        Self::new().max_w(px(768.0)).centered()
     }
 
     pub fn lg() -> Self {
-        Self::new()
-            .max_w(px(1024.0))
-            .centered()
+        Self::new().max_w(px(1024.0)).centered()
     }
 
     pub fn xl() -> Self {
-        Self::new()
-            .max_w(px(1280.0))
-            .centered()
+        Self::new().max_w(px(1280.0)).centered()
     }
 
     pub fn xxl() -> Self {
-        Self::new()
-            .max_w(px(1536.0))
-            .centered()
+        Self::new().max_w(px(1536.0)).centered()
     }
 }
 
@@ -901,7 +887,10 @@ impl ScrollList {
     }
 
     pub fn no_flex_grow(mut self) -> Self {
-        let id = SharedString::from(format!("scroll-list-{}", SCROLL_CONTAINER_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+        let id = SharedString::from(format!(
+            "scroll-list-{}",
+            SCROLL_CONTAINER_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
         self.scroll_container = ScrollContainer::vertical().id(id);
         self
     }

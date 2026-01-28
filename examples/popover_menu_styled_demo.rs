@@ -2,7 +2,7 @@ use adabraka_ui::{
     overlays::popover_menu::{PopoverMenu, PopoverMenuItem},
     prelude::*,
 };
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -287,10 +287,15 @@ impl Render for PopoverMenuStyledDemoView {
 
                 this.child(
                     PopoverMenu::new(point(px(150.0), px(250.0)), items)
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_default = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_default = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Background Menu
@@ -310,10 +315,15 @@ impl Render for PopoverMenuStyledDemoView {
                 this.child(
                     PopoverMenu::new(point(px(350.0), px(250.0)), items)
                         .bg(rgb(0xe3f2fd))
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_custom_bg = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_bg = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Border Menu
@@ -335,10 +345,15 @@ impl Render for PopoverMenuStyledDemoView {
                         .border_3()
                         .border_color(rgb(0x9c27b0))
                         .rounded(px(16.0))
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_custom_border = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_border = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Wide Menu
@@ -360,10 +375,15 @@ impl Render for PopoverMenuStyledDemoView {
                         .min_w(px(350.0))
                         .max_w(px(500.0))
                         .p_3()
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_wide = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_wide = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Gradient Menu
@@ -385,10 +405,15 @@ impl Render for PopoverMenuStyledDemoView {
                         .bg(rgb(0x667eea))
                         .text_color(white())
                         .border_color(rgb(0x764ba2))
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_gradient = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_gradient = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Compact Menu
@@ -407,10 +432,15 @@ impl Render for PopoverMenuStyledDemoView {
                         .min_w(px(150.0))
                         .p_1()
                         .rounded(px(6.0))
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_compact = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_compact = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Elevated Menu
@@ -437,10 +467,15 @@ impl Render for PopoverMenuStyledDemoView {
                                 color: hsla(0.0, 0.0, 0.0, 0.35),
                             }
                         ])
-                        .on_close(cx.listener(|this, _, _| {
-                            this.show_elevated = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_elevated = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
     }

@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
-    overlays::context_menu::{ContextMenu, ContextMenuItem},
     components::scrollable::scrollable_vertical,
+    overlays::context_menu::{ContextMenu, ContextMenuItem},
+    prelude::*,
 };
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 use std::rc::Rc;
 
@@ -101,6 +101,13 @@ impl Render for ContextMenuStyledDemo {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let selected_text = self.selected_item.borrow().clone();
+        let show_default = self.show_default;
+        let show_custom_bg = self.show_custom_bg;
+        let show_custom_border = self.show_custom_border;
+        let show_custom_radius = self.show_custom_radius;
+        let show_custom_shadow = self.show_custom_shadow;
+        let show_combined = self.show_combined;
+        let click_position = self.click_position;
 
         div()
             .size_full()
@@ -347,14 +354,14 @@ impl Render for ContextMenuStyledDemo {
                 )
             )
             // Render context menus
-            .when(self.show_default, {
+            .when(show_default, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .items(vec![
                                 ContextMenuItem::new("copy", "Copy")
                                     .on_click({
@@ -406,14 +413,14 @@ impl Render for ContextMenuStyledDemo {
                     )
                 }
             })
-            .when(self.show_custom_bg, {
+            .when(show_custom_bg, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .bg(rgb(0x8b5cf6))  // Purple background
                             .items(vec![
                                 ContextMenuItem::new("action1", "Action 1")
@@ -453,14 +460,14 @@ impl Render for ContextMenuStyledDemo {
                     )
                 }
             })
-            .when(self.show_custom_border, {
+            .when(show_custom_border, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .border_3()  // Custom border
                             .border_color(rgb(0x3b82f6))  // Blue border
                             .items(vec![
@@ -501,14 +508,14 @@ impl Render for ContextMenuStyledDemo {
                     )
                 }
             })
-            .when(self.show_custom_radius, {
+            .when(show_custom_radius, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .rounded(px(0.0))  // No border radius
                             .items(vec![
                                 ContextMenuItem::new("item1", "Item 1")
@@ -548,14 +555,14 @@ impl Render for ContextMenuStyledDemo {
                     )
                 }
             })
-            .when(self.show_custom_shadow, {
+            .when(show_custom_shadow, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .shadow_lg()  // Large shadow
                             .items(vec![
                                 ContextMenuItem::new("choice1", "Choice 1")
@@ -595,14 +602,14 @@ impl Render for ContextMenuStyledDemo {
                     )
                 }
             })
-            .when(self.show_combined, {
+            .when(show_combined, {
                 let selected = self.selected_item.clone();
                 let entity = cx.entity().clone();
-                move |this| {
+                move |this: Div| {
                     let selected = selected.clone();
                     let entity = entity.clone();
                     this.child(
-                        ContextMenu::new(self.click_position)
+                        ContextMenu::new(click_position)
                             .bg(rgb(0xf59e0b))  // Orange background
                             .border_3()
                             .border_color(rgb(0xdc2626))  // Red border

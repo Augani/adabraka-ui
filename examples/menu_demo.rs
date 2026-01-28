@@ -1,9 +1,10 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    navigation::menu::{MenuBar, MenuBarItem},
+    components::icon_source::IconSource,
     layout::VStack,
+    navigation::menu::{MenuBar, MenuBarItem, MenuItem},
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -94,14 +95,14 @@ impl Render for MenuDemo {
                                 div()
                                     .text_size(px(32.0))
                                     .font_weight(FontWeight::BOLD)
-                                    .child("Menu System Demo")
+                                    .child("Menu System Demo"),
                             )
                             .child(
                                 div()
                                     .text_size(px(16.0))
                                     .text_color(theme.tokens.muted_foreground)
-                                    .child("MenuBar, Menu, MenuItem, and ContextMenu components")
-                            )
+                                    .child("MenuBar, Menu, MenuItem, and ContextMenu components"),
+                            ),
                     )
                     // Status Display
                     .child(
@@ -117,18 +118,21 @@ impl Render for MenuDemo {
                             .child(
                                 div()
                                     .text_size(px(14.0))
-                                    .child(format!("Selected Action: {}", self.selected_option))
+                                    .child(format!("Selected Action: {}", self.selected_option)),
                             )
+                            .child(div().text_size(px(14.0)).child(format!(
+                                "Checkbox State: {}",
+                                if self.checkbox_state {
+                                    "Checked"
+                                } else {
+                                    "Unchecked"
+                                }
+                            )))
                             .child(
                                 div()
                                     .text_size(px(14.0))
-                                    .child(format!("Checkbox State: {}", if self.checkbox_state { "Checked" } else { "Unchecked" }))
-                            )
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child(format!("Radio Selection: {}", self.radio_option))
-                            )
+                                    .child(format!("Radio Selection: {}", self.radio_option)),
+                            ),
                     )
                     // Content
                     .child(
@@ -151,14 +155,14 @@ impl Render for MenuDemo {
                                                 div()
                                                     .text_size(px(20.0))
                                                     .font_weight(FontWeight::SEMIBOLD)
-                                                    .child("MenuBar")
+                                                    .child("MenuBar"),
                                             )
                                             .child(
                                                 div()
                                                     .text_size(px(14.0))
                                                     .text_color(theme.tokens.muted_foreground)
-                                                    .child("Application menu bar with dropdowns")
-                                            )
+                                                    .child("Application menu bar with dropdowns"),
+                                            ),
                                     )
                                     .child({
                                         let file_menu = vec![
@@ -222,91 +226,129 @@ impl Render for MenuDemo {
                                                     }
                                                 }),
                                             MenuItem::separator(),
-                                            MenuItem::checkbox("spell_check", "Spell Check", self.checkbox_state)
-                                                .on_click({
+                                            MenuItem::checkbox(
+                                                "spell_check",
+                                                "Spell Check",
+                                                self.checkbox_state,
+                                            )
+                                            .on_click(
+                                                {
                                                     let entity = cx.entity().clone();
                                                     move |_, cx| {
                                                         cx.update_entity(&entity, |this, cx| {
                                                             this.toggle_checkbox(cx);
                                                         });
                                                     }
-                                                }),
+                                                },
+                                            ),
                                         ];
 
-                                        let view_menu = vec![
-                                            MenuItem::new("radio_group", "Layout").with_children(vec![
-                                                MenuItem::checkbox("layout_1", "Option 1", self.radio_option == "Option 1")
+                                        let view_menu =
+                                            vec![MenuItem::new("radio_group", "Layout")
+                                                .with_children(vec![
+                                                    MenuItem::checkbox(
+                                                        "layout_1",
+                                                        "Option 1",
+                                                        self.radio_option == "Option 1",
+                                                    )
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
-                                                            cx.update_entity(&entity, |this, cx| {
-                                                                this.set_radio_option("Option 1", cx);
-                                                            });
+                                                            cx.update_entity(
+                                                                &entity,
+                                                                |this, cx| {
+                                                                    this.set_radio_option(
+                                                                        "Option 1", cx,
+                                                                    );
+                                                                },
+                                                            );
                                                         }
                                                     }),
-                                                MenuItem::checkbox("layout_2", "Option 2", self.radio_option == "Option 2")
+                                                    MenuItem::checkbox(
+                                                        "layout_2",
+                                                        "Option 2",
+                                                        self.radio_option == "Option 2",
+                                                    )
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
-                                                            cx.update_entity(&entity, |this, cx| {
-                                                                this.set_radio_option("Option 2", cx);
-                                                            });
+                                                            cx.update_entity(
+                                                                &entity,
+                                                                |this, cx| {
+                                                                    this.set_radio_option(
+                                                                        "Option 2", cx,
+                                                                    );
+                                                                },
+                                                            );
                                                         }
                                                     }),
-                                                MenuItem::checkbox("layout_3", "Option 3", self.radio_option == "Option 3")
+                                                    MenuItem::checkbox(
+                                                        "layout_3",
+                                                        "Option 3",
+                                                        self.radio_option == "Option 3",
+                                                    )
                                                     .on_click({
                                                         let entity = cx.entity().clone();
                                                         move |_, cx| {
-                                                            cx.update_entity(&entity, |this, cx| {
-                                                                this.set_radio_option("Option 3", cx);
-                                                            });
+                                                            cx.update_entity(
+                                                                &entity,
+                                                                |this, cx| {
+                                                                    this.set_radio_option(
+                                                                        "Option 3", cx,
+                                                                    );
+                                                                },
+                                                            );
                                                         }
                                                     }),
-                                            ]),
-                                        ];
+                                                ])];
 
                                         cx.new(|_cx| {
                                             MenuBar::new(vec![
-                                                MenuBarItem::new("file", "File").with_items(file_menu),
-                                                MenuBarItem::new("edit", "Edit").with_items(edit_menu),
-                                                MenuBarItem::new("view", "View").with_items(view_menu),
+                                                MenuBarItem::new("file", "File")
+                                                    .with_items(file_menu),
+                                                MenuBarItem::new("edit", "Edit")
+                                                    .with_items(edit_menu),
+                                                MenuBarItem::new("view", "View")
+                                                    .with_items(view_menu),
                                             ])
                                         })
-                                    })
-                            )
-                    )
+                                    }),
+                            ),
+                    ),
             )
     }
 }
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.on_action(|_: &Quit, cx| cx.quit());
-        cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
-        cx.activate(true);
+            cx.on_action(|_: &Quit, cx| cx.quit());
+            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
+            cx.activate(true);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1200.0), px(900.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Menu System Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1200.0), px(900.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Menu System Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| MenuDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| MenuDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

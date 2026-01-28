@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
-    overlays::bottom_sheet::{BottomSheet, BottomSheetSize},
     components::button::{Button, ButtonVariant},
+    overlays::bottom_sheet::{BottomSheet, BottomSheetSize},
+    prelude::*,
 };
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -262,10 +262,15 @@ impl Render for BottomSheetStyledDemo {
                                 .p(px(24.0))
                                 .child("This BottomSheet uses the default theme styling.")
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_default = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_default = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Background BottomSheet
@@ -282,10 +287,15 @@ impl Render for BottomSheetStyledDemo {
                                 .text_color(gpui::white())
                                 .child("This BottomSheet has a purple background applied via the Styled trait!")
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_custom_bg = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_bg = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Border BottomSheet
@@ -302,10 +312,15 @@ impl Render for BottomSheetStyledDemo {
                                 .p(px(24.0))
                                 .child("This BottomSheet has a thick blue border applied via the Styled trait!")
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_custom_border = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_border = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Radius BottomSheet
@@ -321,10 +336,15 @@ impl Render for BottomSheetStyledDemo {
                                 .p(px(24.0))
                                 .child("This BottomSheet has square corners (no border radius) applied via the Styled trait!")
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_custom_radius = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_radius = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Custom Shadow BottomSheet
@@ -340,10 +360,15 @@ impl Render for BottomSheetStyledDemo {
                                 .p(px(24.0))
                                 .child("This BottomSheet has an extra large shadow applied via the Styled trait!")
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_custom_shadow = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_custom_shadow = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
             // Combined Styling BottomSheet
@@ -382,10 +407,15 @@ impl Render for BottomSheetStyledDemo {
                                         )
                                 )
                         )
-                        .on_close(cx.listener(|view, _, cx| {
-                            view.show_combined = false;
-                            cx.notify();
-                        }))
+                        .on_close({
+                            let entity = cx.entity().clone();
+                            move |_window, cx| {
+                                entity.update(cx, |view, cx| {
+                                    view.show_combined = false;
+                                    cx.notify();
+                                });
+                            }
+                        })
                 )
             })
     }

@@ -51,6 +51,7 @@ pub use crate::navigation::app_menu::{
     StandardMacMenuBar,
 };
 pub use crate::navigation::breadcrumbs::{BreadcrumbItem, Breadcrumbs};
+pub use crate::navigation::file_tree::{FileNode, FileNodeKind, FileTree};
 pub use crate::navigation::menu::{
     ContextMenu, Menu, MenuBar, MenuBarItem, MenuItem, MenuItemKind,
 };

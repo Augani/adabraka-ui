@@ -1,11 +1,12 @@
 //! Navigation components module.
 
-pub mod tabs;
-pub mod breadcrumbs;
-pub mod tree;
-pub mod sidebar;
-pub mod menu;
-pub mod toolbar;
 pub mod app_menu;
+pub mod breadcrumbs;
+pub mod file_tree;
+pub mod menu;
+pub mod sidebar;
 pub mod status_bar;
+pub mod tabs;
+pub mod toolbar;
+pub mod tree;
 pub mod virtual_list;

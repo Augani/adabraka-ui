@@ -6,6 +6,7 @@ pub use crate::components::checkbox::{Checkbox, CheckboxSize};
 pub use crate::components::color_picker::{ColorMode, ColorPicker, ColorPickerState};
 pub use crate::components::combobox::{Combobox, ComboboxEvent, ComboboxState};
 pub use crate::components::date_picker::{DateFormat, DatePicker, DatePickerState};
+pub use crate::components::dropdown::{Dropdown, DropdownAlign, DropdownItem, DropdownState};
 pub use crate::components::editor::{Editor, EditorState};
 pub use crate::components::icon::{icon, icon_button, Icon, IconSize, IconVariant};
 pub use crate::components::icon_button::IconButton;
@@ -26,11 +27,15 @@ pub use crate::components::search_input::{SearchFilter, SearchInput, SearchInput
 pub use crate::components::select::{Select, SelectOption};
 pub use crate::components::separator::{Separator, SeparatorOrientation};
 pub use crate::components::slider::{Slider, SliderAxis, SliderSize, SliderState};
+pub use crate::components::tag_input::{TagInput, TagInputState};
 pub use crate::components::text::{
     body, body_large, body_small, caption, code, code_small, h1, h2, h3, h4, h5, h6, label,
     label_small, muted, muted_small, Text, TextVariant,
 };
 pub use crate::components::text_field::{TextField, TextFieldSize};
+pub use crate::components::time_picker::{
+    TimeFormat, TimePeriod, TimePicker, TimePickerState, TimeValue,
+};
 pub use crate::components::toggle::{LabelSide, Toggle, ToggleSize};
 pub use crate::components::tooltip::tooltip;
 pub use crate::display::badge::{Badge, BadgeVariant};

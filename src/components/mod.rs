@@ -45,6 +45,8 @@ pub mod date_picker;
 pub mod navigation_menu;
 pub mod combobox;
 pub mod color_picker;
+pub mod spinner;
+pub mod number_input;
 
 pub use crate::display::badge;
 

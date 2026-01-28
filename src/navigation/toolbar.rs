@@ -1,12 +1,8 @@
 //! Toolbar component with icon buttons and grouping.
 
+use crate::{components::icon::Icon, components::icon_source::IconSource, theme::use_theme};
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::{
-    theme::use_theme,
-    components::icon::Icon,
-    components::icon_source::IconSource,
-};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ToolbarButtonVariant {
@@ -208,19 +204,16 @@ impl Render for Toolbar {
                     .children(group.items.iter().map(|item| {
                         match item {
                             ToolbarItem::Button(button) => {
-                                render_toolbar_button(button.clone(), button_size, icon_size).into_any_element()
-                            }
-                            ToolbarItem::Separator => {
-                                div()
-                                    .w(px(1.0))
-                                    .h(button_size * 0.6)
-                                    .bg(theme.tokens.border)
-                                    .mx(px(4.0))
+                                render_toolbar_button(button.clone(), button_size, icon_size)
                                     .into_any_element()
                             }
-                            ToolbarItem::Spacer => {
-                                div().flex_1().into_any_element()
-                            }
+                            ToolbarItem::Separator => div()
+                                .w(px(1.0))
+                                .h(button_size * 0.6)
+                                .bg(theme.tokens.border)
+                                .mx(px(4.0))
+                                .into_any_element(),
+                            ToolbarItem::Spacer => div().flex_1().into_any_element(),
                         }
                     }))
                     .when(!is_last_group, |this| {
@@ -229,7 +222,7 @@ impl Render for Toolbar {
                                 .w(px(1.0))
                                 .h(button_size * 0.6)
                                 .bg(theme.tokens.border)
-                                .mx(px(4.0))
+                                .mx(px(4.0)),
                         )
                     })
             }))
@@ -241,7 +234,11 @@ impl Render for Toolbar {
     }
 }
 
-fn render_toolbar_button(button: ToolbarButton, button_size: Pixels, icon_size: Pixels) -> impl IntoElement {
+fn render_toolbar_button(
+    button: ToolbarButton,
+    button_size: Pixels,
+    icon_size: Pixels,
+) -> impl IntoElement {
     let theme = use_theme();
 
     div()
@@ -268,11 +265,14 @@ fn render_toolbar_button(button: ToolbarButton, button_size: Pixels, icon_size: 
                 }
             })
         })
-        .when_some(button.on_click.filter(|_| !button.disabled), |div, handler| {
-            div.on_mouse_down(MouseButton::Left, move |_event, window, cx| {
-                handler(window, cx);
-            })
-        })
+        .when_some(
+            button.on_click.filter(|_| !button.disabled),
+            |div, handler| {
+                div.on_mouse_down(MouseButton::Left, move |_event, window, cx| {
+                    handler(window, cx);
+                })
+            },
+        )
         .child(
             Icon::new(button.icon)
                 .size(icon_size)
@@ -280,20 +280,18 @@ fn render_toolbar_button(button: ToolbarButton, button_size: Pixels, icon_size: 
                     theme.tokens.muted_foreground
                 } else {
                     theme.tokens.foreground
-                })
+                }),
         )
-        .children(
-            (button.variant == ToolbarButtonVariant::Dropdown).then(|| {
-                div()
-                    .absolute()
-                    .bottom(px(2.0))
-                    .right(px(2.0))
-                    .child(
-                        Icon::new("chevron-down")
-                            .size(px(10.0))
-                            .color(theme.tokens.foreground)
-                    )
-                    .into_any_element()
-            })
-        )
+        .children((button.variant == ToolbarButtonVariant::Dropdown).then(|| {
+            div()
+                .absolute()
+                .bottom(px(2.0))
+                .right(px(2.0))
+                .child(
+                    Icon::new("chevron-down")
+                        .size(px(10.0))
+                        .color(theme.tokens.foreground),
+                )
+                .into_any_element()
+        }))
 }

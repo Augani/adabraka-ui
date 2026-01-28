@@ -1,12 +1,15 @@
 //! Sidebar navigation component with collapsible functionality.
 
-use gpui::{prelude::FluentBuilder as _, prelude::*, *};
-use std::sync::Arc;
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, prelude::*, *};
+use std::sync::Arc;
 
-actions!(sidebar, [ToggleSidebar, FocusNext, FocusPrevious, ActivateItem]);
+actions!(
+    sidebar,
+    [ToggleSidebar, FocusNext, FocusPrevious, ActivateItem]
+);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SidebarVariant {
@@ -210,7 +213,7 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
                         .h(px(1.0))
                         .bg(theme.tokens.border.opacity(0.5))
                         .my(px(8.0))
-                        .into_any_element()
+                        .into_any_element(),
                 );
             } else {
                 let is_selected = matches!(selected_id.as_ref(), Some(id) if id == &item.id);
@@ -264,9 +267,13 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
                     }
                 })
                 .child(
-                    Icon::new(if is_expanded { "chevron-left" } else { "chevron-right" })
-                        .size(px(16.0))
-                        .color(theme.tokens.muted_foreground)
+                    Icon::new(if is_expanded {
+                        "chevron-left"
+                    } else {
+                        "chevron-right"
+                    })
+                    .size(px(16.0))
+                    .color(theme.tokens.muted_foreground),
                 );
 
             Some(toggle_button)
@@ -307,10 +314,14 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Sidebar<T> {
                 div
             });
 
-        sidebar.children(vec![
-            header.map(|h| h.into_any_element()),
-            Some(content.into_any_element()),
-        ].into_iter().flatten())
+        sidebar.children(
+            vec![
+                header.map(|h| h.into_any_element()),
+                Some(content.into_any_element()),
+            ]
+            .into_iter()
+            .flatten(),
+        )
     }
 }
 
@@ -355,9 +366,7 @@ impl<T: Clone + PartialEq + 'static> Sidebar<T> {
         }
 
         if item.disabled {
-            item_container = item_container
-                .opacity(0.5)
-                .cursor(CursorStyle::Arrow);
+            item_container = item_container.opacity(0.5).cursor(CursorStyle::Arrow);
         }
 
         if !item.disabled {
@@ -393,7 +402,11 @@ impl<T: Clone + PartialEq + 'static> Sidebar<T> {
                 .ml(px(12.0))
                 .text_size(px(14.0))
                 .font_family(theme.tokens.font_family.clone())
-                .font_weight(if is_selected { FontWeight::SEMIBOLD } else { FontWeight::NORMAL })
+                .font_weight(if is_selected {
+                    FontWeight::SEMIBOLD
+                } else {
+                    FontWeight::NORMAL
+                })
                 .text_color(if is_selected {
                     theme.tokens.primary
                 } else if item.disabled {

@@ -1,6 +1,7 @@
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
+use std::rc::Rc;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TimeFormat {
@@ -295,6 +296,7 @@ pub struct TimePicker {
     state: Entity<TimePickerState>,
     placeholder: SharedString,
     disabled: bool,
+    on_change: Option<Rc<dyn Fn(&TimeValue, &mut Window, &mut App)>>,
     style: StyleRefinement,
 }
 
@@ -304,6 +306,7 @@ impl TimePicker {
             state,
             placeholder: "Select time".into(),
             disabled: false,
+            on_change: None,
             style: StyleRefinement::default(),
         }
     }
@@ -315,6 +318,14 @@ impl TimePicker {
 
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
+        self
+    }
+
+    pub fn on_change(
+        mut self,
+        handler: impl Fn(&TimeValue, &mut Window, &mut App) + 'static,
+    ) -> Self {
+        self.on_change = Some(Rc::new(handler));
         self
     }
 }
@@ -396,7 +407,10 @@ impl RenderOnce for TimePicker {
                             spread_radius: px(0.0),
                         }])
                         .p(px(16.0))
-                        .child(
+                        .child({
+                            let on_change = self.on_change.clone();
+                            let state_for_seconds = state.clone();
+                            let state_for_period = state.clone();
                             div()
                                 .flex()
                                 .items_center()
@@ -407,6 +421,7 @@ impl RenderOnce for TimePicker {
                                     state.clone(),
                                     "hour",
                                     &theme,
+                                    on_change.clone(),
                                 ))
                                 .child(
                                     div()
@@ -421,28 +436,33 @@ impl RenderOnce for TimePicker {
                                     state.clone(),
                                     "minute",
                                     &theme,
+                                    on_change.clone(),
                                 ))
-                                .when(show_seconds, |this| {
-                                    this.child(
-                                        div()
-                                            .text_size(px(20.0))
-                                            .font_weight(FontWeight::BOLD)
-                                            .text_color(theme.tokens.foreground)
-                                            .child(":"),
-                                    )
-                                    .child(
-                                        Self::render_spinner(
-                                            "second",
-                                            value.second.unwrap_or(0),
-                                            state.clone(),
-                                            "second",
-                                            &theme,
-                                        ),
-                                    )
+                                .when(show_seconds, {
+                                    let on_change = on_change.clone();
+                                    move |this| {
+                                        this.child(
+                                            div()
+                                                .text_size(px(20.0))
+                                                .font_weight(FontWeight::BOLD)
+                                                .text_color(theme.tokens.foreground)
+                                                .child(":"),
+                                        )
+                                        .child(
+                                            Self::render_spinner(
+                                                "second",
+                                                value.second.unwrap_or(0),
+                                                state_for_seconds.clone(),
+                                                "second",
+                                                &theme,
+                                                on_change,
+                                            ),
+                                        )
+                                    }
                                 })
                                 .when(format == TimeFormat::Hour12, {
-                                    let state = state.clone();
                                     let is_am = value.period == Some(TimePeriod::AM);
+                                    let on_change = on_change.clone();
                                     move |this| {
                                         this.child(
                                             div()
@@ -459,10 +479,21 @@ impl RenderOnce for TimePicker {
                                                             ButtonVariant::Ghost
                                                         })
                                                         .on_click({
-                                                            let state = state.clone();
-                                                            move |_, _, cx| {
+                                                            let state = state_for_period.clone();
+                                                            let on_change = on_change.clone();
+                                                            move |_, window, cx| {
                                                                 state.update(cx, |s, cx| {
-                                                                    s.set_period(TimePeriod::AM, cx)
+                                                                    s.set_period(
+                                                                        TimePeriod::AM,
+                                                                        cx,
+                                                                    );
+                                                                    if let Some(ref handler) =
+                                                                        on_change
+                                                                    {
+                                                                        handler(
+                                                                            &s.value, window, cx,
+                                                                        );
+                                                                    }
                                                                 });
                                                             }
                                                         }),
@@ -476,18 +507,29 @@ impl RenderOnce for TimePicker {
                                                             ButtonVariant::Ghost
                                                         })
                                                         .on_click({
-                                                            let state = state.clone();
-                                                            move |_, _, cx| {
+                                                            let state = state_for_period.clone();
+                                                            let on_change = on_change.clone();
+                                                            move |_, window, cx| {
                                                                 state.update(cx, |s, cx| {
-                                                                    s.set_period(TimePeriod::PM, cx)
+                                                                    s.set_period(
+                                                                        TimePeriod::PM,
+                                                                        cx,
+                                                                    );
+                                                                    if let Some(ref handler) =
+                                                                        on_change
+                                                                    {
+                                                                        handler(
+                                                                            &s.value, window, cx,
+                                                                        );
+                                                                    }
                                                                 });
                                                             }
                                                         }),
                                                 ),
                                         )
                                     }
-                                }),
-                        ),
+                                })
+                        }),
                 )
             })
     }
@@ -500,11 +542,14 @@ impl TimePicker {
         state: Entity<TimePickerState>,
         field: &str,
         theme: &crate::theme::Theme,
+        on_change: Option<Rc<dyn Fn(&TimeValue, &mut Window, &mut App)>>,
     ) -> impl IntoElement {
         let field_up = field.to_string();
         let field_down = field.to_string();
         let state_up = state.clone();
         let state_down = state.clone();
+        let on_change_up = on_change.clone();
+        let on_change_down = on_change;
 
         div()
             .flex()
@@ -523,12 +568,17 @@ impl TimePicker {
                     .cursor_pointer()
                     .hover(|s| s.bg(theme.tokens.accent))
                     .text_color(theme.tokens.muted_foreground)
-                    .on_click(move |_, _, cx| {
-                        state_up.update(cx, |s, cx| match field_up.as_str() {
-                            "hour" => s.increment_hour(cx),
-                            "minute" => s.increment_minute(cx),
-                            "second" => s.increment_second(cx),
-                            _ => {}
+                    .on_click(move |_, window, cx| {
+                        state_up.update(cx, |s, cx| {
+                            match field_up.as_str() {
+                                "hour" => s.increment_hour(cx),
+                                "minute" => s.increment_minute(cx),
+                                "second" => s.increment_second(cx),
+                                _ => {}
+                            }
+                            if let Some(ref handler) = on_change_up {
+                                handler(&s.value, window, cx);
+                            }
                         });
                     })
                     .child("▲"),
@@ -560,12 +610,17 @@ impl TimePicker {
                     .cursor_pointer()
                     .hover(|s| s.bg(theme.tokens.accent))
                     .text_color(theme.tokens.muted_foreground)
-                    .on_click(move |_, _, cx| {
-                        state_down.update(cx, |s, cx| match field_down.as_str() {
-                            "hour" => s.decrement_hour(cx),
-                            "minute" => s.decrement_minute(cx),
-                            "second" => s.decrement_second(cx),
-                            _ => {}
+                    .on_click(move |_, window, cx| {
+                        state_down.update(cx, |s, cx| {
+                            match field_down.as_str() {
+                                "hour" => s.decrement_hour(cx),
+                                "minute" => s.decrement_minute(cx),
+                                "second" => s.decrement_second(cx),
+                                _ => {}
+                            }
+                            if let Some(ref handler) = on_change_down {
+                                handler(&s.value, window, cx);
+                            }
                         });
                     })
                     .child("▼"),

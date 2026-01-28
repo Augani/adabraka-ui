@@ -1,14 +1,15 @@
 use adabraka_ui::{
-    components::time_picker::{TimeFormat, TimePicker, TimePickerState},
+    components::time_picker::{TimeFormat, TimePicker, TimePickerState, TimeValue},
     layout::VStack,
     theme::{install_theme, use_theme, Theme},
 };
-use gpui::*;
+use gpui::{prelude::FluentBuilder as _, *};
 
 struct TimePickerDemo {
     time_12h: Entity<TimePickerState>,
     time_24h: Entity<TimePickerState>,
     time_with_seconds: Entity<TimePickerState>,
+    selected_times: [Option<TimeValue>; 3],
 }
 
 impl TimePickerDemo {
@@ -28,6 +29,7 @@ impl TimePickerDemo {
             time_12h,
             time_24h,
             time_with_seconds,
+            selected_times: [None, None, None],
         }
     }
 }
@@ -35,10 +37,7 @@ impl TimePickerDemo {
 impl Render for TimePickerDemo {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
-
-        let time_12h_val = self.time_12h.read(cx).value();
-        let time_24h_val = self.time_24h.read(cx).value();
-        let time_sec_val = self.time_with_seconds.read(cx).value();
+        let entity = cx.entity().clone();
 
         div()
             .size_full()
@@ -72,7 +71,8 @@ impl Render for TimePickerDemo {
                             .flex()
                             .flex_col()
                             .gap(px(24.0))
-                            .child(
+                            .child({
+                                let entity = entity.clone();
                                 div()
                                     .flex()
                                     .flex_col()
@@ -83,15 +83,26 @@ impl Render for TimePickerDemo {
                                             .font_weight(FontWeight::MEDIUM)
                                             .child("12-Hour Format"),
                                     )
-                                    .child(TimePicker::new(self.time_12h.clone()))
                                     .child(
-                                        div()
-                                            .text_size(px(12.0))
-                                            .text_color(theme.tokens.muted_foreground)
-                                            .child(time_12h_val.format_string(TimeFormat::Hour12)),
-                                    ),
-                            )
-                            .child(
+                                        TimePicker::new(self.time_12h.clone())
+                                            .on_change(move |value, _, cx| {
+                                                entity.update(cx, |this, cx| {
+                                                    this.selected_times[0] = Some(*value);
+                                                    cx.notify();
+                                                });
+                                            })
+                                    )
+                                    .when_some(self.selected_times[0], |d, time| {
+                                        d.child(
+                                            div()
+                                                .text_size(px(12.0))
+                                                .text_color(theme.tokens.muted_foreground)
+                                                .child(time.format_string(TimeFormat::Hour12)),
+                                        )
+                                    })
+                            })
+                            .child({
+                                let entity = entity.clone();
                                 div()
                                     .flex()
                                     .flex_col()
@@ -102,15 +113,26 @@ impl Render for TimePickerDemo {
                                             .font_weight(FontWeight::MEDIUM)
                                             .child("24-Hour Format"),
                                     )
-                                    .child(TimePicker::new(self.time_24h.clone()))
                                     .child(
-                                        div()
-                                            .text_size(px(12.0))
-                                            .text_color(theme.tokens.muted_foreground)
-                                            .child(time_24h_val.format_string(TimeFormat::Hour24)),
-                                    ),
-                            )
-                            .child(
+                                        TimePicker::new(self.time_24h.clone())
+                                            .on_change(move |value, _, cx| {
+                                                entity.update(cx, |this, cx| {
+                                                    this.selected_times[1] = Some(*value);
+                                                    cx.notify();
+                                                });
+                                            })
+                                    )
+                                    .when_some(self.selected_times[1], |d, time| {
+                                        d.child(
+                                            div()
+                                                .text_size(px(12.0))
+                                                .text_color(theme.tokens.muted_foreground)
+                                                .child(time.format_string(TimeFormat::Hour24)),
+                                        )
+                                    })
+                            })
+                            .child({
+                                let entity = entity.clone();
                                 div()
                                     .flex()
                                     .flex_col()
@@ -121,14 +143,24 @@ impl Render for TimePickerDemo {
                                             .font_weight(FontWeight::MEDIUM)
                                             .child("With Seconds"),
                                     )
-                                    .child(TimePicker::new(self.time_with_seconds.clone()))
                                     .child(
-                                        div()
-                                            .text_size(px(12.0))
-                                            .text_color(theme.tokens.muted_foreground)
-                                            .child(time_sec_val.format_string(TimeFormat::Hour12)),
-                                    ),
-                            ),
+                                        TimePicker::new(self.time_with_seconds.clone())
+                                            .on_change(move |value, _, cx| {
+                                                entity.update(cx, |this, cx| {
+                                                    this.selected_times[2] = Some(*value);
+                                                    cx.notify();
+                                                });
+                                            })
+                                    )
+                                    .when_some(self.selected_times[2], |d, time| {
+                                        d.child(
+                                            div()
+                                                .text_size(px(12.0))
+                                                .text_color(theme.tokens.muted_foreground)
+                                                .child(time.format_string(TimeFormat::Hour12)),
+                                        )
+                                    })
+                            }),
                     ),
             )
     }

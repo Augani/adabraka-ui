@@ -1,10 +1,10 @@
 //! Tab navigation component with multiple visual variants.
 
-use gpui::{prelude::FluentBuilder as _, *};
-use std::sync::Arc;
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
+use std::sync::Arc;
 
 actions!(tabs, [TabNext, TabPrevious, TabFirst, TabLast, TabClose]);
 
@@ -199,9 +199,7 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                     gpui::transparent_black()
                 })
                 .when(!tab.disabled && !is_active, |div| {
-                    div.hover(|style| {
-                        style.text_color(theme.tokens.primary)
-                    })
+                    div.hover(|style| style.text_color(theme.tokens.primary))
                 }),
 
             TabVariant::Enclosed => base
@@ -256,20 +254,17 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                 }),
         };
 
-        let with_icon = styled
-            .when_some(tab.icon.as_ref(), |div, icon| {
-                div.child(
-                    Icon::new(icon.clone())
-                        .size(px(14.0))
-                        .color(if is_active && variant == TabVariant::Pills {
-                            theme.tokens.primary_foreground
-                        } else if tab.disabled {
-                            theme.tokens.muted_foreground
-                        } else {
-                            theme.tokens.primary
-                        }),
-                )
-            });
+        let with_icon = styled.when_some(tab.icon.as_ref(), |div, icon| {
+            div.child(Icon::new(icon.clone()).size(px(14.0)).color(
+                if is_active && variant == TabVariant::Pills {
+                    theme.tokens.primary_foreground
+                } else if tab.disabled {
+                    theme.tokens.muted_foreground
+                } else {
+                    theme.tokens.primary
+                },
+            ))
+        });
 
         let with_label = with_icon.child(div().child(tab.label.clone()));
 
@@ -320,15 +315,13 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
                             }
                         }
                     })
-                    .child(
-                        Icon::new("x")
-                            .size(px(12.0))
-                            .color(if is_active && variant == TabVariant::Pills {
-                                theme.tokens.primary_foreground
-                            } else {
-                                theme.tokens.muted_foreground
-                            }),
-                    ),
+                    .child(Icon::new("x").size(px(12.0)).color(
+                        if is_active && variant == TabVariant::Pills {
+                            theme.tokens.primary_foreground
+                        } else {
+                            theme.tokens.muted_foreground
+                        },
+                    )),
             )
         });
 
@@ -405,7 +398,7 @@ impl<T: Clone + PartialEq + 'static> RenderOnce for Tabs<T> {
                     .flex_1()
                     .min_h(px(0.0))
                     .overflow_hidden()
-                    .child(div().size_full().child(panel))
+                    .child(div().size_full().child(panel)),
             );
         }
 

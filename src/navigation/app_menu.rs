@@ -1,6 +1,6 @@
 //! Native application menu bar builder for desktop applications.
 
-use gpui::{Menu, MenuItem, SharedString, SystemMenuType, Styled, StyleRefinement};
+use gpui::{Menu, MenuItem, SharedString, StyleRefinement, Styled, SystemMenuType};
 
 pub struct AppMenuBar {
     menus: Vec<Menu>,
@@ -59,7 +59,8 @@ impl AppMenu {
     }
 
     pub fn os_submenu(mut self, label: impl Into<SharedString>, menu_type: SystemMenuType) -> Self {
-        self.items.push(MenuItem::os_submenu(label.into(), menu_type));
+        self.items
+            .push(MenuItem::os_submenu(label.into(), menu_type));
         self
     }
 

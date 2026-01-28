@@ -1,16 +1,12 @@
 //! Virtual list component for efficient rendering of large item counts.
 
-use std::{
-    cmp,
-    ops::Range,
-    rc::Rc,
-};
+use std::{cmp, ops::Range, rc::Rc};
 
 use gpui::{
     div, point, px, size, Along, AnyElement, App, AvailableSpace, Axis, Bounds, ContentMask,
-    Context, Div, Element, ElementId, Entity, GlobalElementId, Hitbox,
-    InteractiveElement, IntoElement, Pixels, Render,
-    ScrollHandle, Size, Stateful, StatefulInteractiveElement, Styled, Window,
+    Context, Div, Element, ElementId, Entity, GlobalElementId, Hitbox, InteractiveElement,
+    IntoElement, Pixels, Render, ScrollHandle, Size, Stateful, StatefulInteractiveElement, Styled,
+    Window,
 };
 use smallvec::SmallVec;
 
@@ -217,10 +213,9 @@ impl Element for VirtualList {
                     },
                 );
 
-                window
-                    .with_text_style(style.text_style().cloned(), |window| {
-                        window.request_layout(style, None, cx)
-                    })
+                window.with_text_style(style.text_style().cloned(), |window| {
+                    window.request_layout(style, None, cx)
+                })
             },
         );
 
@@ -307,9 +302,7 @@ impl Element for VirtualList {
                             }
                             (first_visible_element_ix, last_visible_element_ix)
                         }
-                        Axis::Horizontal => {
-                            (0, self.items_count)
-                        }
+                        Axis::Horizontal => (0, self.items_count),
                     };
 
                     let visible_range = first_visible_element_ix

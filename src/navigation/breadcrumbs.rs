@@ -1,9 +1,9 @@
 //! Breadcrumb navigation component for hierarchical navigation.
 
-use gpui::{prelude::FluentBuilder as _, *};
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::sync::Arc;
 
 pub struct BreadcrumbItem<T> {
@@ -33,7 +33,10 @@ impl<T: Clone + 'static> Breadcrumbs<T> {
         self
     }
 
-    pub fn on_click<F: Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_click<F: Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.on_click = Some(Arc::new(f));
         self
     }
@@ -86,15 +89,14 @@ impl<T: Clone + 'static> RenderOnce for Breadcrumbs<T> {
                 .font_family(theme.tokens.font_family.clone());
 
             if let Some(icon_source) = &item.icon {
-                breadcrumb_element = breadcrumb_element.child(
-                    Icon::new(icon_source.clone())
-                        .size(px(14.0))
-                        .color(if is_last {
+                breadcrumb_element =
+                    breadcrumb_element.child(Icon::new(icon_source.clone()).size(px(14.0)).color(
+                        if is_last {
                             theme.tokens.foreground
                         } else {
                             theme.tokens.primary
-                        })
-                );
+                        },
+                    ));
             } else if is_first {
                 breadcrumb_element = breadcrumb_element.child(
                     Icon::new(IconSource::Named("globe".to_string()))
@@ -103,7 +105,7 @@ impl<T: Clone + 'static> RenderOnce for Breadcrumbs<T> {
                             theme.tokens.foreground
                         } else {
                             theme.tokens.primary
-                        })
+                        }),
                 );
             }
 

@@ -1,16 +1,16 @@
 //! Status bar component with customizable sections.
 
-use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
-use std::rc::Rc;
 use crate::{
-    theme::use_theme,
     components::{
-        text::caption,
+        badge::{Badge, BadgeVariant},
         icon::Icon,
         icon_source::IconSource,
-        badge::{Badge, BadgeVariant},
+        text::caption,
     },
+    theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
+use std::rc::Rc;
 
 #[derive(Clone)]
 pub struct StatusItem {
@@ -204,31 +204,25 @@ impl Render for StatusBar {
                 div
             })
             .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(12.0))
-                    .children(self.left_items.iter().map(|item| {
-                        render_status_item(item.clone())
-                    }))
+                div().flex().items_center().gap(px(12.0)).children(
+                    self.left_items
+                        .iter()
+                        .map(|item| render_status_item(item.clone())),
+                ),
             )
             .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(12.0))
-                    .children(self.center_items.iter().map(|item| {
-                        render_status_item(item.clone())
-                    }))
+                div().flex().items_center().gap(px(12.0)).children(
+                    self.center_items
+                        .iter()
+                        .map(|item| render_status_item(item.clone())),
+                ),
             )
             .child(
-                div()
-                    .flex()
-                    .items_center()
-                    .gap(px(12.0))
-                    .children(self.right_items.iter().map(|item| {
-                        render_status_item(item.clone())
-                    }))
+                div().flex().items_center().gap(px(12.0)).children(
+                    self.right_items
+                        .iter()
+                        .map(|item| render_status_item(item.clone())),
+                ),
             )
     }
 }
@@ -254,29 +248,20 @@ fn render_status_item(item: StatusItem) -> impl IntoElement {
             })
         })
         .when_some(item.icon, |div, icon| {
-            div.child(
-                Icon::new(icon)
-                    .size(px(14.0))
-                    .color(if item.disabled {
-                        theme.tokens.muted_foreground
-                    } else {
-                        theme.tokens.foreground
-                    })
-            )
+            div.child(Icon::new(icon).size(px(14.0)).color(if item.disabled {
+                theme.tokens.muted_foreground
+            } else {
+                theme.tokens.foreground
+            }))
         })
         .when_some(item.text, |div, text| {
-            div.child(
-                caption(text).color(if item.disabled {
-                    theme.tokens.muted_foreground
-                } else {
-                    theme.tokens.foreground
-                })
-            )
+            div.child(caption(text).color(if item.disabled {
+                theme.tokens.muted_foreground
+            } else {
+                theme.tokens.foreground
+            }))
         })
         .when_some(item.badge, |div, badge_text| {
-            div.child(
-                Badge::new(badge_text)
-                    .variant(item.badge_variant)
-            )
+            div.child(Badge::new(badge_text).variant(item.badge_variant))
         })
 }

@@ -1,15 +1,15 @@
 //! Menu system for dropdown and context menus.
 
-use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
-use std::rc::Rc;
 use crate::{
-    theme::use_theme,
     components::{
-        text::{body, caption},
         icon::Icon,
         icon_source::IconSource,
+        text::{body, caption},
     },
+    theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub enum MenuItemKind {
@@ -59,7 +59,11 @@ impl MenuItem {
         }
     }
 
-    pub fn checkbox(id: impl Into<SharedString>, label: impl Into<SharedString>, checked: bool) -> Self {
+    pub fn checkbox(
+        id: impl Into<SharedString>,
+        label: impl Into<SharedString>,
+        checked: bool,
+    ) -> Self {
         Self {
             id: id.into(),
             label: label.into(),
@@ -165,9 +169,7 @@ impl RenderOnce for Menu {
             .rounded(theme.tokens.radius_md)
             .shadow_lg()
             .p(px(4.0))
-            .children(self.items.into_iter().map(|item| {
-                render_menu_item(item)
-            }))
+            .children(self.items.into_iter().map(|item| render_menu_item(item)))
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);
@@ -180,13 +182,11 @@ fn render_menu_item(item: MenuItem) -> impl IntoElement {
     let theme = use_theme();
 
     match item.kind {
-        MenuItemKind::Separator => {
-            div()
-                .h(px(1.0))
-                .bg(theme.tokens.border)
-                .my(px(4.0))
-                .mx(px(8.0))
-        }
+        MenuItemKind::Separator => div()
+            .h(px(1.0))
+            .bg(theme.tokens.border)
+            .my(px(4.0))
+            .mx(px(8.0)),
         _ => {
             let is_checked = matches!(
                 item.kind,
@@ -226,44 +226,38 @@ fn render_menu_item(item: MenuItem) -> impl IntoElement {
                             div.child(
                                 Icon::new("check")
                                     .size(px(12.0))
-                                    .color(theme.tokens.foreground)
+                                    .color(theme.tokens.foreground),
                             )
-                        })
+                        }),
                 )
                 .when_some(item.icon, |div, icon| {
-                    div.child(
-                        Icon::new(icon)
-                            .size(px(16.0))
-                            .color(if item.disabled {
-                                theme.tokens.muted_foreground
-                            } else {
-                                theme.tokens.foreground
-                            })
-                    )
+                    div.child(Icon::new(icon).size(px(16.0)).color(if item.disabled {
+                        theme.tokens.muted_foreground
+                    } else {
+                        theme.tokens.foreground
+                    }))
                 })
                 .child(
                     div()
                         .flex_1()
-                        .child(body(item.label).color(
-                            if item.disabled {
-                                theme.tokens.muted_foreground
-                            } else {
-                                theme.tokens.foreground
-                            }
-                        ))
+                        .child(body(item.label).color(if item.disabled {
+                            theme.tokens.muted_foreground
+                        } else {
+                            theme.tokens.foreground
+                        })),
                 )
                 .when_some(item.shortcut, |div, shortcut| {
                     div.child(
                         caption(shortcut)
                             .color(theme.tokens.muted_foreground)
-                            .no_wrap()
+                            .no_wrap(),
                     )
                 })
                 .when(has_submenu, |div| {
                     div.child(
                         Icon::new("chevron-right")
                             .size(px(14.0))
-                            .color(theme.tokens.muted_foreground)
+                            .color(theme.tokens.muted_foreground),
                     )
                 })
         }
@@ -332,14 +326,17 @@ impl Render for MenuBar {
                     .when(!is_active, |div| {
                         div.hover(|style| style.bg(theme.tokens.muted))
                     })
-                    .on_mouse_down(MouseButton::Left, cx.listener(move |this, _event, _window, cx| {
-                        this.active_menu = if this.active_menu == Some(idx) {
-                            None
-                        } else {
-                            Some(idx)
-                        };
-                        cx.notify();
-                    }))
+                    .on_mouse_down(
+                        MouseButton::Left,
+                        cx.listener(move |this, _event, _window, cx| {
+                            this.active_menu = if this.active_menu == Some(idx) {
+                                None
+                            } else {
+                                Some(idx)
+                            };
+                            cx.notify();
+                        }),
+                    )
                     .child(body(label).color(theme.tokens.foreground))
             }))
     }
@@ -377,9 +374,7 @@ impl RenderOnce for ContextMenu {
                     .rounded(theme.tokens.radius_md)
                     .shadow_lg()
                     .p(px(4.0))
-                    .children(self.items.into_iter().map(|item| {
-                        render_menu_item(item)
-                    }))
+                    .children(self.items.into_iter().map(|item| render_menu_item(item))),
             )
     }
 }

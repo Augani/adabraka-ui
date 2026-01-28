@@ -319,26 +319,24 @@ impl RenderOnce for SplitPane {
                         },
                     ),
                 )
-                .on_mouse_move({
-                    window.listener_for(
-                        &state_for_move,
-                        move |state, e: &MouseMoveEvent, window, cx| {
-                            if state.is_dragging {
-                                state.update_from_position(e.position, cx);
+            });
 
-                                if let Some(ref handler) = on_resize_move {
-                                    handler(state.ratio, window, cx);
-                                }
-                            }
-                        },
-                    )
-                })
-                .on_mouse_up(
-                    MouseButton::Left,
-                    window.listener_for(&state_for_up, move |state, _: &MouseUpEvent, _, _cx| {
-                        state.is_dragging = false;
-                    }),
-                )
+        let container_mouse_move = window.listener_for(
+            &state_for_move,
+            move |state, e: &MouseMoveEvent, window, cx| {
+                if state.is_dragging {
+                    state.update_from_position(e.position, cx);
+
+                    if let Some(ref handler) = on_resize_move {
+                        handler(state.ratio, window, cx);
+                    }
+                }
+            },
+        );
+
+        let container_mouse_up =
+            window.listener_for(&state_for_up, move |state, _: &MouseUpEvent, _, _cx| {
+                state.is_dragging = false;
             });
 
         let mut container = div()
@@ -346,7 +344,9 @@ impl RenderOnce for SplitPane {
             .size_full()
             .overflow_hidden()
             .when(is_horizontal, |this| this.flex_row())
-            .when(!is_horizontal, |this| this.flex_col());
+            .when(!is_horizontal, |this| this.flex_col())
+            .on_mouse_move(container_mouse_move)
+            .on_mouse_up(MouseButton::Left, container_mouse_up);
 
         container = container.map(|mut this| {
             this.style().refine(&user_style);

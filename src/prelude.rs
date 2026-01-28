@@ -19,6 +19,10 @@ pub use crate::components::keyboard_shortcuts::{
     KeyboardShortcuts, ShortcutCategory, ShortcutItem,
 };
 pub use crate::components::label::Label;
+pub use crate::components::notification_center::{
+    NotificationBell, NotificationCenter, NotificationCenterState, NotificationItem,
+    NotificationVariant,
+};
 pub use crate::components::number_input::{NumberInput, NumberInputSize, NumberInputState};
 pub use crate::components::progress::{
     CircularProgress, ProgressBar, ProgressSize, ProgressVariant,
@@ -36,6 +40,9 @@ pub use crate::components::spinner::{Spinner, SpinnerSize, SpinnerVariant};
 pub use crate::components::split_pane::{
     CollapsiblePane, SplitDirection, SplitPane, SplitPaneEvent, SplitPaneState,
 };
+pub use crate::components::stepper::{
+    StepItem, StepStatus, Stepper, StepperOrientation, StepperSize, StepperState,
+};
 pub use crate::components::tag_input::{TagInput, TagInputState};
 pub use crate::components::text::{
     body, body_large, body_small, caption, code, code_small, h1, h2, h3, h4, h5, h6, label,
@@ -44,6 +51,9 @@ pub use crate::components::text::{
 pub use crate::components::text_field::{TextField, TextFieldSize};
 pub use crate::components::time_picker::{
     TimeFormat, TimePeriod, TimePicker, TimePickerState, TimeValue,
+};
+pub use crate::components::timeline::{
+    timeline, Timeline, TimelineItem, TimelineItemVariant, TimelineOrientation, TimelineSize,
 };
 pub use crate::components::toggle::{LabelSide, Toggle, ToggleSize};
 pub use crate::components::tooltip::tooltip;

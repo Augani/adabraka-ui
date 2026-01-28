@@ -52,6 +52,9 @@ pub mod empty_state;
 pub mod hotkey_input;
 pub mod split_pane;
 pub mod inline_edit;
+pub mod notification_center;
+pub mod timeline;
+pub mod stepper;
 
 pub use crate::display::badge;
 

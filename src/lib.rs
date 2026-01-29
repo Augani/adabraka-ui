@@ -74,17 +74,26 @@ pub mod fonts;
 /// Icon configuration for custom asset paths
 pub mod icon_config;
 
+/// HTTP client for remote image loading
+pub mod http;
+
 // Re-export commonly used icon configuration functions
 pub use icon_config::set_icon_base_path;
+
+// Re-export HTTP client functions
+pub use http::{init_http, init_http_with_user_agent};
 
 /// Initialize the UI library
 ///
 /// This registers all necessary keybindings and initializes component systems.
 /// Registers custom fonts for the component library.
+/// Also initializes HTTP client for remote image loading.
 pub fn init(cx: &mut gpui::App) {
     fonts::register_fonts(cx);
+    http::init_http(cx);
 
     components::input::init(cx);
+    components::otp_input::init(cx);
     components::select::init_select(cx);
     components::combobox::init_combobox(cx);
     components::editor::init(cx);

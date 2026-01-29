@@ -26,10 +26,19 @@ regex = "1.10"
 
 # Async Runtime
 smol = "2.0.2"
+futures = "0.3"
+
+# HTTP Client for remote images (optional)
+isahc = { version = "1.7", optional = true }
+bytes = "1.0"
 
 # Syntax Highlighting (tree-sitter based)
 tree-sitter = "0.25.10"
 tree-sitter-sequel = "0.3.11"
+
+[features]
+default = ["http"]
+http = ["isahc"]
 
 [[example]]
 name = "scroll_test"
@@ -46,6 +55,10 @@ path = "examples/collapsible_styled_demo.rs"
 [[example]]
 name = "calendar_styled_demo"
 path = "examples/calendar_styled_demo.rs"
+
+[[example]]
+name = "carousel_demo"
+path = "examples/carousel_demo.rs"
 
 [[example]]
 name = "tooltip_styled_demo"
@@ -199,3 +212,19 @@ path = "examples/combobox_demo.rs"
 [[example]]
 name = "pie_chart_demo"
 path = "examples/pie_chart_demo.rs"
+
+[[example]]
+name = "avatar_group_demo"
+path = "examples/avatar_group_demo.rs"
+
+[[example]]
+name = "otp_input_demo"
+path = "examples/otp_input_demo.rs"
+
+[[example]]
+name = "file_upload_demo"
+path = "examples/file_upload_demo.rs"
+
+[[example]]
+name = "image_viewer_demo"
+path = "examples/image_viewer_demo.rs"

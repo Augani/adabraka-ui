@@ -12,8 +12,14 @@ pub use crate::charts::pie_chart::{
     PieChart, PieChartLabelPosition, PieChartSegment, PieChartSize, PieChartVariant,
 };
 pub use crate::components::alert::{alert, Alert, AlertVariant};
+pub use crate::components::avatar::{Avatar, AvatarSize};
+pub use crate::components::avatar_group::{AvatarGroup, AvatarItem};
 pub use crate::components::button::{Button, ButtonSize, ButtonVariant, IconPosition};
 pub use crate::components::calendar::{Calendar, CalendarLocale, DateValue};
+pub use crate::components::carousel::{
+    bounce, ease_in_out, ease_out_quint, linear, pulsating_between, quadratic, Carousel,
+    CarouselSize, CarouselSlide, CarouselState, CarouselTransition,
+};
 pub use crate::components::checkbox::{Checkbox, CheckboxSize};
 pub use crate::components::color_picker::{ColorMode, ColorPicker, ColorPickerState};
 pub use crate::components::combobox::{Combobox, ComboboxEvent, ComboboxState};
@@ -21,10 +27,16 @@ pub use crate::components::date_picker::{DateFormat, DatePicker, DatePickerState
 pub use crate::components::dropdown::{Dropdown, DropdownAlign, DropdownItem, DropdownState};
 pub use crate::components::editor::{Editor, EditorState};
 pub use crate::components::empty_state::{EmptyState, EmptyStateSize};
+pub use crate::components::file_upload::{
+    FileTypeFilter, FileUpload, FileUploadError, FileUploadSize, FileUploadState, SelectedFile,
+};
 pub use crate::components::hotkey_input::{HotkeyInput, HotkeyInputState, HotkeyValue};
 pub use crate::components::icon::{icon, icon_button, Icon, IconSize, IconVariant};
 pub use crate::components::icon_button::IconButton;
 pub use crate::components::icon_source::IconSource;
+pub use crate::components::image_viewer::{
+    init_image_viewer, ImageItem, ImageViewer, ImageViewerSize, ImageViewerState,
+};
 pub use crate::components::inline_edit::{InlineEdit, InlineEditState, InlineEditTrigger};
 pub use crate::components::keyboard_shortcuts::{
     KeyboardShortcuts, ShortcutCategory, ShortcutItem,
@@ -35,6 +47,9 @@ pub use crate::components::notification_center::{
     NotificationVariant,
 };
 pub use crate::components::number_input::{NumberInput, NumberInputSize, NumberInputState};
+pub use crate::components::otp_input::{
+    OTPInput, OTPInputEvent, OTPInputSize, OTPInputState, OTPState,
+};
 pub use crate::components::progress::{
     CircularProgress, ProgressBar, ProgressSize, ProgressVariant,
 };
@@ -97,3 +112,5 @@ pub use crate::overlays::dialog::{Dialog, DialogSize};
 pub use crate::overlays::popover::Popover;
 pub use crate::overlays::toast::{ToastItem, ToastManager, ToastPosition, ToastVariant};
 pub use crate::theme::{install_theme, use_theme, Theme, ThemeTokens, ThemeVariant};
+
+pub use crate::http::{init_http, init_http_with_user_agent};

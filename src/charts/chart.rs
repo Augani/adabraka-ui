@@ -509,6 +509,7 @@ impl Series {
 
 struct HoveredPoint {
     series_index: usize,
+    #[allow(dead_code)]
     point_index: usize,
     screen_pos: Point<Pixels>,
     data_point: DataPoint,
@@ -520,7 +521,9 @@ struct ChartPaintState {
     y_axis: Axis,
     tooltip: TooltipConfig,
     grid_color: Hsla,
+    #[allow(dead_code)]
     text_color: Hsla,
+    #[allow(dead_code)]
     background: Hsla,
     padding: ChartPadding,
 }
@@ -693,10 +696,20 @@ impl RenderOnce for Chart {
                     .child(
                         canvas(
                             move |bounds, window, _cx| {
-                                let mouse_pos = window.mouse_position();
-                                (paint_state, data_range, bounds, mouse_pos)
+                                let hitbox = window.insert_hitbox(bounds, HitboxBehavior::Normal);
+                                (paint_state, data_range, bounds, hitbox)
                             },
-                            move |bounds, (state, range, _, mouse_pos), window, _cx| {
+                            move |bounds, (state, range, _, hitbox), window, cx| {
+                                let hitbox_for_event = hitbox.clone();
+                                window.on_mouse_event(
+                                    move |_event: &MouseMoveEvent, _phase, window, cx| {
+                                        if hitbox_for_event.is_hovered(window) {
+                                            cx.refresh_windows();
+                                        }
+                                    },
+                                );
+
+                                let mouse_pos = window.mouse_position();
                                 if bounds.size.width <= px(0.0) || bounds.size.height <= px(0.0) {
                                     return;
                                 }
@@ -875,16 +888,40 @@ impl RenderOnce for Chart {
                                     }
                                 }
 
-                                if state.tooltip.show {
+                                if state.tooltip.show && hitbox.is_hovered(window) {
                                     if let Some(hp) = hovered_point {
                                         let series = &state.series[hp.series_index];
                                         let tooltip_text = state
                                             .tooltip
                                             .format_tooltip(&hp.data_point, &series.name);
 
-                                        let tooltip_width =
-                                            px(tooltip_text.len() as f32 * 7.0 + 20.0);
-                                        let tooltip_height = px(32.0);
+                                        let text_style = window.text_style();
+                                        let font = text_style.font();
+                                        let font_size = px(12.0);
+                                        let text_len = tooltip_text.len();
+
+                                        let text_run = TextRun {
+                                            len: text_len,
+                                            font,
+                                            color: text_color,
+                                            background_color: None,
+                                            underline: None,
+                                            strikethrough: None,
+                                        };
+
+                                        let shaped_line = window.text_system().shape_line(
+                                            tooltip_text.into(),
+                                            font_size,
+                                            &[text_run],
+                                            None,
+                                        );
+
+                                        let text_width = shaped_line.width;
+                                        let padding_h = px(12.0);
+                                        let padding_v = px(8.0);
+                                        let tooltip_width = text_width + padding_h * 2.0;
+                                        let tooltip_height = font_size + padding_v * 2.0;
+
                                         let tooltip_x = (hp.screen_pos.x - tooltip_width / 2.0)
                                             .max(bounds.left())
                                             .min(bounds.right() - tooltip_width);
@@ -903,6 +940,11 @@ impl RenderOnce for Chart {
                                             tooltip_border,
                                             BorderStyle::default(),
                                         ));
+
+                                        let text_origin =
+                                            point(tooltip_x + padding_h, tooltip_y + padding_v);
+                                        let _ =
+                                            shaped_line.paint(text_origin, font_size, window, cx);
                                     }
                                 }
                             },

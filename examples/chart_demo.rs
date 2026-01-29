@@ -1,4 +1,6 @@
-use adabraka_ui::{components::scrollable::scrollable_vertical, prelude::*};
+use adabraka_ui::{
+    charts::chart::Axis as ChartAxis, components::scrollable::scrollable_vertical, prelude::*,
+};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -150,8 +152,8 @@ impl ChartDemo {
                                     .show_points(true)
                                     .stroke_width(2.5),
                             )
-                            .y_axis(Axis::new().label("Revenue ($K)"))
-                            .x_axis(Axis::new().label("Month"))
+                            .y_axis(ChartAxis::new().label("Revenue ($K)"))
+                            .x_axis(ChartAxis::new().label("Month"))
                             .show_legend(false),
                     ),
             )
@@ -218,7 +220,7 @@ impl ChartDemo {
                                     .color(rgb(0x3b82f6))
                                     .show_points(true),
                             )
-                            .y_axis(Axis::new().range(0.0, 250.0)),
+                            .y_axis(ChartAxis::new().range(0.0, 250.0)),
                     ),
             )
     }
@@ -261,7 +263,7 @@ impl ChartDemo {
                                     .color(rgb(0x8b5cf6))
                                     .bar_width(40.0),
                             )
-                            .y_axis(Axis::new().range(0.0, 100.0).label("Usage %"))
+                            .y_axis(ChartAxis::new().range(0.0, 100.0).label("Usage %"))
                             .show_legend(false),
                     ),
             )
@@ -320,7 +322,7 @@ impl ChartDemo {
                                     .show_points(true)
                                     .smooth(true),
                             )
-                            .y_axis(Axis::new().range(0.0, 120.0)),
+                            .y_axis(ChartAxis::new().range(0.0, 120.0)),
                     ),
             )
     }
@@ -363,8 +365,8 @@ impl ChartDemo {
                                     .color(rgb(0xf59e0b))
                                     .point_radius(6.0),
                             )
-                            .y_axis(Axis::new().range(0.0, 80.0))
-                            .x_axis(Axis::new().range(0.0, 100.0)),
+                            .y_axis(ChartAxis::new().range(0.0, 80.0))
+                            .x_axis(ChartAxis::new().range(0.0, 100.0)),
                     ),
             )
     }
@@ -421,7 +423,7 @@ impl ChartDemo {
                                     .stroke_width(3.0)
                                     .show_points(true),
                             )
-                            .y_axis(Axis::new().range(0.0, 100.0)),
+                            .y_axis(ChartAxis::new().range(0.0, 100.0)),
                     ),
             )
     }
@@ -466,11 +468,11 @@ impl ChartDemo {
                                     .smooth(true),
                             )
                             .y_axis(
-                                Axis::new()
+                                ChartAxis::new()
                                     .label("Revenue")
                                     .tick_format(|v| format!("${:.0}K", v / 1000.0)),
                             )
-                            .x_axis(Axis::new().label("Time")),
+                            .x_axis(ChartAxis::new().label("Time")),
                     ),
             )
             .child(

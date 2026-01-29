@@ -12,7 +12,7 @@ readme = "README.md"
 keywords = ["gpui", "ui", "gui", "components", "desktop"]
 categories = ["gui", "rendering"]
 rust-version = "1.70"
-exclude = ["assets/icons/**/*"]
+exclude = ["assets/icons/**/*", "assets/audio/**/*", "assets/images/**/*"]
 
 [dependencies]
 # Core Framework

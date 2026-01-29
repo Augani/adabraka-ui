@@ -252,11 +252,14 @@ impl BarChart {
                                 };
                                 let bar_color = item.color.unwrap_or_else(|| get_chart_color(i));
                                 let value = item.value;
+                                let bar_height = chart_height * height_percent;
 
                                 div()
                                     .flex()
                                     .flex_col()
                                     .items_center()
+                                    .justify_end()
+                                    .h_full()
                                     .gap(px(4.0))
                                     .when(show_values, |this| {
                                         this.child(
@@ -269,7 +272,7 @@ impl BarChart {
                                     .child(
                                         div()
                                             .w(bar_width)
-                                            .h(relative(height_percent))
+                                            .h(bar_height)
                                             .bg(bar_color)
                                             .rounded_t(theme.tokens.radius_sm),
                                     )
@@ -432,7 +435,7 @@ impl BarChart {
                             .gap(gap)
                             .px(px(16.0))
                             .children((0..label_count).map(|label_idx| {
-                                div().flex().items_end().gap(px(2.0)).children(
+                                div().flex().items_end().h_full().gap(px(2.0)).children(
                                     self.series.iter().enumerate().map(|(series_idx, series)| {
                                         let value =
                                             series.data.get(label_idx).copied().unwrap_or(0.0);
@@ -444,11 +447,14 @@ impl BarChart {
                                         let bar_color = series
                                             .color
                                             .unwrap_or_else(|| get_chart_color(series_idx));
+                                        let bar_height = chart_height * height_percent;
 
                                         div()
                                             .flex()
                                             .flex_col()
                                             .items_center()
+                                            .justify_end()
+                                            .h_full()
                                             .gap(px(2.0))
                                             .when(show_values, |this| {
                                                 this.child(
@@ -461,7 +467,7 @@ impl BarChart {
                                             .child(
                                                 div()
                                                     .w(single_bar_width)
-                                                    .h(relative(height_percent))
+                                                    .h(bar_height)
                                                     .bg(bar_color)
                                                     .rounded_t(theme.tokens.radius_sm),
                                             )
@@ -579,11 +585,14 @@ impl BarChart {
                                     0.0
                                 };
                                 let total_value = stacked_totals[label_idx];
+                                let bar_height = chart_height * total_height_percent;
 
                                 div()
                                     .flex()
                                     .flex_col()
                                     .items_center()
+                                    .justify_end()
+                                    .h_full()
                                     .gap(px(4.0))
                                     .when(show_values, |this| {
                                         this.child(
@@ -596,7 +605,7 @@ impl BarChart {
                                     .child(
                                         div()
                                             .w(bar_width)
-                                            .h(relative(total_height_percent))
+                                            .h(bar_height)
                                             .flex()
                                             .flex_col_reverse()
                                             .overflow_hidden()

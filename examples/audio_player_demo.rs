@@ -59,29 +59,26 @@ fn main() {
 }
 
 struct AudioPlayerDemo {
-    full_player: Entity<AudioPlayerState>,
+    main_player: Entity<AudioPlayerState>,
     compact_player: Entity<AudioPlayerState>,
     disabled_player: Entity<AudioPlayerState>,
-    custom_player: Entity<AudioPlayerState>,
 }
 
 impl AudioPlayerDemo {
     fn new(cx: &mut Context<Self>) -> Self {
         let audio_path = format!("{}/assets/audio/sample.mp3", env!("CARGO_MANIFEST_DIR"));
 
-        let full_player = cx.new(|cx| {
+        let main_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
             if !state.load_file(&audio_path, cx) {
-                state.set_duration(245.0, cx);
+                state.set_duration(372.0, cx);
             }
             state
         });
 
         let compact_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
-            if !state.load_file(&audio_path, cx) {
-                state.set_duration(180.0, cx);
-            }
+            state.set_duration(180.0, cx);
             state
         });
 
@@ -92,15 +89,8 @@ impl AudioPlayerDemo {
             state
         });
 
-        let custom_player = cx.new(|cx| {
-            let mut state = AudioPlayerState::new(cx);
-            if !state.load_file(&audio_path, cx) {
-                state.set_duration(360.0, cx);
-            }
-            state.set_volume(0.6, cx);
-            state
-        });
-
+        let main_player_for_timer = main_player.clone();
+        let compact_for_timer = compact_player.clone();
         cx.spawn(
             async | this,
             cx | {
@@ -110,26 +100,32 @@ impl AudioPlayerDemo {
                         .await;
 
                     let should_continue = this
-                        .update(cx, |demo, cx| {
-                            let players = [
-                                demo.full_player.clone(),
-                                demo.compact_player.clone(),
-                                demo.custom_player.clone(),
-                            ];
-                            for player in &players {
-                                player.update(cx, |state, cx| {
-                                    if state.is_playing() {
-                                        let speed = state.playback_speed().value();
-                                        let new_time = state.current_time() + 0.1 * speed;
-                                        if new_time >= state.duration() {
-                                            state.set_current_time(0.0, cx);
-                                            state.set_playing(false, cx);
-                                        } else {
-                                            state.set_current_time(new_time, cx);
-                                        }
+                        .update(cx, |_demo, cx| {
+                            main_player_for_timer.update(cx, |state, cx| {
+                                if state.is_playing() {
+                                    let speed = state.playback_speed().value();
+                                    let new_time = state.current_time() + 0.1 * speed;
+                                    if new_time >= state.duration() {
+                                        state.set_current_time(0.0, cx);
+                                        state.set_playing(false, cx);
+                                    } else {
+                                        state.set_current_time(new_time, cx);
                                     }
-                                });
-                            }
+                                }
+                            });
+
+                            compact_for_timer.update(cx, |state, cx| {
+                                if state.is_playing() {
+                                    let speed = state.playback_speed().value();
+                                    let new_time = state.current_time() + 0.1 * speed;
+                                    if new_time >= state.duration() {
+                                        state.set_current_time(0.0, cx);
+                                        state.set_playing(false, cx);
+                                    } else {
+                                        state.set_current_time(new_time, cx);
+                                    }
+                                }
+                            });
                         })
                         .is_ok();
 
@@ -142,10 +138,9 @@ impl AudioPlayerDemo {
         .detach();
 
         Self {
-            full_player,
+            main_player,
             compact_player,
             disabled_player,
-            custom_player,
         }
     }
 }
@@ -180,8 +175,7 @@ impl Render for AudioPlayerDemo {
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
                                         .child(
-                                            "A versatile audio player component with real audio playback. \
-                                            Enable the 'audio' feature for actual audio output.",
+                                            "A versatile audio player with real audio playback support.",
                                         ),
                                 ),
                         )
@@ -192,27 +186,26 @@ impl Render for AudioPlayerDemo {
                                     div()
                                         .text_size(px(18.0))
                                         .font_weight(FontWeight::SEMIBOLD)
-                                        .child("Full Size Player"),
+                                        .child("Full Size Player (Real Audio)"),
                                 )
                                 .child(
                                     div()
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
                                         .child(
-                                            "Complete player with title, progress bar, volume control, \
-                                            and playback speed.",
+                                            "This player loads and plays a real MP3 file when the 'audio' feature is enabled.",
                                         ),
                                 )
                                 .child(
                                     div().max_w(px(500.0)).child(
-                                        AudioPlayer::new(self.full_player.clone())
+                                        AudioPlayer::new(self.main_player.clone())
                                             .full()
                                             .title("SoundHelix Song 1")
                                             .on_play(|_, _| {
-                                                println!("Play pressed");
+                                                println!("Playing audio...");
                                             })
                                             .on_pause(|_, _| {
-                                                println!("Pause pressed");
+                                                println!("Paused audio");
                                             })
                                             .on_seek(|time, _, _| {
                                                 println!("Seek to: {:.1}s", time);
@@ -233,26 +226,20 @@ impl Render for AudioPlayerDemo {
                                     div()
                                         .text_size(px(18.0))
                                         .font_weight(FontWeight::SEMIBOLD)
-                                        .child("Compact Size Player"),
+                                        .child("Compact Size Player (Simulated)"),
                                 )
                                 .child(
                                     div()
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
                                         .child(
-                                            "Minimal player with play button, progress bar, and time display.",
+                                            "Minimal player with simulated playback for UI demonstration.",
                                         ),
                                 )
                                 .child(
                                     div().max_w(px(400.0)).child(
                                         AudioPlayer::new(self.compact_player.clone())
-                                            .compact()
-                                            .on_play(|_, _| {
-                                                println!("Compact: Play pressed");
-                                            })
-                                            .on_pause(|_, _| {
-                                                println!("Compact: Pause pressed");
-                                            }),
+                                            .compact(),
                                     ),
                                 ),
                         )
@@ -281,36 +268,6 @@ impl Render for AudioPlayerDemo {
                                 ),
                         )
                         .child(
-                            VStack::new()
-                                .gap(px(16.0))
-                                .child(
-                                    div()
-                                        .text_size(px(18.0))
-                                        .font_weight(FontWeight::SEMIBOLD)
-                                        .child("Custom Styled Player"),
-                                )
-                                .child(
-                                    div()
-                                        .text_size(px(14.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child(
-                                            "Player with custom styling via Styled trait methods.",
-                                        ),
-                                )
-                                .child(
-                                    div().max_w(px(500.0)).child(
-                                        AudioPlayer::new(self.custom_player.clone())
-                                            .full()
-                                            .title("Custom Styled Track")
-                                            .bg(hsla(258.0 / 360.0, 0.90, 0.66, 0.15))
-                                            .border_2()
-                                            .border_color(hsla(258.0 / 360.0, 0.90, 0.66, 0.5))
-                                            .rounded(px(16.0))
-                                            .shadow_lg(),
-                                    ),
-                                ),
-                        )
-                        .child(
                             div()
                                 .mt(px(16.0))
                                 .p(px(16.0))
@@ -321,7 +278,7 @@ impl Render for AudioPlayerDemo {
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.accent_foreground)
                                         .child(
-                                            "To enable real audio playback, run with: cargo run --example audio_player_demo --features audio",
+                                            "Run with: cargo run --example audio_player_demo --features audio",
                                         ),
                                 )
                                 .child(

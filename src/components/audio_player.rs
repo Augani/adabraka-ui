@@ -3,10 +3,9 @@ use crate::theme::use_theme;
 use gpui::{prelude::*, *};
 use std::rc::Rc;
 use std::sync::Arc;
-use std::time::Duration;
 
 #[cfg(feature = "audio")]
-use rodio::Source;
+use std::io::BufReader;
 #[cfg(feature = "audio")]
 use std::sync::Mutex;
 
@@ -65,7 +64,7 @@ pub struct AudioBackend {
     sink: rodio::Sink,
     _stream: rodio::OutputStream,
     stream_handle: rodio::OutputStreamHandle,
-    source_duration: Option<Duration>,
+    file_path: Option<String>,
 }
 
 #[cfg(feature = "audio")]
@@ -78,8 +77,49 @@ impl AudioBackend {
             sink,
             _stream: stream,
             stream_handle,
-            source_duration: None,
+            file_path: None,
         })
+    }
+
+    pub fn load(&mut self, path: &str) -> Result<std::time::Duration, String> {
+        use rodio::Source;
+
+        let file = std::fs::File::open(path).map_err(|e| e.to_string())?;
+        let reader = BufReader::new(file);
+        let source = rodio::Decoder::new(reader).map_err(|e| e.to_string())?;
+        let duration = source.total_duration().unwrap_or(std::time::Duration::ZERO);
+
+        self.sink.stop();
+        self.sink = rodio::Sink::try_new(&self.stream_handle).map_err(|e| e.to_string())?;
+        self.sink.append(source);
+        self.sink.pause();
+        self.file_path = Some(path.to_string());
+
+        Ok(duration)
+    }
+
+    pub fn play(&self) {
+        self.sink.play();
+    }
+
+    pub fn pause(&self) {
+        self.sink.pause();
+    }
+
+    pub fn stop(&self) {
+        self.sink.stop();
+    }
+
+    pub fn set_volume(&self, volume: f32) {
+        self.sink.set_volume(volume);
+    }
+
+    pub fn set_speed(&self, speed: f32) {
+        self.sink.set_speed(speed);
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.sink.empty()
     }
 }
 
@@ -127,31 +167,21 @@ impl AudioPlayerState {
 
         if let Some(ref backend) = self.backend {
             if let Ok(mut backend) = backend.lock() {
-                let file = match std::fs::File::open(&path_str) {
-                    Ok(f) => f,
-                    Err(_) => return false,
-                };
-                let reader = std::io::BufReader::new(file);
-                let source = match rodio::Decoder::new(reader) {
-                    Ok(s) => s,
-                    Err(_) => return false,
-                };
-
-                if let Some(duration) = source.total_duration() {
-                    self.duration = duration.as_secs_f32();
-                    backend.source_duration = Some(duration);
+                match backend.load(&path_str) {
+                    Ok(duration) => {
+                        self.duration = duration.as_secs_f32();
+                        self.current_time = 0.0;
+                        self.is_playing = false;
+                        backend.set_volume(self.volume);
+                        backend.set_speed(self.playback_speed.value());
+                        cx.notify();
+                        return true;
+                    }
+                    Err(e) => {
+                        eprintln!("Failed to load audio: {}", e);
+                        return false;
+                    }
                 }
-
-                backend.sink.stop();
-                backend.sink = rodio::Sink::try_new(&backend.stream_handle).unwrap();
-                backend.sink.append(source);
-                backend.sink.pause();
-                backend.sink.set_volume(self.volume);
-
-                self.current_time = 0.0;
-                self.is_playing = false;
-                cx.notify();
-                return true;
             }
         }
         false
@@ -174,9 +204,9 @@ impl AudioPlayerState {
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
                 if playing {
-                    backend.sink.play();
+                    backend.play();
                 } else {
-                    backend.sink.pause();
+                    backend.pause();
                 }
             }
         }
@@ -189,9 +219,9 @@ impl AudioPlayerState {
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
                 if self.is_playing {
-                    backend.sink.play();
+                    backend.play();
                 } else {
-                    backend.sink.pause();
+                    backend.pause();
                 }
             }
         }
@@ -257,7 +287,7 @@ impl AudioPlayerState {
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
                 let effective_vol = if self.is_muted { 0.0 } else { self.volume };
-                backend.sink.set_volume(effective_vol);
+                backend.set_volume(effective_vol);
             }
         }
     }
@@ -279,7 +309,7 @@ impl AudioPlayerState {
         #[cfg(feature = "audio")]
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
-                backend.sink.set_speed(speed.value());
+                backend.set_speed(speed.value());
             }
         }
         cx.notify();
@@ -290,7 +320,7 @@ impl AudioPlayerState {
         #[cfg(feature = "audio")]
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
-                backend.sink.set_speed(self.playback_speed.value());
+                backend.set_speed(self.playback_speed.value());
             }
         }
         cx.notify();
@@ -302,10 +332,25 @@ impl AudioPlayerState {
         #[cfg(feature = "audio")]
         if let Some(ref backend) = self.backend {
             if let Ok(backend) = backend.lock() {
-                backend.sink.stop();
+                backend.stop();
             }
         }
         cx.notify();
+    }
+
+    #[cfg(feature = "audio")]
+    pub fn is_finished(&self) -> bool {
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                return backend.is_empty();
+            }
+        }
+        false
+    }
+
+    #[cfg(not(feature = "audio"))]
+    pub fn is_finished(&self) -> bool {
+        self.current_time >= self.duration
     }
 
     fn progress_percentage(&self) -> f32 {

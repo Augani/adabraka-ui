@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
         resizable::{h_resizable, resizable_panel, ResizableState},
         scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

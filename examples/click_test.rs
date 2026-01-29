@@ -9,14 +9,18 @@ fn main() {
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::Windowed(Bounds {
-                    origin: Point { x: px(100.0), y: px(100.0) },
-                    size: Size { width: px(400.0), height: px(300.0) },
+                    origin: Point {
+                        x: px(100.0),
+                        y: px(100.0),
+                    },
+                    size: Size {
+                        width: px(400.0),
+                        height: px(300.0),
+                    },
                 })),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| ClickTestApp::new(window, cx))
-            },
+            |window, cx| cx.new(|cx| ClickTestApp::new(window, cx)),
         )
         .unwrap();
     });
@@ -28,9 +32,7 @@ struct ClickTestApp {
 
 impl ClickTestApp {
     fn new(_window: &mut Window, _cx: &mut App) -> Self {
-        Self {
-            click_count: 0,
-        }
+        Self { click_count: 0 }
     }
 }
 
@@ -48,7 +50,7 @@ impl Render for ClickTestApp {
                 div()
                     .text_size(px(24.0))
                     .text_color(rgb(0xffffff))
-                    .child(format!("Clicked {} times", self.click_count))
+                    .child(format!("Clicked {} times", self.click_count)),
             )
             .child(
                 // Test 1: Simple div with on_click
@@ -65,7 +67,7 @@ impl Render for ClickTestApp {
                         view.click_count += 1;
                         cx.notify();
                         println!("Simple div clicked! Count: {}", view.click_count);
-                    }))
+                    })),
             )
             .child(
                 // Test 2: Stateful div with on_click
@@ -82,7 +84,7 @@ impl Render for ClickTestApp {
                         view.click_count += 1;
                         cx.notify();
                         println!("Stateful div clicked! Count: {}", view.click_count);
-                    }))
+                    })),
             )
             .child(
                 // Test 3: gc-style double on_click
@@ -105,7 +107,7 @@ impl Render for ClickTestApp {
                         view.click_count += 1;
                         cx.notify();
                         println!("gc-style clicked! Count: {}", view.click_count);
-                    }))
+                    })),
             )
     }
 }

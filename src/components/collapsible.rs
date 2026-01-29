@@ -105,13 +105,9 @@ impl RenderOnce for Collapsible {
                             CursorStyle::PointingHand
                         })
                         .when(!disabled, |this: Div| {
-                            this.hover(|style| {
-                                style.bg(theme.tokens.muted.opacity(0.5))
-                            })
+                            this.hover(|style| style.bg(theme.tokens.muted.opacity(0.5)))
                         })
-                        .when(disabled, |this: Div| {
-                            this.opacity(0.5)
-                        })
+                        .when(disabled, |this: Div| this.opacity(0.5))
                         .when(!disabled && on_toggle.is_some(), |this: Div| {
                             let handler = on_toggle.clone().unwrap();
                             this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
@@ -126,28 +122,16 @@ impl RenderOnce for Collapsible {
                                     .justify_center()
                                     .text_size(px(16.0))
                                     .text_color(theme.tokens.muted_foreground)
-                                    .when(is_open, |this: Div| {
-                                        this.child("▼")
-                                    })
-                                    .when(!is_open, |this: Div| {
-                                        this.child("▶")
-                                    })
+                                    .when(is_open, |this: Div| this.child("▼"))
+                                    .when(!is_open, |this: Div| this.child("▶")),
                             )
                         })
-                        .child(
-                            div()
-                                .flex_1()
-                                .child(trigger)
-                        )
+                        .child(div().flex_1().child(trigger)),
                 )
             })
             .when(is_open, |this: Div| {
                 this.when_some(content, |this: Div, content| {
-                    this.child(
-                        div()
-                            .overflow_hidden()
-                            .child(content)
-                    )
+                    this.child(div().overflow_hidden().child(content))
                 })
             })
             .map(|this| {

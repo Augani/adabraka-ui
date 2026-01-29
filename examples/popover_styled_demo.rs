@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
     overlays::popover::{Popover, PopoverContent},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -67,9 +67,7 @@ struct PopoverStyledDemo {
 
 impl PopoverStyledDemo {
     fn new() -> Self {
-        Self {
-            popover_count: 0,
-        }
+        Self { popover_count: 0 }
     }
 }
 

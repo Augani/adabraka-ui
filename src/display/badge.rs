@@ -1,7 +1,7 @@
 //! Badge component - Status labels and tags.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum BadgeVariant {

@@ -2,8 +2,8 @@
 
 use adabraka_ui::layout::ScrollContainer;
 use gpui::{
-    div, prelude::*, px, rgb, App, Application, Bounds, Context,
-    Window, WindowBounds, WindowOptions, size,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, Window, WindowBounds,
+    WindowOptions,
 };
 
 struct TestReal {}
@@ -32,8 +32,8 @@ impl Render for TestReal {
                         div()
                             .h(px(800.))
                             .bg(rgb(0xdbeafe))
-                            .child("Raw GPUI - scrolls")
-                    )
+                            .child("Raw GPUI - scrolls"),
+                    ),
             )
             .child(div().child("ACTUAL ScrollContainer from library:"))
             .child(
@@ -48,8 +48,8 @@ impl Render for TestReal {
                         div()
                             .h(px(800.))
                             .bg(rgb(0xd1fae5))
-                            .child("REAL ScrollContainer - does this scroll?")
-                    )
+                            .child("REAL ScrollContainer - does this scroll?"),
+                    ),
             )
     }
 }
@@ -68,4 +68,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

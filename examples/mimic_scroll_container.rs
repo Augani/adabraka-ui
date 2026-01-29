@@ -1,9 +1,9 @@
 // Exactly mimic what ScrollContainer does
 
 use gpui::{
-    div, prelude::*, px, rgb, AnyElement, App, Application, Bounds, Context, 
-    Interactivity, ParentElement, Stateful, StatefulInteractiveElement, 
-    Styled, StyleRefinement, Window, WindowBounds, WindowOptions, size, ElementId,
+    div, prelude::*, px, rgb, size, AnyElement, App, Application, Bounds, Context, ElementId,
+    Interactivity, ParentElement, Stateful, StatefulInteractiveElement, StyleRefinement, Styled,
+    Window, WindowBounds, WindowOptions,
 };
 use std::sync::atomic::{AtomicUsize, Ordering};
 
@@ -21,7 +21,7 @@ struct MyScrollContainer {
 
 impl MyScrollContainer {
     fn new() -> Self {
-        let base = div().id(next_test_scroll_id());  // Use dynamic ID like ScrollContainer
+        let base = div().id(next_test_scroll_id()); // Use dynamic ID like ScrollContainer
         Self { base }
     }
 }
@@ -82,8 +82,8 @@ impl Render for TestMimic {
                             .h(px(800.))
                             .bg(rgb(0xdbeafe))
                             .p_4()
-                            .child("Tall content - does this scroll?")
-                    )
+                            .child("Tall content - does this scroll?"),
+                    ),
             )
             .child(div().child("Raw GPUI (for comparison):"))
             .child(
@@ -101,8 +101,8 @@ impl Render for TestMimic {
                             .h(px(800.))
                             .bg(rgb(0xd1fae5))
                             .p_4()
-                            .child("Tall content - this DOES scroll")
-                    )
+                            .child("Tall content - this DOES scroll"),
+                    ),
             )
     }
 }
@@ -121,4 +121,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

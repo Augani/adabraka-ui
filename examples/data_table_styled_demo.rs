@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    components::scrollable::scrollable_vertical,
-};
+use adabraka_ui::{components::scrollable::scrollable_vertical, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -83,10 +80,8 @@ impl DataTableStyledDemo {
         let data = Self::generate_data(20);
 
         // 1. Default DataTable
-        let table1 = cx.new(|cx| {
-            DataTable::new(data.clone(), Self::create_columns(), cx)
-                .show_search(false)
-        });
+        let table1 = cx
+            .new(|cx| DataTable::new(data.clone(), Self::create_columns(), cx).show_search(false));
 
         // 2. Custom Border Styling
         let table2 = cx.new(|cx| {
@@ -146,8 +141,14 @@ impl DataTableStyledDemo {
 
     fn generate_data(count: usize) -> Vec<Product> {
         let names = vec![
-            "Wireless Mouse", "Mechanical Keyboard", "USB-C Hub", "Monitor Stand",
-            "Laptop Sleeve", "Webcam", "Headphones", "Desk Lamp",
+            "Wireless Mouse",
+            "Mechanical Keyboard",
+            "USB-C Hub",
+            "Monitor Stand",
+            "Laptop Sleeve",
+            "Webcam",
+            "Headphones",
+            "Desk Lamp",
         ];
         let categories = vec!["Electronics", "Accessories", "Peripherals", "Office"];
 
@@ -169,21 +170,31 @@ impl DataTableStyledDemo {
 
     fn create_columns() -> Vec<ColumnDef<Product>> {
         vec![
-            ColumnDef::new("id", "ID", |product: &Product| product.id.to_string().into())
-                .width(px(80.0))
-                .sortable(true),
-            ColumnDef::new("name", "Product Name", |product: &Product| product.name.clone().into())
-                .width(px(250.0))
-                .sortable(true),
-            ColumnDef::new("category", "Category", |product: &Product| product.category.clone().into())
-                .width(px(150.0))
-                .sortable(true),
-            ColumnDef::new("price", "Price", |product: &Product| product.price.clone().into())
-                .width(px(120.0))
-                .sortable(true),
-            ColumnDef::new("stock", "Stock", |product: &Product| product.stock.clone().into())
-                .width(px(100.0))
-                .sortable(true),
+            ColumnDef::new("id", "ID", |product: &Product| {
+                product.id.to_string().into()
+            })
+            .width(px(80.0))
+            .sortable(true),
+            ColumnDef::new("name", "Product Name", |product: &Product| {
+                product.name.clone().into()
+            })
+            .width(px(250.0))
+            .sortable(true),
+            ColumnDef::new("category", "Category", |product: &Product| {
+                product.category.clone().into()
+            })
+            .width(px(150.0))
+            .sortable(true),
+            ColumnDef::new("price", "Price", |product: &Product| {
+                product.price.clone().into()
+            })
+            .width(px(120.0))
+            .sortable(true),
+            ColumnDef::new("stock", "Stock", |product: &Product| {
+                product.stock.clone().into()
+            })
+            .width(px(100.0))
+            .sortable(true),
         ]
     }
 }

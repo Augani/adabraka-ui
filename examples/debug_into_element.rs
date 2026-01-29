@@ -2,10 +2,9 @@
 
 use adabraka_ui::layout::{ScrollContainer, ScrollDirection};
 use gpui::{
-    div, prelude::*, px, rgb, App, Application, Bounds, Context,
-    Window, WindowBounds, WindowOptions, size, AnyElement, Stateful,
-    ParentElement, Styled, StyleRefinement, InteractiveElement, Interactivity,
-    StatefulInteractiveElement, ElementId,
+    div, prelude::*, px, rgb, size, AnyElement, App, Application, Bounds, Context, ElementId,
+    InteractiveElement, Interactivity, ParentElement, Stateful, StatefulInteractiveElement,
+    StyleRefinement, Styled, Window, WindowBounds, WindowOptions,
 };
 
 // Create our own version WITH debug prints
@@ -49,8 +48,11 @@ impl IntoElement for DebugScrollContainer {
 
     fn into_element(self) -> Self::Element {
         eprintln!("DebugScrollContainer::into_element() CALLED!");
-        let DebugScrollContainer { mut base, direction } = self;
-        
+        let DebugScrollContainer {
+            mut base,
+            direction,
+        } = self;
+
         base = match direction {
             ScrollDirection::Vertical => {
                 eprintln!("Applying overflow_y_scroll()");
@@ -59,7 +61,7 @@ impl IntoElement for DebugScrollContainer {
             ScrollDirection::Horizontal => base.overflow_x_scroll(),
             ScrollDirection::Both => base.overflow_scroll(),
         };
-        
+
         eprintln!("Returning base from into_element");
         base
     }
@@ -70,7 +72,7 @@ struct DebugTest {}
 impl Render for DebugTest {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
         eprintln!("\n=== RENDER CALLED ===");
-        
+
         div()
             .size_full()
             .flex()
@@ -88,12 +90,7 @@ impl Render for DebugTest {
                     .border_color(rgb(0x00ff00))
                     .bg(rgb(0xfafafa))
                     .p(px(12.0))
-                    .child(
-                        div()
-                            .h(px(800.))
-                            .bg(rgb(0xd1fae5))
-                            .child("Debug content")
-                    )
+                    .child(div().h(px(800.)).bg(rgb(0xd1fae5)).child("Debug content"))
             })
             .child(div().child("Actual library ScrollContainer:"))
             .child({
@@ -105,12 +102,7 @@ impl Render for DebugTest {
                     .border_color(rgb(0xff0000))
                     .bg(rgb(0xfafafa))
                     .p(px(12.0))
-                    .child(
-                        div()
-                            .h(px(800.))
-                            .bg(rgb(0xdbeafe))
-                            .child("Library content")
-                    )
+                    .child(div().h(px(800.)).bg(rgb(0xdbeafe)).child("Library content"))
             })
     }
 }
@@ -129,4 +121,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

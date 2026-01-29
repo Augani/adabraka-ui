@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
-        calendar::{Calendar, DateValue, CalendarLocale},
+        calendar::{Calendar, CalendarLocale, DateValue},
         scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

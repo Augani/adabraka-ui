@@ -224,6 +224,12 @@ pub struct TreeList<T: Clone + PartialEq + Eq + Hash + 'static> {
     style: StyleRefinement,
 }
 
+impl<T: Clone + PartialEq + Eq + Hash + 'static> Default for TreeList<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: Clone + PartialEq + Eq + Hash + 'static> TreeList<T> {
     pub fn new() -> Self {
         Self {
@@ -423,156 +429,173 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for TreeList<T> {
             .child(
                 div()
                     .w_full()
-                    .children(flat_nodes_rc.iter().enumerate().map(
-                    |(_abs_idx, flat_node)| {
-                        let is_selected = selected_id.as_ref() == Some(&flat_node.node_id);
-                        let is_expanded = expanded_ids_rc.contains(&flat_node.node_id);
-                        let has_children =
-                            !flat_node.node.children.is_empty() || flat_node.node.has_lazy_children;
-                        let indent = px((flat_node.level as f32) * 16.0);
+                    .children(
+                        flat_nodes_rc
+                            .iter()
+                            .enumerate()
+                            .map(|(_abs_idx, flat_node)| {
+                                let is_selected = selected_id.as_ref() == Some(&flat_node.node_id);
+                                let is_expanded = expanded_ids_rc.contains(&flat_node.node_id);
+                                let has_children = !flat_node.node.children.is_empty()
+                                    || flat_node.node.has_lazy_children;
+                                let indent = px((flat_node.level as f32) * 16.0);
 
-                        div()
-                            .w_full()
-                            .h(px(ROW_HEIGHT))
-                            .flex()
-                            .items_center()
-                            .px(px(8.0))
-                            .pl(indent + px(8.0))
-                            .cursor(if flat_node.node.disabled {
-                                CursorStyle::Arrow
-                            } else {
-                                CursorStyle::PointingHand
-                            })
-                            .bg(if is_selected {
-                                theme.tokens.accent
-                            } else {
-                                gpui::transparent_black()
-                            })
-                            .text_color(if is_selected {
-                                theme.tokens.accent_foreground
-                            } else if flat_node.node.disabled {
-                                theme.tokens.muted_foreground
-                            } else {
-                                theme.tokens.primary
-                            })
-                            .when(!flat_node.node.disabled && !is_selected, |div| {
-                                div.hover(|mut style| {
-                                    style.background =
-                                        Some(theme.tokens.accent.opacity(0.5).into());
-                                    style
-                                })
-                            })
-                            .when(!flat_node.node.disabled, {
-                                let on_select = on_select.clone();
-                                let on_toggle = on_toggle.clone();
-                                let node_id = flat_node.node_id.clone();
-
-                                move |this| {
-                                    this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                        if let Some(on_select) = on_select.clone() {
-                                            on_select(&node_id, window, cx);
-                                        }
-
-                                        if has_children {
-                                            if let Some(on_toggle) = on_toggle.clone() {
-                                                on_toggle(&node_id, !is_expanded, window, cx);
-                                            }
-                                        }
-                                    })
-                                }
-                            })
-                            .when(!flat_node.node.disabled, {
-                                let on_right_click = on_right_click.clone();
-                                let node_id = flat_node.node_id.clone();
-
-                                move |this| {
-                                    this.on_mouse_down(
-                                        MouseButton::Right,
-                                        move |event, window, cx| {
-                                            eprintln!("TreeList: Right mouse button down on node");
-                                            if let Some(on_right_click) = on_right_click.clone() {
-                                                eprintln!(
-                                                    "TreeList: Calling on_right_click handler"
-                                                );
-                                                on_right_click(&node_id, event, window, cx);
-                                            } else {
-                                                eprintln!("TreeList: No on_right_click handler!");
-                                            }
-                                        },
-                                    )
-                                }
-                            })
-                            .child(
                                 div()
+                                    .w_full()
+                                    .h(px(ROW_HEIGHT))
                                     .flex()
                                     .items_center()
-                                    .gap(px(8.0))
-                                    .children(flat_node.node.icon.as_ref().map(|icon| {
-                                        Icon::new(icon.clone()).size(px(16.0)).color(
-                                            if is_selected {
-                                                theme.tokens.accent_foreground
-                                            } else if flat_node.node.disabled {
-                                                theme.tokens.muted_foreground
-                                            } else {
-                                                theme.tokens.primary
-                                            },
-                                        )
-                                    }))
+                                    .px(px(8.0))
+                                    .pl(indent + px(8.0))
+                                    .cursor(if flat_node.node.disabled {
+                                        CursorStyle::Arrow
+                                    } else {
+                                        CursorStyle::PointingHand
+                                    })
+                                    .bg(if is_selected {
+                                        theme.tokens.accent
+                                    } else {
+                                        gpui::transparent_black()
+                                    })
+                                    .text_color(if is_selected {
+                                        theme.tokens.accent_foreground
+                                    } else if flat_node.node.disabled {
+                                        theme.tokens.muted_foreground
+                                    } else {
+                                        theme.tokens.primary
+                                    })
+                                    .when(!flat_node.node.disabled && !is_selected, |div| {
+                                        div.hover(|mut style| {
+                                            style.background =
+                                                Some(theme.tokens.accent.opacity(0.5).into());
+                                            style
+                                        })
+                                    })
+                                    .when(!flat_node.node.disabled, {
+                                        let on_select = on_select.clone();
+                                        let on_toggle = on_toggle.clone();
+                                        let node_id = flat_node.node_id.clone();
+
+                                        move |this| {
+                                            this.on_mouse_down(
+                                                MouseButton::Left,
+                                                move |_, window, cx| {
+                                                    if let Some(on_select) = on_select.clone() {
+                                                        on_select(&node_id, window, cx);
+                                                    }
+
+                                                    if has_children {
+                                                        if let Some(on_toggle) = on_toggle.clone() {
+                                                            on_toggle(
+                                                                &node_id,
+                                                                !is_expanded,
+                                                                window,
+                                                                cx,
+                                                            );
+                                                        }
+                                                    }
+                                                },
+                                            )
+                                        }
+                                    })
+                                    .when(!flat_node.node.disabled, {
+                                        let on_right_click = on_right_click.clone();
+                                        let node_id = flat_node.node_id.clone();
+
+                                        move |this| {
+                                            this.on_mouse_down(
+                                                MouseButton::Right,
+                                                move |event, window, cx| {
+                                                    eprintln!(
+                                                        "TreeList: Right mouse button down on node"
+                                                    );
+                                                    if let Some(on_right_click) =
+                                                        on_right_click.clone()
+                                                    {
+                                                        eprintln!(
+                                                    "TreeList: Calling on_right_click handler"
+                                                );
+                                                        on_right_click(&node_id, event, window, cx);
+                                                    } else {
+                                                        eprintln!(
+                                                            "TreeList: No on_right_click handler!"
+                                                        );
+                                                    }
+                                                },
+                                            )
+                                        }
+                                    })
                                     .child(
                                         div()
-                                            .flex_1()
-                                            .text_size(px(14.0))
-                                            .font_family(theme.tokens.font_family.clone())
-                                            .font_weight(if is_selected {
-                                                FontWeight::SEMIBOLD
-                                            } else {
-                                                FontWeight::NORMAL
-                                            })
-                                            .child({
-                                                let ranges = match_ranges_rc
-                                                    .get(&flat_node.node_id)
-                                                    .map(|r| r.as_slice())
-                                                    .unwrap_or(&[]);
+                                            .flex()
+                                            .items_center()
+                                            .gap(px(8.0))
+                                            .children(flat_node.node.icon.as_ref().map(|icon| {
+                                                Icon::new(icon.clone()).size(px(16.0)).color(
+                                                    if is_selected {
+                                                        theme.tokens.accent_foreground
+                                                    } else if flat_node.node.disabled {
+                                                        theme.tokens.muted_foreground
+                                                    } else {
+                                                        theme.tokens.primary
+                                                    },
+                                                )
+                                            }))
+                                            .child(
+                                                div()
+                                                    .flex_1()
+                                                    .text_size(px(14.0))
+                                                    .font_family(theme.tokens.font_family.clone())
+                                                    .font_weight(if is_selected {
+                                                        FontWeight::SEMIBOLD
+                                                    } else {
+                                                        FontWeight::NORMAL
+                                                    })
+                                                    .child({
+                                                        let ranges = match_ranges_rc
+                                                            .get(&flat_node.node_id)
+                                                            .map(|r| r.as_slice())
+                                                            .unwrap_or(&[]);
 
-                                                if !ranges.is_empty() && highlight_matches {
-                                                    self.render_highlighted_text(
-                                                        &flat_node.node.label,
-                                                        ranges,
-                                                        &theme,
-                                                        is_selected,
-                                                    )
-                                                    .into_any_element()
-                                                } else {
+                                                        if !ranges.is_empty() && highlight_matches {
+                                                            self.render_highlighted_text(
+                                                                &flat_node.node.label,
+                                                                ranges,
+                                                                &theme,
+                                                                is_selected,
+                                                            )
+                                                            .into_any_element()
+                                                        } else {
+                                                            div()
+                                                                .child(flat_node.node.label.clone())
+                                                                .into_any_element()
+                                                        }
+                                                    }),
+                                            )
+                                            .children(if has_children {
+                                                Some(
                                                     div()
-                                                        .child(flat_node.node.label.clone())
-                                                        .into_any_element()
-                                                }
+                                                        .w(px(16.0))
+                                                        .h(px(16.0))
+                                                        .flex()
+                                                        .items_center()
+                                                        .justify_center()
+                                                        .child(
+                                                            Icon::new(if is_expanded {
+                                                                "arrow-down"
+                                                            } else {
+                                                                "arrow-right"
+                                                            })
+                                                            .size(px(12.0))
+                                                            .color(theme.tokens.primary),
+                                                        ),
+                                                )
+                                            } else {
+                                                None
                                             }),
                                     )
-                                    .children(if has_children {
-                                        Some(
-                                            div()
-                                                .w(px(16.0))
-                                                .h(px(16.0))
-                                                .flex()
-                                                .items_center()
-                                                .justify_center()
-                                                .child(
-                                                    Icon::new(if is_expanded {
-                                                        "arrow-down"
-                                                    } else {
-                                                        "arrow-right"
-                                                    })
-                                                    .size(px(12.0))
-                                                    .color(theme.tokens.primary),
-                                                ),
-                                        )
-                                    } else {
-                                        None
-                                    }),
-                            )
-                    },
-                )),
+                            }),
+                    ),
             )
     }
 }
@@ -618,6 +641,12 @@ pub struct List<T: Clone + PartialEq + 'static> {
     items: Vec<ListItem<T>>,
     selected_id: Option<T>,
     on_select: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
+}
+
+impl<T: Clone + PartialEq + 'static> Default for List<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: Clone + PartialEq + 'static> List<T> {

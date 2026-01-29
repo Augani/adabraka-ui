@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
         keyboard_shortcuts::{KeyboardShortcuts, ShortcutItem},
         scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

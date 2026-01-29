@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
-    navigation::sidebar::{Sidebar, SidebarItem, SidebarVariant, SidebarPosition},
     components::{icon_source::IconSource, scrollable::scrollable_vertical},
+    navigation::sidebar::{Sidebar, SidebarItem, SidebarPosition, SidebarVariant},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

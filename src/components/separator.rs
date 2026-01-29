@@ -1,21 +1,16 @@
 //! Separator component - Visual dividers for content sections.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 /// Orientation of the separator
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SeparatorOrientation {
     /// Horizontal separator (default)
+    #[default]
     Horizontal,
     /// Vertical separator
     Vertical,
-}
-
-impl Default for SeparatorOrientation {
-    fn default() -> Self {
-        Self::Horizontal
-    }
 }
 
 /// Visual divider for separating content
@@ -113,10 +108,9 @@ impl RenderOnce for Separator {
                 self.orientation == SeparatorOrientation::Horizontal,
                 |this| this.w_full().h(px(1.0)),
             )
-            .when(
-                self.orientation == SeparatorOrientation::Vertical,
-                |this| this.h_full().w(px(1.0)),
-            )
+            .when(self.orientation == SeparatorOrientation::Vertical, |this| {
+                this.h_full().w(px(1.0))
+            })
             .child(
                 div()
                     .absolute()
@@ -124,10 +118,9 @@ impl RenderOnce for Separator {
                         self.orientation == SeparatorOrientation::Horizontal,
                         |this| this.w_full().h(px(1.0)),
                     )
-                    .when(
-                        self.orientation == SeparatorOrientation::Vertical,
-                        |this| this.h_full().w(px(1.0)),
-                    )
+                    .when(self.orientation == SeparatorOrientation::Vertical, |this| {
+                        this.h_full().w(px(1.0))
+                    })
                     .bg(line_color),
             )
             .when_some(self.label, |this, label| {

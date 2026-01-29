@@ -169,7 +169,7 @@ impl RenderOnce for Menu {
             .rounded(theme.tokens.radius_md)
             .shadow_lg()
             .p(px(4.0))
-            .children(self.items.into_iter().map(|item| render_menu_item(item)))
+            .children(self.items.into_iter().map(render_menu_item))
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);
@@ -374,7 +374,7 @@ impl RenderOnce for ContextMenu {
                     .rounded(theme.tokens.radius_md)
                     .shadow_lg()
                     .p(px(4.0))
-                    .children(self.items.into_iter().map(|item| render_menu_item(item))),
+                    .children(self.items.into_iter().map(render_menu_item)),
             )
     }
 }

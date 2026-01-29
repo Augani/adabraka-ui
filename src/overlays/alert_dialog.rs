@@ -3,8 +3,8 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
 
 actions!(alert_dialog, [AlertDialogCancel]);
 
@@ -88,13 +88,17 @@ impl AlertDialog {
         }
     }
 
-    fn handle_escape(&mut self, _: &AlertDialogCancel, window: &mut Window, cx: &mut Context<Self>) {
+    fn handle_escape(
+        &mut self,
+        _: &AlertDialogCancel,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.handle_cancel(window, cx);
     }
 }
 
-pub fn init_alert_dialog(_cx: &mut App) {
-}
+pub fn init_alert_dialog(_cx: &mut App) {}
 
 impl Styled for AlertDialog {
     fn style(&mut self) -> &mut StyleRefinement {
@@ -146,14 +150,14 @@ impl Render for AlertDialog {
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(theme.tokens.foreground)
-                                    .child(title)
+                                    .child(title),
                             )
                             .child(
                                 div()
                                     .text_size(px(14.0))
                                     .text_color(theme.tokens.muted_foreground)
                                     .line_height(relative(1.5))
-                                    .child(description)
+                                    .child(description),
                             )
                             .child(
                                 div()
@@ -166,7 +170,7 @@ impl Render for AlertDialog {
                                             .size(ButtonSize::Md)
                                             .on_click(cx.listener(|this, _, window, cx| {
                                                 this.handle_cancel(window, cx);
-                                            }))
+                                            })),
                                     )
                                     .child(
                                         Button::new("alert-action-btn", action_text)
@@ -178,15 +182,15 @@ impl Render for AlertDialog {
                                             .size(ButtonSize::Md)
                                             .on_click(cx.listener(|this, _, window, cx| {
                                                 this.handle_action(window, cx);
-                                            }))
-                                    )
-                            )
+                                            })),
+                                    ),
+                            ),
                     )
                     .map(|this| {
                         let mut div = this;
                         div.style().refine(&user_style);
                         div
-                    })
+                    }),
             )
     }
 }

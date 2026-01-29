@@ -1,9 +1,6 @@
 use adabraka_ui::{
+    components::{date_picker::DateSelectionMode, scrollable::scrollable_vertical},
     prelude::*,
-    components::{
-        scrollable::scrollable_vertical,
-        date_picker::DateSelectionMode,
-    },
 };
 use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
@@ -62,7 +59,8 @@ impl DatePickerDemoApp {
         let custom_format_picker_state = cx.new(|cx| DatePickerState::new(cx));
         let locale_picker_state = cx.new(|cx| DatePickerState::new(cx));
         let styled_picker_state = cx.new(|cx| DatePickerState::new(cx));
-        let range_picker_state = cx.new(|cx| DatePickerState::new_with_mode(DateSelectionMode::Range, cx));
+        let range_picker_state =
+            cx.new(|cx| DatePickerState::new_with_mode(DateSelectionMode::Range, cx));
 
         Self {
             basic_picker_state,
@@ -82,7 +80,13 @@ impl DatePickerDemoApp {
         }
     }
 
-    fn render_section(&self, title: &str, description: &str, picker: impl IntoElement, selected: &Option<String>) -> Div {
+    fn render_section(
+        &self,
+        title: &str,
+        description: &str,
+        picker: impl IntoElement,
+        selected: &Option<String>,
+    ) -> Div {
         div()
             .flex()
             .flex_col()
@@ -99,14 +103,14 @@ impl DatePickerDemoApp {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child(title.to_string())
+                            .child(title.to_string()),
                     )
                     .child(
                         div()
                             .text_size(px(14.0))
                             .text_color(rgb(0x6c757d))
-                            .child(description.to_string())
-                    )
+                            .child(description.to_string()),
+                    ),
             )
             .child(picker)
             .map(|this| {
@@ -117,7 +121,7 @@ impl DatePickerDemoApp {
                             .bg(rgb(0xe9ecef))
                             .rounded(px(6.0))
                             .text_size(px(14.0))
-                            .child(format!("Selected: {}", text))
+                            .child(format!("Selected: {}", text)),
                     )
                 } else {
                     this

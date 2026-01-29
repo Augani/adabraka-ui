@@ -1,7 +1,7 @@
 //! Label component - Form labels with accessibility support.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 /// Form label component with accessibility support
 ///
@@ -91,11 +91,7 @@ impl RenderOnce for Label {
                     .line_height(relative(1.0))
                     .child(self.text)
                     .when(self.required, |this| {
-                        this.child(
-                            div()
-                                .text_color(theme.tokens.destructive)
-                                .child("*"),
-                        )
+                        this.child(div().text_color(theme.tokens.destructive).child("*"))
                     }),
             )
             .when_some(self.helper_text, |this, helper| {

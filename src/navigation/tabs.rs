@@ -8,17 +8,12 @@ use std::sync::Arc;
 
 actions!(tabs, [TabNext, TabPrevious, TabFirst, TabLast, TabClose]);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TabVariant {
+    #[default]
     Underline,
     Enclosed,
     Pills,
-}
-
-impl Default for TabVariant {
-    fn default() -> Self {
-        Self::Underline
-    }
 }
 
 #[derive(Clone)]
@@ -93,6 +88,12 @@ pub struct Tabs<T: Clone + PartialEq + 'static> {
     on_change: Option<Arc<dyn Fn(&usize, &mut Window, &mut App) + Send + Sync + 'static>>,
     on_close: Option<Arc<dyn Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>>,
     style: StyleRefinement,
+}
+
+impl<T: Clone + PartialEq + 'static> Default for Tabs<T> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<T: Clone + PartialEq + 'static> Tabs<T> {

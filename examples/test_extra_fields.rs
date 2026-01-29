@@ -1,9 +1,9 @@
 // Test if extra fields break scrolling
 
 use gpui::{
-    div, prelude::*, px, rgb, AnyElement, App, Application, Bounds, Context, 
-    Interactivity, ParentElement, Stateful, StatefulInteractiveElement, 
-    Styled, StyleRefinement, Window, WindowBounds, WindowOptions, size, ElementId, ScrollHandle,
+    div, prelude::*, px, rgb, size, AnyElement, App, Application, Bounds, Context, ElementId,
+    Interactivity, ParentElement, ScrollHandle, Stateful, StatefulInteractiveElement,
+    StyleRefinement, Styled, Window, WindowBounds, WindowOptions,
 };
 
 // Test 1: Single field (SHOULD WORK)
@@ -13,7 +13,9 @@ struct Test1 {
 
 impl Test1 {
     fn new() -> Self {
-        Self { base: div().id("test1") }
+        Self {
+            base: div().id("test1"),
+        }
     }
 }
 
@@ -60,7 +62,7 @@ struct Test2 {
 
 impl Test2 {
     fn new() -> Self {
-        Self { 
+        Self {
             base: div().id("test2"),
             scroll_handle: None,
             direction: TestDirection::Vertical,
@@ -92,13 +94,17 @@ impl IntoElement for Test2 {
     type Element = Stateful<gpui::Div>;
 
     fn into_element(self) -> Self::Element {
-        let Test2 { mut base, scroll_handle: _, direction } = self;
-        
+        let Test2 {
+            mut base,
+            scroll_handle: _,
+            direction,
+        } = self;
+
         // Use match like ScrollContainer
         base = match direction {
             TestDirection::Vertical => base.overflow_y_scroll(),
         };
-        
+
         base
     }
 }
@@ -123,12 +129,7 @@ impl Render for TestExtraFields {
                     .border_color(rgb(0xff0000))
                     .bg(rgb(0xfafafa))
                     .p_4()
-                    .child(
-                        div()
-                            .h(px(800.))
-                            .bg(rgb(0xdbeafe))
-                            .child("Test1")
-                    )
+                    .child(div().h(px(800.)).bg(rgb(0xdbeafe)).child("Test1")),
             )
             .child(div().child("Test2: With Option<ScrollHandle> field"))
             .child(
@@ -139,12 +140,7 @@ impl Render for TestExtraFields {
                     .border_color(rgb(0x00ff00))
                     .bg(rgb(0xfafafa))
                     .p_4()
-                    .child(
-                        div()
-                            .h(px(800.))
-                            .bg(rgb(0xd1fae5))
-                            .child("Test2")
-                    )
+                    .child(div().h(px(800.)).bg(rgb(0xd1fae5)).child("Test2")),
             )
     }
 }
@@ -163,4 +159,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

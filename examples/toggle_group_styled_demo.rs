@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
         scrollable::scrollable_vertical,
         toggle_group::{ToggleGroup, ToggleGroupItem},
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

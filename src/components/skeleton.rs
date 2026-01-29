@@ -1,20 +1,15 @@
 //! Skeleton component - Loading placeholder with pulsing animation effect.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::time::Duration;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SkeletonVariant {
+    #[default]
     Text,
     Circle,
     Rect,
-}
-
-impl Default for SkeletonVariant {
-    fn default() -> Self {
-        Self::Text
-    }
 }
 
 #[derive(IntoElement)]
@@ -55,18 +50,15 @@ impl RenderOnce for Skeleton {
         };
 
         self.base
-            .when(
-                self.variant == SkeletonVariant::Text,
-                |this| this.w_full().h(px(16.0)).rounded(theme.tokens.radius_md),
-            )
-            .when(
-                self.variant == SkeletonVariant::Circle,
-                |this| this.rounded_full(),
-            )
-            .when(
-                self.variant == SkeletonVariant::Rect,
-                |this| this.rounded(theme.tokens.radius_md),
-            )
+            .when(self.variant == SkeletonVariant::Text, |this| {
+                this.w_full().h(px(16.0)).rounded(theme.tokens.radius_md)
+            })
+            .when(self.variant == SkeletonVariant::Circle, |this| {
+                this.rounded_full()
+            })
+            .when(self.variant == SkeletonVariant::Rect, |this| {
+                this.rounded(theme.tokens.radius_md)
+            })
             .bg(base_color)
             .with_animation(
                 "skeleton-pulse",

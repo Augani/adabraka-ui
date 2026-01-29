@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
-    overlays::toast::{ToastManager, ToastItem, ToastVariant},
+    overlays::toast::{ToastItem, ToastManager, ToastVariant},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

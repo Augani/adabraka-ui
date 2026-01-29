@@ -1,9 +1,6 @@
 use adabraka_ui::{
+    components::{confirm_dialog::Dialog, scrollable::scrollable_vertical},
     prelude::*,
-    components::{
-        scrollable::scrollable_vertical,
-        confirm_dialog::Dialog,
-    },
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -325,17 +322,15 @@ impl Render for DialogStyledDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Default Dialog")
-                            )
+                                    .child("Default Dialog"),
+                            ),
                     )
                     .content(
-                        div()
-                            .p(px(24.0))
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child("This is a default dialog with no custom styling.")
-                            )
+                        div().p(px(24.0)).child(
+                            div()
+                                .text_size(px(14.0))
+                                .child("This is a default dialog with no custom styling."),
+                        ),
                     )
                     .footer(
                         div()
@@ -351,9 +346,9 @@ impl Render for DialogStyledDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.show_default = false;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             );
         }
 
@@ -455,7 +450,7 @@ impl Render for DialogStyledDemo {
         if self.show_custom_radius {
             root = root.child(
                 Dialog::new()
-                    .rounded(px(0.0))  // No border radius via Styled trait
+                    .rounded(px(0.0)) // No border radius via Styled trait
                     .header(
                         div()
                             .p(px(24.0))
@@ -465,18 +460,12 @@ impl Render for DialogStyledDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Custom Border Radius Dialog")
-                            )
+                                    .child("Custom Border Radius Dialog"),
+                            ),
                     )
-                    .content(
-                        div()
-                            .p(px(24.0))
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child("This dialog has sharp corners with .rounded(px(0.0)) - no border radius!")
-                            )
-                    )
+                    .content(div().p(px(24.0)).child(div().text_size(px(14.0)).child(
+                        "This dialog has sharp corners with .rounded(px(0.0)) - no border radius!",
+                    )))
                     .footer(
                         div()
                             .p(px(24.0))
@@ -491,9 +480,9 @@ impl Render for DialogStyledDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.show_custom_radius = false;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             );
         }
 
@@ -592,14 +581,14 @@ impl Render for DialogStyledDemo {
         if self.show_combined {
             root = root.child(
                 Dialog::new()
-                    .w(px(600.0))  // Custom width
-                    .min_h(px(350.0))  // Custom min height
-                    .bg(rgb(0x0f172a))  // Dark background
-                    .border_4()  // Thick border
-                    .border_color(rgb(0x10b981))  // Green border
-                    .rounded(px(24.0))  // Large border radius
-                    .shadow_2xl()  // Extra large shadow
-                    .p(px(4.0))  // Internal padding
+                    .w(px(600.0)) // Custom width
+                    .min_h(px(350.0)) // Custom min height
+                    .bg(rgb(0x0f172a)) // Dark background
+                    .border_4() // Thick border
+                    .border_color(rgb(0x10b981)) // Green border
+                    .rounded(px(24.0)) // Large border radius
+                    .shadow_2xl() // Extra large shadow
+                    .p(px(4.0)) // Internal padding
                     .header(
                         div()
                             .p(px(24.0))
@@ -610,70 +599,67 @@ impl Render for DialogStyledDemo {
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(rgb(0x10b981))
-                                    .child("Combined Styling Dialog")
-                            )
+                                    .child("Combined Styling Dialog"),
+                            ),
                     )
                     .content(
-                        div()
-                            .p(px(24.0))
-                            .child(
-                                VStack::new()
-                                    .gap(px(12.0))
-                                    .child(
-                                        div()
-                                            .text_size(px(14.0))
-                                            .text_color(rgb(0xe2e8f0))
-                                            .child("This dialog combines multiple Styled trait methods:")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .w(px(600.0)) - Custom width")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .min_h(px(350.0)) - Minimum height")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .bg(rgb(0x0f172a)) - Dark background")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .border_4() - Thick border")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .border_color(rgb(0x10b981)) - Green border")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .rounded(px(24.0)) - Large border radius")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .shadow_2xl() - Extra large shadow")
-                                    )
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(rgb(0x94a3b8))
-                                            .child("- .p(px(4.0)) - Internal padding")
-                                    )
-                            )
+                        div().p(px(24.0)).child(
+                            VStack::new()
+                                .gap(px(12.0))
+                                .child(
+                                    div().text_size(px(14.0)).text_color(rgb(0xe2e8f0)).child(
+                                        "This dialog combines multiple Styled trait methods:",
+                                    ),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .w(px(600.0)) - Custom width"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .min_h(px(350.0)) - Minimum height"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .bg(rgb(0x0f172a)) - Dark background"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .border_4() - Thick border"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .border_color(rgb(0x10b981)) - Green border"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .rounded(px(24.0)) - Large border radius"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .shadow_2xl() - Extra large shadow"),
+                                )
+                                .child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(rgb(0x94a3b8))
+                                        .child("- .p(px(4.0)) - Internal padding"),
+                                ),
+                        ),
                     )
                     .footer(
                         div()
@@ -689,9 +675,9 @@ impl Render for DialogStyledDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.show_combined = false;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             );
         }
 

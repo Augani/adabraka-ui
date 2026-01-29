@@ -1,9 +1,9 @@
-use gpui::*;
 use adabraka_ui::{
-    components::search_input::{SearchInput, SearchFilter},
+    components::search_input::{SearchFilter, SearchInput},
     layout::VStack,
     theme::use_theme,
 };
+use gpui::*;
 use std::path::PathBuf;
 
 struct Assets {
@@ -51,45 +51,50 @@ impl SearchInputStyledDemo {
 
             // SearchInput with custom padding via Styled trait
             search2: cx.new(|cx| {
-                SearchInput::new(cx)
-                    .p(px(16.0))  // Styled trait method - adds extra padding
+                SearchInput::new(cx).p(px(16.0)) // Styled trait method - adds extra padding
             }),
 
             // SearchInput with custom background and border via Styled trait
             search3: cx.new(|cx| {
                 SearchInput::new(cx)
-                    .bg(hsla(220.0 / 360.0, 0.7, 0.25, 0.3))  // Styled trait
-                    .border_2()  // Styled trait
+                    .bg(hsla(220.0 / 360.0, 0.7, 0.25, 0.3)) // Styled trait
+                    .border_2() // Styled trait
                     .border_color(rgb(0x3b82f6))
-                    .rounded(px(12.0))  // Styled trait
+                    .rounded(px(12.0)) // Styled trait
             }),
 
             // SearchInput with filters and custom styling
             search4: cx.new(|cx| {
                 SearchInput::new(cx)
-                    .filters(vec![
-                        SearchFilter::new("*.rs", "rs"),
-                        SearchFilter::new("*.toml", "toml"),
-                        SearchFilter::new("*.md", "md"),
-                    ], cx)
-                    .p(px(12.0))  // Styled trait
-                    .bg(hsla(280.0 / 360.0, 0.7, 0.30, 0.2))  // Styled trait
-                    .rounded(px(16.0))  // Styled trait
+                    .filters(
+                        vec![
+                            SearchFilter::new("*.rs", "rs"),
+                            SearchFilter::new("*.toml", "toml"),
+                            SearchFilter::new("*.md", "md"),
+                        ],
+                        cx,
+                    )
+                    .p(px(12.0)) // Styled trait
+                    .bg(hsla(280.0 / 360.0, 0.7, 0.30, 0.2)) // Styled trait
+                    .rounded(px(16.0)) // Styled trait
             }),
 
             // Fully customized SearchInput with all Styled trait features
             search5: cx.new(|cx| {
                 SearchInput::new(cx)
-                    .filters(vec![
-                        SearchFilter::new("Active", "active"),
-                        SearchFilter::new("Completed", "completed"),
-                    ], cx)
-                    .p(px(20.0))  // Styled trait
-                    .bg(hsla(160.0 / 360.0, 0.8, 0.30, 0.2))  // Styled trait
-                    .rounded(px(20.0))  // Styled trait
-                    .border_2()  // Styled trait
+                    .filters(
+                        vec![
+                            SearchFilter::new("Active", "active"),
+                            SearchFilter::new("Completed", "completed"),
+                        ],
+                        cx,
+                    )
+                    .p(px(20.0)) // Styled trait
+                    .bg(hsla(160.0 / 360.0, 0.8, 0.30, 0.2)) // Styled trait
+                    .rounded(px(20.0)) // Styled trait
+                    .border_2() // Styled trait
                     .border_color(rgb(0x10b981))
-                    .shadow_lg()  // Styled trait
+                    .shadow_lg() // Styled trait
             }),
         }
     }
@@ -281,9 +286,7 @@ fn main() {
             // Set up actions
             cx.on_action(|_: &Quit, cx| cx.quit());
 
-            cx.bind_keys([
-                KeyBinding::new("cmd-q", Quit, None),
-            ]);
+            cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
             cx.activate(true);
 
             // Create window

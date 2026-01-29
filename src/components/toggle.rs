@@ -1,8 +1,8 @@
 //! Toggle component - Toggle/Switch component with animations and keyboard support.
 
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
 
 actions!(toggle, [ToggleAction]);
 
@@ -136,7 +136,9 @@ impl RenderOnce for Toggle {
             .flex()
             .items_center()
             .gap(px(8.0))
-            .when(self.label_side == LabelSide::Left, |this| this.flex_row_reverse())
+            .when(self.label_side == LabelSide::Left, |this| {
+                this.flex_row_reverse()
+            })
             .child(
                 div()
                     .w(bg_width)
@@ -175,7 +177,7 @@ impl RenderOnce for Toggle {
                         self.disabled,
                         window,
                         cx,
-                    ))
+                    )),
             )
             .when_some(self.label.clone(), |this, label| {
                 this.child(
@@ -195,7 +197,7 @@ impl RenderOnce for Toggle {
                         } else {
                             CursorStyle::PointingHand
                         })
-                        .child(label)
+                        .child(label),
                 )
             })
             .map(|this| {
@@ -206,18 +208,17 @@ impl RenderOnce for Toggle {
             .when(!self.disabled, |this| {
                 this.when_some(self.on_click.clone(), |this, on_click| {
                     let on_click_for_key = on_click.clone();
-                    this
-                        .on_click(move |_, window, cx| {
+                    this.on_click(move |_, window, cx| {
+                        let new_checked = !checked;
+                        (on_click)(&new_checked, window, cx);
+                    })
+                    .on_key_down(move |event, window, cx| {
+                        if event.keystroke.key == "space" || event.keystroke.key == "enter" {
                             let new_checked = !checked;
-                            (on_click)(&new_checked, window, cx);
-                        })
-                        .on_key_down(move |event, window, cx| {
-                            if event.keystroke.key == "space" || event.keystroke.key == "enter" {
-                                let new_checked = !checked;
-                                (on_click_for_key)(&new_checked, window, cx);
-                                cx.stop_propagation();
-                            }
-                        })
+                            (on_click_for_key)(&new_checked, window, cx);
+                            cx.stop_propagation();
+                        }
+                    })
                 })
             })
     }

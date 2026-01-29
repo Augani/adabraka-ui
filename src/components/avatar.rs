@@ -1,21 +1,16 @@
 //! Avatar component - User profile image with fallback to initials or icon.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum AvatarSize {
     Xs,
     Sm,
+    #[default]
     Md,
     Lg,
     Xl,
-}
-
-impl Default for AvatarSize {
-    fn default() -> Self {
-        Self::Md
-    }
 }
 
 impl AvatarSize {

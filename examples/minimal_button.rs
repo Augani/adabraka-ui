@@ -11,9 +11,7 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| MinimalButtonTest::new(window, cx))
-            },
+            |window, cx| cx.new(|cx| MinimalButtonTest::new(window, cx)),
         )
         .unwrap();
     });
@@ -33,7 +31,10 @@ impl MinimalButtonTest {
 
 impl Render for MinimalButtonTest {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        println!("[MinimalButtonTest::render] Rendering with click_count: {}", self.click_count);
+        println!(
+            "[MinimalButtonTest::render] Rendering with click_count: {}",
+            self.click_count
+        );
 
         div()
             .bg(use_theme().tokens.background)
@@ -47,16 +48,18 @@ impl Render for MinimalButtonTest {
                 div()
                     .text_size(px(18.0))
                     .text_color(use_theme().tokens.foreground)
-                    .child(format!("Clicked {} times", self.click_count))
+                    .child(format!("Clicked {} times", self.click_count)),
             )
-            .child(
-                Button::new("click-btn", "Click Me!")
-                    .on_click(cx.listener(|view, _event, _window, cx| {
-                        println!("[MinimalButtonTest] BUTTON CLICKED! Incrementing from {} to {}",
-                                 view.click_count, view.click_count + 1);
-                        view.click_count += 1;
-                        cx.notify();
-                    }))
-            )
+            .child(Button::new("click-btn", "Click Me!").on_click(cx.listener(
+                |view, _event, _window, cx| {
+                    println!(
+                        "[MinimalButtonTest] BUTTON CLICKED! Incrementing from {} to {}",
+                        view.click_count,
+                        view.click_count + 1
+                    );
+                    view.click_count += 1;
+                    cx.notify();
+                },
+            )))
     }
 }

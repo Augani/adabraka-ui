@@ -1,11 +1,11 @@
 //! Button component with multiple variants and sizes.
 
+use crate::components::icon_source::IconSource;
+use crate::components::text::{Text, TextVariant};
+use crate::icon_config::resolve_icon_path;
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
-use crate::components::text::{Text, TextVariant};
-use crate::components::icon_source::IconSource;
-use crate::icon_config::resolve_icon_path;
 
 /// Render an icon from IconSource
 fn render_icon(icon_src: IconSource, size: Pixels, color: Hsla) -> impl IntoElement {
@@ -14,22 +14,17 @@ fn render_icon(icon_src: IconSource, size: Pixels, color: Hsla) -> impl IntoElem
         IconSource::Named(name) => SharedString::from(resolve_icon_path(&name)),
     };
 
-    svg()
-        .path(svg_path)
-        .size(size)
-        .text_color(color)
+    svg().path(svg_path).size(size).text_color(color)
 }
 
 /// Render a loading spinner
 fn render_loading_spinner(size: Pixels, color: Hsla) -> impl IntoElement {
-    div()
-        .size(size)
-        .child(
-            svg()
-                .path("assets/icons/loader.svg")
-                .size(size)
-                .text_color(color)
-        )
+    div().size(size).child(
+        svg()
+            .path("assets/icons/loader.svg")
+            .size(size)
+            .text_color(color),
+    )
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -151,7 +146,6 @@ impl Button {
     fn clickable(&self) -> bool {
         !self.disabled && !self.loading && self.on_click.is_some()
     }
-
 }
 
 impl Styled for Button {
@@ -265,9 +259,7 @@ impl RenderOnce for Button {
             .rounded(theme.tokens.radius_md)
             .text_color(fg)
             .bg(bg)
-            .when(has_shadow, |this| {
-                this.shadow(vec![theme.tokens.shadow_xs])
-            })
+            .when(has_shadow, |this| this.shadow(vec![theme.tokens.shadow_xs]))
             .when(self.variant == ButtonVariant::Outline, |this| {
                 this.border_1().border_color(border)
             })
@@ -277,24 +269,21 @@ impl RenderOnce for Button {
                     .border_color(theme.tokens.accent)
             })
             .when(is_loading, |this| {
-                this.opacity(0.7)
-                    .cursor(CursorStyle::Arrow)
+                this.opacity(0.7).cursor(CursorStyle::Arrow)
             })
             .when(self.disabled && !is_loading, |this| {
-                this.opacity(0.5)
-                    .cursor(CursorStyle::Arrow)
+                this.opacity(0.5).cursor(CursorStyle::Arrow)
             })
             .when(!self.disabled && !is_loading, |this| {
                 let shadow_sm = theme.tokens.shadow_sm;
-                this.cursor(CursorStyle::PointingHand)
-                    .hover(move |style| {
-                        let hover_style = style.bg(hover_bg).text_color(hover_fg);
-                        if has_shadow {
-                            hover_style.shadow(vec![shadow_sm])
-                        } else {
-                            hover_style
-                        }
-                    })
+                this.cursor(CursorStyle::PointingHand).hover(move |style| {
+                    let hover_style = style.bg(hover_bg).text_color(hover_fg);
+                    if has_shadow {
+                        hover_style.shadow(vec![shadow_sm])
+                    } else {
+                        hover_style
+                    }
+                })
             })
             .map(|this| {
                 let mut div = this;
@@ -326,7 +315,7 @@ impl RenderOnce for Button {
                     .child(
                         div()
                             .when(self.variant == ButtonVariant::Link, |this| this.underline())
-                            .child(label_text)
+                            .child(label_text),
                     )
                     .when(icon_pos == IconPosition::End && !is_loading, |this| {
                         this.when_some(icon.clone(), |this, icon_src| {
@@ -335,7 +324,7 @@ impl RenderOnce for Button {
                     })
                     .when(is_loading && icon_pos == IconPosition::End, |this| {
                         this.child(render_loading_spinner(icon_size, fg))
-                    })
+                    }),
             )
     }
 }

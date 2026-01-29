@@ -68,7 +68,7 @@ mod tests {
 
         // File paths
         match IconSource::from("custom/icon.svg") {
-            IconSource::FilePath(_) => {},
+            IconSource::FilePath(_) => {}
             _ => panic!("Should be FilePath"),
         }
 
@@ -80,7 +80,7 @@ mod tests {
 
         // Windows paths
         match IconSource::from("custom\\icon.svg") {
-            IconSource::FilePath(_) => {},
+            IconSource::FilePath(_) => {}
             _ => panic!("Should be FilePath"),
         }
     }

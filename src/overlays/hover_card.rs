@@ -5,31 +5,21 @@ use std::time::Duration;
 
 use crate::theme::use_theme;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum HoverCardPosition {
     Top,
+    #[default]
     Bottom,
     Left,
     Right,
 }
 
-impl Default for HoverCardPosition {
-    fn default() -> Self {
-        Self::Bottom
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum HoverCardAlignment {
     Start,
+    #[default]
     Center,
     End,
-}
-
-impl Default for HoverCardAlignment {
-    fn default() -> Self {
-        Self::Center
-    }
 }
 
 #[derive(IntoElement)]

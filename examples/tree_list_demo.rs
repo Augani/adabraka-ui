@@ -1,14 +1,14 @@
-use gpui::*;
-use gpui::prelude::FluentBuilder;
 use adabraka_ui::{
-    prelude::*,
-    navigation::tree::{TreeList, TreeNode, List, ListItem},
     components::{
+        input::{init as init_input, Input, InputSize, InputState, InputVariant},
         scrollable::scrollable_vertical,
-        input::{Input, InputState, InputVariant, InputSize, init as init_input},
     },
-    layout::{VStack, HStack},
+    layout::{HStack, VStack},
+    navigation::tree::{List, ListItem, TreeList, TreeNode},
+    prelude::*,
 };
+use gpui::prelude::FluentBuilder;
+use gpui::*;
 use std::path::PathBuf;
 
 struct Assets {
@@ -464,29 +464,31 @@ impl Render for TreeListDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
-        init_input(cx);
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
+            init_input(cx);
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1200.0), px(900.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("TreeList & List Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1200.0), px(900.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("TreeList & List Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| TreeListDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| TreeListDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

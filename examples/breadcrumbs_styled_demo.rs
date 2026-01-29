@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
-    navigation::breadcrumbs::{Breadcrumbs, BreadcrumbItem},
     components::scrollable::scrollable_vertical,
+    navigation::breadcrumbs::{BreadcrumbItem, Breadcrumbs},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

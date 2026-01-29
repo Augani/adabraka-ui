@@ -3,16 +3,26 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
 
 /// Default English weekday abbreviations
 pub const DEFAULT_WEEKDAYS: [&str; 7] = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 /// Default English month names
 pub const DEFAULT_MONTHS: [&str; 12] = [
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
 ];
 
 /// Localization configuration for the Calendar component
@@ -27,10 +37,7 @@ pub struct CalendarLocale {
 impl CalendarLocale {
     /// Create a new locale with custom weekdays and months
     pub fn new(weekdays: [SharedString; 7], months: [SharedString; 12]) -> Self {
-        Self {
-            weekdays,
-            months,
-        }
+        Self { weekdays, months }
     }
 
     /// English locale (default)
@@ -45,8 +52,21 @@ impl CalendarLocale {
     pub fn french() -> Self {
         Self {
             weekdays: ["Di", "Lu", "Ma", "Me", "Je", "Ve", "Sa"].map(|s| s.into()),
-            months: ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-                     "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"].map(|s| s.into()),
+            months: [
+                "Janvier",
+                "Février",
+                "Mars",
+                "Avril",
+                "Mai",
+                "Juin",
+                "Juillet",
+                "Août",
+                "Septembre",
+                "Octobre",
+                "Novembre",
+                "Décembre",
+            ]
+            .map(|s| s.into()),
         }
     }
 
@@ -54,8 +74,21 @@ impl CalendarLocale {
     pub fn spanish() -> Self {
         Self {
             weekdays: ["Do", "Lu", "Ma", "Mi", "Ju", "Vi", "Sá"].map(|s| s.into()),
-            months: ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-                     "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(|s| s.into()),
+            months: [
+                "Enero",
+                "Febrero",
+                "Marzo",
+                "Abril",
+                "Mayo",
+                "Junio",
+                "Julio",
+                "Agosto",
+                "Septiembre",
+                "Octubre",
+                "Noviembre",
+                "Diciembre",
+            ]
+            .map(|s| s.into()),
         }
     }
 
@@ -63,8 +96,21 @@ impl CalendarLocale {
     pub fn german() -> Self {
         Self {
             weekdays: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"].map(|s| s.into()),
-            months: ["Januar", "Februar", "März", "April", "Mai", "Juni",
-                     "Juli", "August", "September", "Oktober", "November", "Dezember"].map(|s| s.into()),
+            months: [
+                "Januar",
+                "Februar",
+                "März",
+                "April",
+                "Mai",
+                "Juni",
+                "Juli",
+                "August",
+                "September",
+                "Oktober",
+                "November",
+                "Dezember",
+            ]
+            .map(|s| s.into()),
         }
     }
 
@@ -72,8 +118,21 @@ impl CalendarLocale {
     pub fn portuguese() -> Self {
         Self {
             weekdays: ["Do", "Se", "Te", "Qa", "Qi", "Sx", "Sá"].map(|s| s.into()),
-            months: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-                     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"].map(|s| s.into()),
+            months: [
+                "Janeiro",
+                "Fevereiro",
+                "Março",
+                "Abril",
+                "Maio",
+                "Junho",
+                "Julho",
+                "Agosto",
+                "Setembro",
+                "Outubro",
+                "Novembro",
+                "Dezembro",
+            ]
+            .map(|s| s.into()),
         }
     }
 
@@ -81,8 +140,21 @@ impl CalendarLocale {
     pub fn italian() -> Self {
         Self {
             weekdays: ["Do", "Lu", "Ma", "Me", "Gi", "Ve", "Sa"].map(|s| s.into()),
-            months: ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno",
-                     "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"].map(|s| s.into()),
+            months: [
+                "Gennaio",
+                "Febbraio",
+                "Marzo",
+                "Aprile",
+                "Maggio",
+                "Giugno",
+                "Luglio",
+                "Agosto",
+                "Settembre",
+                "Ottobre",
+                "Novembre",
+                "Dicembre",
+            ]
+            .map(|s| s.into()),
         }
     }
 }
@@ -232,7 +304,8 @@ impl Calendar {
 
     fn is_date_in_range(date: &DateValue, range: &DateRange) -> bool {
         let date_num = date.year * 10000 + date.month as i32 * 100 + date.day as i32;
-        let start_num = range.start.year * 10000 + range.start.month as i32 * 100 + range.start.day as i32;
+        let start_num =
+            range.start.year * 10000 + range.start.month as i32 * 100 + range.start.day as i32;
         let end_num = range.end.year * 10000 + range.end.month as i32 * 100 + range.end.day as i32;
         date_num >= start_num && date_num <= end_num
     }
@@ -325,7 +398,7 @@ impl RenderOnce for Calendar {
                             .text_size(px(14.0))
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_color(theme.tokens.foreground)
-                            .child(format!("{} {}", month_name, current_month.year))
+                            .child(format!("{} {}", month_name, current_month.year)),
                     )
                     .child({
                         let handler = on_month_change_handler;
@@ -338,154 +411,169 @@ impl RenderOnce for Calendar {
                                     handler(&next_month_date, window, cx);
                                 })
                             })
-                    })
+                    }),
             )
             .child(
                 div()
                     .flex()
                     .mb(px(8.0))
-                    .children(
-                        locale.weekdays.iter().map(|day| {
-                            div()
-                                .flex_1()
-                                .text_center()
-                                .text_size(px(12.0))
-                                .font_weight(FontWeight::MEDIUM)
-                                .text_color(theme.tokens.muted_foreground)
-                                .child(day.clone())
-                        })
-                    )
+                    .children(locale.weekdays.iter().map(|day| {
+                        div()
+                            .flex_1()
+                            .text_center()
+                            .text_size(px(12.0))
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(theme.tokens.muted_foreground)
+                            .child(day.clone())
+                    })),
             )
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .gap(px(4.0))
-                    .children({
-                        let mut weeks = Vec::new();
-                        let mut current_day = 1;
-                        let mut day_of_week = 0;
+            .child(div().flex().flex_col().gap(px(4.0)).children({
+                let mut weeks = Vec::new();
+                let mut current_day = 1;
+                let mut day_of_week = 0;
 
-                        while current_day <= days_in_month {
-                            let mut week_days = Vec::new();
+                while current_day <= days_in_month {
+                    let mut week_days = Vec::new();
 
-                            for _ in 0..7 {
-                                if (day_of_week < first_day_of_week && current_day == 1) || current_day > days_in_month {
-                                    week_days.push(None);
-                                } else {
-                                    week_days.push(Some(current_day));
-                                    current_day += 1;
-                                }
-                                day_of_week += 1;
-                            }
-
-                            day_of_week = 0;
-                            weeks.push(week_days);
+                    for _ in 0..7 {
+                        if (day_of_week < first_day_of_week && current_day == 1)
+                            || current_day > days_in_month
+                        {
+                            week_days.push(None);
+                        } else {
+                            week_days.push(Some(current_day));
+                            current_day += 1;
                         }
+                        day_of_week += 1;
+                    }
 
-                        let on_date_select_for_weeks = on_date_select_handler.clone();
-                        let is_date_disabled_for_weeks = is_date_disabled_fn.clone();
-                        let disabled_dates_for_weeks = disabled_dates.clone();
-                        weeks.into_iter().map(move |week| {
-                            let on_date_select_for_days = on_date_select_for_weeks.clone();
-                            let is_date_disabled_for_days = is_date_disabled_for_weeks.clone();
-                            let disabled_dates_for_days = disabled_dates_for_weeks.clone();
-                            let range_for_week = selected_range;
-                            let range_start_for_week = range_start_temp;
-                            div()
-                                .flex()
-                                .gap(px(4.0))
-                                .children(
-                                    week.into_iter().map(move |day_option| {
-                                        match day_option {
-                                            Some(day) => {
-                                                let date = DateValue::new(
-                                                    current_month.year,
-                                                    current_month.month,
-                                                    day
-                                                );
-                                                let is_selected = selected_date.map_or(false, |sel| sel == date);
+                    day_of_week = 0;
+                    weeks.push(week_days);
+                }
 
-                                                // Check if date is disabled
-                                                let is_disabled = is_date_disabled_for_days.as_ref()
-                                                    .map(|f| f(&date))
-                                                    .unwrap_or_else(|| disabled_dates_for_days.iter().any(|d| d == &date));
+                let on_date_select_for_weeks = on_date_select_handler.clone();
+                let is_date_disabled_for_weeks = is_date_disabled_fn.clone();
+                let disabled_dates_for_weeks = disabled_dates.clone();
+                weeks.into_iter().map(move |week| {
+                    let on_date_select_for_days = on_date_select_for_weeks.clone();
+                    let is_date_disabled_for_days = is_date_disabled_for_weeks.clone();
+                    let disabled_dates_for_days = disabled_dates_for_weeks.clone();
+                    let range_for_week = selected_range;
+                    let range_start_for_week = range_start_temp;
+                    div()
+                        .flex()
+                        .gap(px(4.0))
+                        .children(week.into_iter().map(move |day_option| {
+                            match day_option {
+                                Some(day) => {
+                                    let date = DateValue::new(
+                                        current_month.year,
+                                        current_month.month,
+                                        day,
+                                    );
+                                    let is_selected =
+                                        selected_date.map_or(false, |sel| sel == date);
 
-                                                // Check if date is in selected range
-                                                let is_in_range = range_for_week
-                                                    .map(|r| Calendar::is_date_in_range(&date, &r))
-                                                    .unwrap_or(false);
+                                    // Check if date is disabled
+                                    let is_disabled = is_date_disabled_for_days
+                                        .as_ref()
+                                        .map(|f| f(&date))
+                                        .unwrap_or_else(|| {
+                                            disabled_dates_for_days.iter().any(|d| d == &date)
+                                        });
 
-                                                // Check if date is the range start (first click in range mode)
-                                                let is_range_start = range_start_for_week.map_or(false, |start| start == date);
+                                    // Check if date is in selected range
+                                    let is_in_range = range_for_week
+                                        .map(|r| Calendar::is_date_in_range(&date, &r))
+                                        .unwrap_or(false);
 
-                                                // Check if date is a range endpoint
-                                                let is_range_endpoint = range_for_week
-                                                    .map(|r| date == r.start || date == r.end)
-                                                    .unwrap_or(false);
+                                    // Check if date is the range start (first click in range mode)
+                                    let is_range_start =
+                                        range_start_for_week.map_or(false, |start| start == date);
 
-                                                let handler = if is_disabled {
-                                                    None
-                                                } else {
-                                                    on_date_select_for_days.clone()
-                                                };
+                                    // Check if date is a range endpoint
+                                    let is_range_endpoint = range_for_week
+                                        .map(|r| date == r.start || date == r.end)
+                                        .unwrap_or(false);
 
-                                                div()
-                                                    .flex_1()
-                                                    .flex()
-                                                    .items_center()
-                                                    .justify_center()
-                                                    .h(px(36.0))
-                                                    .text_size(px(14.0))
-                                                    .rounded(theme.tokens.radius_sm)
-                                                    // Disabled state styling
-                                                    .when(is_disabled, |this: Div| {
-                                                        this.text_color(theme.tokens.muted_foreground.opacity(0.4))
-                                                            .cursor(CursorStyle::OperationNotAllowed)
+                                    let handler = if is_disabled {
+                                        None
+                                    } else {
+                                        on_date_select_for_days.clone()
+                                    };
+
+                                    div()
+                                        .flex_1()
+                                        .flex()
+                                        .items_center()
+                                        .justify_center()
+                                        .h(px(36.0))
+                                        .text_size(px(14.0))
+                                        .rounded(theme.tokens.radius_sm)
+                                        // Disabled state styling
+                                        .when(is_disabled, |this: Div| {
+                                            this.text_color(
+                                                theme.tokens.muted_foreground.opacity(0.4),
+                                            )
+                                            .cursor(CursorStyle::OperationNotAllowed)
+                                        })
+                                        // Range middle dates styling (light background)
+                                        .when(
+                                            !is_disabled
+                                                && is_in_range
+                                                && !is_range_endpoint
+                                                && !is_range_start,
+                                            |this: Div| {
+                                                this.bg(theme.tokens.primary.opacity(0.15))
+                                                    .text_color(theme.tokens.foreground)
+                                                    .cursor(CursorStyle::PointingHand)
+                                            },
+                                        )
+                                        // Range endpoints or single selected date styling
+                                        .when(
+                                            !is_disabled
+                                                && (is_range_endpoint
+                                                    || is_selected
+                                                    || is_range_start),
+                                            |this: Div| {
+                                                this.bg(theme.tokens.primary)
+                                                    .text_color(theme.tokens.primary_foreground)
+                                                    .font_weight(FontWeight::MEDIUM)
+                                                    .cursor(CursorStyle::PointingHand)
+                                            },
+                                        )
+                                        // Non-disabled, non-selected, non-range state
+                                        .when(
+                                            !is_disabled
+                                                && !is_selected
+                                                && !is_in_range
+                                                && !is_range_start,
+                                            |this: Div| {
+                                                this.cursor(CursorStyle::PointingHand)
+                                                    .text_color(theme.tokens.foreground)
+                                                    .hover(|style| {
+                                                        style.bg(theme.tokens.muted.opacity(0.5))
                                                     })
-                                                    // Range middle dates styling (light background)
-                                                    .when(!is_disabled && is_in_range && !is_range_endpoint && !is_range_start, |this: Div| {
-                                                        this.bg(theme.tokens.primary.opacity(0.15))
-                                                            .text_color(theme.tokens.foreground)
-                                                            .cursor(CursorStyle::PointingHand)
-                                                    })
-                                                    // Range endpoints or single selected date styling
-                                                    .when(!is_disabled && (is_range_endpoint || is_selected || is_range_start), |this: Div| {
-                                                        this.bg(theme.tokens.primary)
-                                                            .text_color(theme.tokens.primary_foreground)
-                                                            .font_weight(FontWeight::MEDIUM)
-                                                            .cursor(CursorStyle::PointingHand)
-                                                    })
-                                                    // Non-disabled, non-selected, non-range state
-                                                    .when(!is_disabled && !is_selected && !is_in_range && !is_range_start, |this: Div| {
-                                                        this.cursor(CursorStyle::PointingHand)
-                                                            .text_color(theme.tokens.foreground)
-                                                            .hover(|style| {
-                                                                style.bg(theme.tokens.muted.opacity(0.5))
-                                                            })
-                                                    })
-                                                    // Click handler only for non-disabled dates
-                                                    .when(handler.is_some(), |this: Div| {
-                                                        let handler = handler.unwrap();
-                                                        this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                                            handler(&date, window, cx);
-                                                        })
-                                                    })
-                                                    .child(day.to_string())
-                                                    .into_any_element()
-                                            }
-                                            None => {
-                                                div()
-                                                    .flex_1()
-                                                    .h(px(36.0))
-                                                    .into_any_element()
-                                            }
-                                        }
-                                    })
-                                )
-                        })
-                    })
-            )
+                                            },
+                                        )
+                                        // Click handler only for non-disabled dates
+                                        .when(handler.is_some(), |this: Div| {
+                                            let handler = handler.unwrap();
+                                            this.on_mouse_down(
+                                                MouseButton::Left,
+                                                move |_, window, cx| {
+                                                    handler(&date, window, cx);
+                                                },
+                                            )
+                                        })
+                                        .child(day.to_string())
+                                        .into_any_element()
+                                }
+                                None => div().flex_1().h(px(36.0)).into_any_element(),
+                            }
+                        }))
+                })
+            }))
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);

@@ -1,4 +1,3 @@
-
 //! # Utility Extensions and Helper Functions
 //!
 //! Common extension traits and utility functions that enhance GPUI's standard types
@@ -20,7 +19,7 @@
 //! - **Discoverability**: Clear naming that makes functionality obvious
 //!
 
-use gpui::{Pixels, Point, Size, ScrollHandle};
+use gpui::{Pixels, Point, ScrollHandle, Size};
 
 /// Extension trait for Axis
 pub trait AxisExt {

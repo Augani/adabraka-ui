@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
     navigation::status_bar::{StatusBar, StatusItem},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -67,9 +67,7 @@ struct StatusBarStyledDemo {
 
 impl StatusBarStyledDemo {
     fn new() -> Self {
-        Self {
-            click_count: 0,
-        }
+        Self { click_count: 0 }
     }
 }
 

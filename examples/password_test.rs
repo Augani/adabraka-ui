@@ -43,9 +43,11 @@ struct PasswordTestApp {
 impl PasswordTestApp {
     fn new(cx: &mut Context<Self>) -> Self {
         Self {
-            password_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Password)
-                .placeholder("Enter password")),
+            password_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Password)
+                    .placeholder("Enter password")
+            }),
         }
     }
 }
@@ -63,7 +65,7 @@ impl Render for PasswordTestApp {
                 div()
                     .text_size(px(24.0))
                     .text_color(theme.tokens.foreground)
-                    .child("Password Toggle Test")
+                    .child("Password Toggle Test"),
             )
             .child(
                 Input::new(&self.password_input)
@@ -78,20 +80,22 @@ impl Render for PasswordTestApp {
                                 cx.notify();
                             });
                         }
-                    })
+                    }),
             )
             .child(
                 div()
                     .text_size(px(14.0))
                     .text_color(theme.tokens.muted_foreground)
-                    .child("Click the eye icon to toggle password visibility")
+                    .child("Click the eye icon to toggle password visibility"),
             )
     }
 }
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx| {
             install_theme(cx, Theme::dark());
             adabraka_ui::init(cx);

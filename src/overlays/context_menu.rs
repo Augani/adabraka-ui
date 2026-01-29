@@ -146,60 +146,53 @@ impl RenderOnce for ContextMenu {
                         div
                     })
                     .on_mouse_down(MouseButton::Left, |_, _, _| {})
-                    .children(
-                        self.items.into_iter().map(|item| {
-                            if item.label.is_empty() && item.divider {
-                                return div()
-                                    .h(px(1.0))
-                                    .my(px(4.0))
-                                    .bg(theme.tokens.border)
-                                    .into_any_element();
-                            }
+                    .children(self.items.into_iter().map(|item| {
+                        if item.label.is_empty() && item.divider {
+                            return div()
+                                .h(px(1.0))
+                                .my(px(4.0))
+                                .bg(theme.tokens.border)
+                                .into_any_element();
+                        }
 
-                            let on_close = self.on_close.clone();
-                            let handler = item.on_click.clone();
-                            let disabled = item.disabled;
+                        let on_close = self.on_close.clone();
+                        let handler = item.on_click.clone();
+                        let disabled = item.disabled;
 
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap(px(8.0))
-                                .px(px(8.0))
-                                .py(px(6.0))
-                                .rounded(theme.tokens.radius_sm)
-                                .text_size(px(14.0))
-                                .cursor(if disabled {
-                                    CursorStyle::Arrow
-                                } else {
-                                    CursorStyle::PointingHand
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(8.0))
+                            .px(px(8.0))
+                            .py(px(6.0))
+                            .rounded(theme.tokens.radius_sm)
+                            .text_size(px(14.0))
+                            .cursor(if disabled {
+                                CursorStyle::Arrow
+                            } else {
+                                CursorStyle::PointingHand
+                            })
+                            .when(disabled, |this: Div| {
+                                this.text_color(theme.tokens.muted_foreground).opacity(0.5)
+                            })
+                            .when(!disabled, |this: Div| {
+                                this.text_color(theme.tokens.popover_foreground)
+                                    .hover(|style| style.bg(theme.tokens.accent.opacity(0.1)))
+                            })
+                            .when(!disabled && handler.is_some(), |this: Div| {
+                                let handler = handler.unwrap();
+                                let on_close = on_close.clone();
+                                this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                                    handler(window, cx);
+                                    if let Some(close_handler) = &on_close {
+                                        close_handler(window, cx);
+                                    }
                                 })
-                                .when(disabled, |this: Div| {
-                                    this.text_color(theme.tokens.muted_foreground)
-                                        .opacity(0.5)
-                                })
-                                .when(!disabled, |this: Div| {
-                                    this.text_color(theme.tokens.popover_foreground)
-                                        .hover(|style| {
-                                            style.bg(theme.tokens.accent.opacity(0.1))
-                                        })
-                                })
-                                .when(!disabled && handler.is_some(), |this: Div| {
-                                    let handler = handler.unwrap();
-                                    let on_close = on_close.clone();
-                                    this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                        handler(window, cx);
-                                        if let Some(close_handler) = &on_close {
-                                            close_handler(window, cx);
-                                        }
-                                    })
-                                })
-                                .when_some(item.icon, |this: Div, _icon| {
-                                    this
-                                })
-                                .child(item.label)
-                                .into_any_element()
-                        })
-                    )
+                            })
+                            .when_some(item.icon, |this: Div, _icon| this)
+                            .child(item.label)
+                            .into_any_element()
+                    })),
             )
     }
 }

@@ -555,17 +555,13 @@ fn database_record(
                 .text_color(theme.tokens.muted_foreground)
                 .child(email),
         )
-        .child(
-            div()
-                .w(px(80.0))
-                .child(
-                    Badge::new(status.clone()).variant(if status.as_ref() == "Active" {
-                        BadgeVariant::Default
-                    } else if status.as_ref() == "Away" {
-                        BadgeVariant::Secondary
-                    } else {
-                        BadgeVariant::Outline
-                    }),
-                ),
-        )
+        .child(div().w(px(80.0)).child(Badge::new(status.clone()).variant(
+            if status.as_ref() == "Active" {
+                BadgeVariant::Default
+            } else if status.as_ref() == "Away" {
+                BadgeVariant::Secondary
+            } else {
+                BadgeVariant::Outline
+            },
+        )))
 }

@@ -1,16 +1,16 @@
 use adabraka_ui::{
     components::{
-        select::{Select, SelectOption, SelectEvent},
-        tooltip::{TooltipPlacement, tooltip},
-        button::{Button, ButtonVariant, ButtonSize},
+        button::{Button, ButtonSize, ButtonVariant},
         scrollable::scrollable_vertical,
+        select::{Select, SelectEvent, SelectOption},
+        tooltip::{tooltip, TooltipPlacement},
     },
     display::{
         badge::{Badge, BadgeVariant},
         card::Card,
     },
-    layout::{VStack, HStack, Grid, Justify},
-    theme::{install_theme, Theme, use_theme},
+    layout::{Grid, HStack, Justify, VStack},
+    theme::{install_theme, use_theme, Theme},
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -44,25 +44,27 @@ impl gpui::AssetSource for Assets {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(|cx| {
-        cx.open_window(
-            WindowOptions {
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Select & Tooltip Component Demo".into()),
+            cx.open_window(
+                WindowOptions {
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Select & Tooltip Component Demo".into()),
+                        ..Default::default()
+                    }),
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1000.0), px(800.0)),
+                        cx,
+                    ))),
                     ..Default::default()
-                }),
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1000.0), px(800.0)),
-                    cx,
-                ))),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| SelectTooltipDemoApp::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| SelectTooltipDemoApp::new(cx)),
+            )
+            .unwrap();
+        });
 }
 
 struct SelectTooltipDemoApp {
@@ -87,14 +89,30 @@ impl SelectTooltipDemoApp {
             country_select: cx.new(|cx| {
                 Select::new(cx)
                     .options(vec![
-                        SelectOption::new("us".to_string(), "United States").with_group("North America").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("ca".to_string(), "Canada").with_group("North America").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("uk".to_string(), "United Kingdom").with_group("Europe").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("de".to_string(), "Germany").with_group("Europe").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("fr".to_string(), "France").with_group("Europe").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("au".to_string(), "Australia").with_group("Oceania").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("jp".to_string(), "Japan").with_group("Asia").with_icon("src/icons/regular/globe.svg"),
-                        SelectOption::new("cn".to_string(), "China").with_group("Asia").with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("us".to_string(), "United States")
+                            .with_group("North America")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("ca".to_string(), "Canada")
+                            .with_group("North America")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("uk".to_string(), "United Kingdom")
+                            .with_group("Europe")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("de".to_string(), "Germany")
+                            .with_group("Europe")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("fr".to_string(), "France")
+                            .with_group("Europe")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("au".to_string(), "Australia")
+                            .with_group("Oceania")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("jp".to_string(), "Japan")
+                            .with_group("Asia")
+                            .with_icon("src/icons/regular/globe.svg"),
+                        SelectOption::new("cn".to_string(), "China")
+                            .with_group("Asia")
+                            .with_icon("src/icons/regular/globe.svg"),
                     ])
                     .placeholder("Select a country")
                     .selected_index(Some(0))
@@ -104,9 +122,12 @@ impl SelectTooltipDemoApp {
             theme_select: cx.new(|cx| {
                 Select::new(cx)
                     .options(vec![
-                        SelectOption::new("dark".to_string(), "Dark Theme").with_icon("src/icons/regular/palette.svg"),
-                        SelectOption::new("light".to_string(), "Light Theme").with_icon("src/icons/regular/palette.svg"),
-                        SelectOption::new("auto".to_string(), "Auto (System)").with_icon("src/icons/regular/palette.svg"),
+                        SelectOption::new("dark".to_string(), "Dark Theme")
+                            .with_icon("src/icons/regular/palette.svg"),
+                        SelectOption::new("light".to_string(), "Light Theme")
+                            .with_icon("src/icons/regular/palette.svg"),
+                        SelectOption::new("auto".to_string(), "Auto (System)")
+                            .with_icon("src/icons/regular/palette.svg"),
                     ])
                     .placeholder("Select theme")
                     .selected_index(Some(0))
@@ -131,9 +152,7 @@ impl SelectTooltipDemoApp {
             }),
             disabled_select: cx.new(|cx| {
                 Select::new(cx)
-                    .options(vec![
-                        SelectOption::new("option1".to_string(), "Option 1"),
-                    ])
+                    .options(vec![SelectOption::new("option1".to_string(), "Option 1")])
                     .placeholder("Disabled select")
                     .disabled(true)
             }),
@@ -144,34 +163,46 @@ impl SelectTooltipDemoApp {
 
         // Set up change handlers
         let country_entity = app.country_select.clone();
-        cx.subscribe(&country_entity.clone(), move |this, _select, _event: &SelectEvent, cx| {
-            let value = country_entity.read(cx).selected_value().cloned();
-            this.selected_country = value.clone();
-            if let Some(country) = value {
-                println!("[Select Demo] Country changed to: {}", country);
-            }
-            cx.notify();
-        }).detach();
+        cx.subscribe(
+            &country_entity.clone(),
+            move |this, _select, _event: &SelectEvent, cx| {
+                let value = country_entity.read(cx).selected_value().cloned();
+                this.selected_country = value.clone();
+                if let Some(country) = value {
+                    println!("[Select Demo] Country changed to: {}", country);
+                }
+                cx.notify();
+            },
+        )
+        .detach();
 
         let theme_entity = app.theme_select.clone();
-        cx.subscribe(&theme_entity.clone(), move |this, _select, _event: &SelectEvent, cx| {
-            let value = theme_entity.read(cx).selected_value().cloned();
-            this.selected_theme = value.clone();
-            if let Some(theme) = value {
-                println!("[Select Demo] Theme changed to: {}", theme);
-            }
-            cx.notify();
-        }).detach();
+        cx.subscribe(
+            &theme_entity.clone(),
+            move |this, _select, _event: &SelectEvent, cx| {
+                let value = theme_entity.read(cx).selected_value().cloned();
+                this.selected_theme = value.clone();
+                if let Some(theme) = value {
+                    println!("[Select Demo] Theme changed to: {}", theme);
+                }
+                cx.notify();
+            },
+        )
+        .detach();
 
         let language_entity = app.language_select.clone();
-        cx.subscribe(&language_entity.clone(), move |this, _select, _event: &SelectEvent, cx| {
-            let value = language_entity.read(cx).selected_value().cloned();
-            this.selected_language = value.clone();
-            if let Some(lang) = value {
-                println!("[Select Demo] Language changed to: {}", lang);
-            }
-            cx.notify();
-        }).detach();
+        cx.subscribe(
+            &language_entity.clone(),
+            move |this, _select, _event: &SelectEvent, cx| {
+                let value = language_entity.read(cx).selected_value().cloned();
+                this.selected_language = value.clone();
+                if let Some(lang) = value {
+                    println!("[Select Demo] Language changed to: {}", lang);
+                }
+                cx.notify();
+            },
+        )
+        .detach();
 
         app
     }

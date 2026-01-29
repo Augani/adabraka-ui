@@ -1,10 +1,10 @@
 use adabraka_ui::{
     components::{
         input::{Input, InputType, InputVariant},
-        input_state::{InputState, InputEvent},
+        input_state::{InputEvent, InputState},
         scrollable::scrollable_vertical,
     },
-    layout::{VStack, HStack},
+    layout::{HStack, VStack},
     theme::{install_theme, Theme},
 };
 use gpui::*;
@@ -52,35 +52,40 @@ impl FocusTestApp {
             let inputs_clone = inputs.clone();
             let current_index = i;
 
-            cx.subscribe(input, move |_this, _emitter: Entity<InputState>, event: &InputEvent, cx| {
-                match event {
-                    InputEvent::Tab => {
-                        // Queue focus change for next input
-                        let next_index = (current_index + 1) % inputs_clone.len();
-                        let next_input = inputs_clone[next_index].clone();
-                        cx.defer(move |cx| {
-                            cx.update_window(cx.active_window().unwrap(), |_, window, cx| {
-                                window.focus(&next_input.read(cx).focus_handle(cx));
-                            }).ok();
-                        });
+            cx.subscribe(
+                input,
+                move |_this, _emitter: Entity<InputState>, event: &InputEvent, cx| {
+                    match event {
+                        InputEvent::Tab => {
+                            // Queue focus change for next input
+                            let next_index = (current_index + 1) % inputs_clone.len();
+                            let next_input = inputs_clone[next_index].clone();
+                            cx.defer(move |cx| {
+                                cx.update_window(cx.active_window().unwrap(), |_, window, cx| {
+                                    window.focus(&next_input.read(cx).focus_handle(cx));
+                                })
+                                .ok();
+                            });
+                        }
+                        InputEvent::ShiftTab => {
+                            // Queue focus change for previous input
+                            let prev_index = if current_index == 0 {
+                                inputs_clone.len() - 1
+                            } else {
+                                current_index - 1
+                            };
+                            let prev_input = inputs_clone[prev_index].clone();
+                            cx.defer(move |cx| {
+                                cx.update_window(cx.active_window().unwrap(), |_, window, cx| {
+                                    window.focus(&prev_input.read(cx).focus_handle(cx));
+                                })
+                                .ok();
+                            });
+                        }
+                        _ => {}
                     }
-                    InputEvent::ShiftTab => {
-                        // Queue focus change for previous input
-                        let prev_index = if current_index == 0 {
-                            inputs_clone.len() - 1
-                        } else {
-                            current_index - 1
-                        };
-                        let prev_input = inputs_clone[prev_index].clone();
-                        cx.defer(move |cx| {
-                            cx.update_window(cx.active_window().unwrap(), |_, window, cx| {
-                                window.focus(&prev_input.read(cx).focus_handle(cx));
-                            }).ok();
-                        });
-                    }
-                    _ => {}
-                }
-            })
+                },
+            )
             .detach();
         }
     }

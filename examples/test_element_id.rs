@@ -1,8 +1,8 @@
 // Test different ElementId creation methods
 
 use gpui::{
-    div, prelude::*, px, rgb, App, Application, Bounds, Context, ElementId,
-    Window, WindowBounds, WindowOptions, size,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, ElementId, Window,
+    WindowBounds, WindowOptions,
 };
 
 struct TestElementId {}
@@ -23,7 +23,7 @@ impl Render for TestElementId {
                 div()
                     .h(px(800.))
                     .bg(rgb(0xdbeafe))
-                    .child("Test 1: String literal ID")
+                    .child("Test 1: String literal ID"),
             );
 
         // Test 2: ElementId::Name with format! (what we use)
@@ -41,7 +41,7 @@ impl Render for TestElementId {
                 div()
                     .h(px(800.))
                     .bg(rgb(0xd1fae5))
-                    .child("Test 2: ElementId::Name with format!")
+                    .child("Test 2: ElementId::Name with format!"),
             );
 
         div()
@@ -72,4 +72,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

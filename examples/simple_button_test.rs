@@ -11,14 +11,18 @@ fn main() {
                     ..Default::default()
                 }),
                 window_bounds: Some(WindowBounds::Windowed(Bounds {
-                    origin: Point { x: px(100.0), y: px(100.0) },
-                    size: Size { width: px(400.0), height: px(300.0) },
+                    origin: Point {
+                        x: px(100.0),
+                        y: px(100.0),
+                    },
+                    size: Size {
+                        width: px(400.0),
+                        height: px(300.0),
+                    },
                 })),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| SimpleButtonApp::new(window, cx))
-            },
+            |window, cx| cx.new(|cx| SimpleButtonApp::new(window, cx)),
         )
         .unwrap();
     });
@@ -54,17 +58,16 @@ impl Render for SimpleButtonApp {
                 div()
                     .text_size(px(24.0))
                     .text_color(theme.tokens.foreground)
-                    .child(format!("Clicked {} times", count))
+                    .child(format!("Clicked {} times", count)),
             )
             .child(
                 // Using Button with a regular closure (gc pattern)
-                Button::new("click-btn", "Click Me!")
-                    .on_click(move |_event, _window, _cx| {
-                        let mut count = click_count.lock().unwrap();
-                        *count += 1;
-                        println!("Button clicked! Count: {}", *count);
-                        // Can't call cx.notify() here because we don't have view access
-                    })
+                Button::new("click-btn", "Click Me!").on_click(move |_event, _window, _cx| {
+                    let mut count = click_count.lock().unwrap();
+                    *count += 1;
+                    println!("Button clicked! Count: {}", *count);
+                    // Can't call cx.notify() here because we don't have view access
+                }),
             )
     }
 }

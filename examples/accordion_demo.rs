@@ -1,5 +1,5 @@
-use gpui::*;
 use adabraka_ui::display::accordion::Accordion;
+use gpui::*;
 use std::collections::HashSet;
 
 fn main() {

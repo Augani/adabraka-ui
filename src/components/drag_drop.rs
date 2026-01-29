@@ -18,8 +18,8 @@ impl<T: Clone + Debug> Clone for DragData<T> {
         Self {
             data: self.data.clone(),
             label: self.label.clone(),
-            preview_factory: self.preview_factory.clone(), // Rc can be cloned
-            position: self.position.clone(),
+            preview_factory: self.preview_factory.clone(),
+            position: self.position,
         }
     }
 }
@@ -53,7 +53,7 @@ impl<T: Clone + Debug> DragData<T> {
     where
         F: Fn() -> AnyElement + 'static,
     {
-        self.preview_factory = Some(Rc::new(move || factory()));
+        self.preview_factory = Some(Rc::new(factory));
         self
     }
 

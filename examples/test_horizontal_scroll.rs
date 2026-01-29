@@ -2,8 +2,8 @@
 
 use adabraka_ui::layout::ScrollContainer;
 use gpui::{
-    div, prelude::*, px, rgb, App, Application, Bounds, Context,
-    Window, WindowBounds, WindowOptions, size,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, Window, WindowBounds,
+    WindowOptions,
 };
 
 struct TestHorizontalScroll {}
@@ -29,31 +29,30 @@ impl Render for TestHorizontalScroll {
                     .bg(rgb(0xfafafa))
                     .p_4()
                     .child(
-                        div()
-                            .w(px(2000.))
-                            .h_full()
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_row()
-                                    .flex_nowrap()
-                                    .gap_4()
-                                    .h_full()
-                                    .children(
-                                        (0..20).map(|i| {
-                                            div()
-                                                .w(px(150.))
-                                                .flex_shrink_0()
-                                                .h_full()
-                                                .bg(if i % 2 == 0 { rgb(0xdbeafe) } else { rgb(0xfecaca) })
-                                                .border_1()
-                                                .rounded(px(4.0))
-                                                .p_2()
-                                                .child(format!("Item {}", i + 1))
+                        div().w(px(2000.)).h_full().child(
+                            div()
+                                .flex()
+                                .flex_row()
+                                .flex_nowrap()
+                                .gap_4()
+                                .h_full()
+                                .children((0..20).map(|i| {
+                                    div()
+                                        .w(px(150.))
+                                        .flex_shrink_0()
+                                        .h_full()
+                                        .bg(if i % 2 == 0 {
+                                            rgb(0xdbeafe)
+                                        } else {
+                                            rgb(0xfecaca)
                                         })
-                                    )
-                            )
-                    )
+                                        .border_1()
+                                        .rounded(px(4.0))
+                                        .p_2()
+                                        .child(format!("Item {}", i + 1))
+                                })),
+                        ),
+                    ),
             )
             .child(div().child("ScrollContainer::horizontal() with overlay bars:"))
             .child(
@@ -67,31 +66,30 @@ impl Render for TestHorizontalScroll {
                     .bg(rgb(0xfafafa))
                     .p(px(12.0))
                     .child(
-                        div()
-                            .w(px(2000.))
-                            .h_full()
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_row()
-                                    .flex_nowrap()
-                                    .gap_4()
-                                    .h_full()
-                                    .children(
-                                        (0..20).map(|i| {
-                                            div()
-                                                .w(px(150.))
-                                                .flex_shrink_0()
-                                                .h_full()
-                                                .bg(if i % 2 == 0 { rgb(0xd1fae5) } else { rgb(0xfed7d7) })
-                                                .border_1()
-                                                .rounded(px(4.0))
-                                                .p_2()
-                                                .child(format!("Item {}", i + 1))
+                        div().w(px(2000.)).h_full().child(
+                            div()
+                                .flex()
+                                .flex_row()
+                                .flex_nowrap()
+                                .gap_4()
+                                .h_full()
+                                .children((0..20).map(|i| {
+                                    div()
+                                        .w(px(150.))
+                                        .flex_shrink_0()
+                                        .h_full()
+                                        .bg(if i % 2 == 0 {
+                                            rgb(0xd1fae5)
+                                        } else {
+                                            rgb(0xfed7d7)
                                         })
-                                    )
-                            )
-                    )
+                                        .border_1()
+                                        .rounded(px(4.0))
+                                        .p_2()
+                                        .child(format!("Item {}", i + 1))
+                                })),
+                        ),
+                    ),
             )
             .child(div().child("ScrollContainer::horizontal() WITHOUT overlay bars:"))
             .child(
@@ -105,31 +103,30 @@ impl Render for TestHorizontalScroll {
                     .bg(rgb(0xfafafa))
                     .p(px(12.0))
                     .child(
-                        div()
-                            .w(px(2000.))
-                            .h_full()
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_row()
-                                    .flex_nowrap()
-                                    .gap_4()
-                                    .h_full()
-                                    .children(
-                                        (0..20).map(|i| {
-                                            div()
-                                                .w(px(150.))
-                                                .flex_shrink_0()
-                                                .h_full()
-                                                .bg(if i % 2 == 0 { rgb(0xffe4b5) } else { rgb(0xe6e6fa) })
-                                                .border_1()
-                                                .rounded(px(4.0))
-                                                .p_2()
-                                                .child(format!("Item {}", i + 1))
+                        div().w(px(2000.)).h_full().child(
+                            div()
+                                .flex()
+                                .flex_row()
+                                .flex_nowrap()
+                                .gap_4()
+                                .h_full()
+                                .children((0..20).map(|i| {
+                                    div()
+                                        .w(px(150.))
+                                        .flex_shrink_0()
+                                        .h_full()
+                                        .bg(if i % 2 == 0 {
+                                            rgb(0xffe4b5)
+                                        } else {
+                                            rgb(0xe6e6fa)
                                         })
-                                    )
-                            )
-                    )
+                                        .border_1()
+                                        .rounded(px(4.0))
+                                        .p_2()
+                                        .child(format!("Item {}", i + 1))
+                                })),
+                        ),
+                    ),
             )
     }
 }

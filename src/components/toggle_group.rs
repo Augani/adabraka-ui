@@ -5,29 +5,19 @@ use std::rc::Rc;
 
 use crate::theme::use_theme;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum ToggleGroupVariant {
+    #[default]
     Single,
     Multiple,
 }
 
-impl Default for ToggleGroupVariant {
-    fn default() -> Self {
-        Self::Single
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum ToggleGroupSize {
     Sm,
+    #[default]
     Md,
     Lg,
-}
-
-impl Default for ToggleGroupSize {
-    fn default() -> Self {
-        Self::Md
-    }
 }
 
 impl ToggleGroupSize {
@@ -90,8 +80,8 @@ pub struct ToggleGroup {
     variant: ToggleGroupVariant,
     size: ToggleGroupSize,
     items: Vec<ToggleGroupItem>,
-    value: Option<SharedString>,        // For single selection
-    values: Vec<SharedString>,          // For multiple selection
+    value: Option<SharedString>, // For single selection
+    values: Vec<SharedString>,   // For multiple selection
     disabled: bool,
     on_change: Option<Rc<dyn Fn(&SharedString, &mut Window, &mut App)>>,
     on_multiple_change: Option<Rc<dyn Fn(&Vec<SharedString>, &mut Window, &mut App)>>,
@@ -206,71 +196,66 @@ impl RenderOnce for ToggleGroup {
             .p(px(2.0))
             .bg(theme.tokens.muted.opacity(0.3))
             .rounded(theme.tokens.radius_md)
-            .children(
-                self.items.into_iter().map(move |item| {
-                    let is_selected = match variant {
-                        ToggleGroupVariant::Single => {
-                            current_value.as_ref().map_or(false, |v| v == &item.value)
-                        }
-                        ToggleGroupVariant::Multiple => {
-                            current_values.contains(&item.value)
-                        }
-                    };
-                    let is_disabled = disabled || item.disabled;
-                    let value = item.value.clone();
-                    let handler = on_change.clone();
+            .children(self.items.into_iter().map(move |item| {
+                let is_selected = match variant {
+                    ToggleGroupVariant::Single => {
+                        current_value.as_ref().map_or(false, |v| v == &item.value)
+                    }
+                    ToggleGroupVariant::Multiple => current_values.contains(&item.value),
+                };
+                let is_disabled = disabled || item.disabled;
+                let value = item.value.clone();
+                let handler = on_change.clone();
 
-                    div()
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .gap(px(6.0))
-                        .h(size.height())
-                        .px(size.px_value())
-                        .rounded(theme.tokens.radius_sm)
-                        .text_size(size.text_size())
-                        .font_weight(FontWeight::MEDIUM)
-                        .cursor(if is_disabled {
-                            CursorStyle::Arrow
-                        } else {
-                            CursorStyle::PointingHand
-                        })
-                        .when(is_selected, |this: Div| {
-                            this.bg(theme.tokens.background)
+                div()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .gap(px(6.0))
+                    .h(size.height())
+                    .px(size.px_value())
+                    .rounded(theme.tokens.radius_sm)
+                    .text_size(size.text_size())
+                    .font_weight(FontWeight::MEDIUM)
+                    .cursor(if is_disabled {
+                        CursorStyle::Arrow
+                    } else {
+                        CursorStyle::PointingHand
+                    })
+                    .when(is_selected, |this: Div| {
+                        this.bg(theme.tokens.background)
+                            .text_color(theme.tokens.foreground)
+                            .shadow(vec![BoxShadow {
+                                color: hsla(0.0, 0.0, 0.0, 0.05),
+                                offset: point(px(0.0), px(1.0)),
+                                blur_radius: px(2.0),
+                                spread_radius: px(0.0),
+                            }])
+                    })
+                    .when(!is_selected, |this: Div| {
+                        this.text_color(theme.tokens.muted_foreground)
+                    })
+                    .when(is_disabled, |this: Div| this.opacity(0.5))
+                    .when(!is_disabled && !is_selected, |this: Div| {
+                        this.hover(|style| {
+                            style
+                                .bg(theme.tokens.muted.opacity(0.5))
                                 .text_color(theme.tokens.foreground)
-                                .shadow(vec![BoxShadow {
-                                    color: hsla(0.0, 0.0, 0.0, 0.05),
-                                    offset: point(px(0.0), px(1.0)),
-                                    blur_radius: px(2.0),
-                                    spread_radius: px(0.0),
-                                }])
                         })
-                        .when(!is_selected, |this: Div| {
-                            this.text_color(theme.tokens.muted_foreground)
+                    })
+                    .when(!is_disabled, |this: Div| {
+                        this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                            if let Some(h) = &handler {
+                                h(&value, window, cx);
+                            }
                         })
-                        .when(is_disabled, |this: Div| {
-                            this.opacity(0.5)
-                        })
-                        .when(!is_disabled && !is_selected, |this: Div| {
-                            this.hover(|style| {
-                                style.bg(theme.tokens.muted.opacity(0.5))
-                                    .text_color(theme.tokens.foreground)
-                            })
-                        })
-                        .when(!is_disabled, |this: Div| {
-                            this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                if let Some(h) = &handler {
-                                    h(&value, window, cx);
-                                }
-                            })
-                        })
-                        .when_some(item.icon, |this: Div, _icon| {
-                            // TODO: Render icon when icon component is integrated
-                            this
-                        })
-                        .child(item.label)
-                })
-            )
+                    })
+                    .when_some(item.icon, |this: Div, _icon| {
+                        // TODO: Render icon when icon component is integrated
+                        this
+                    })
+                    .child(item.label)
+            }))
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);

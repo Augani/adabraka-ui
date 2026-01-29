@@ -1,11 +1,11 @@
 //! Checkbox component with validation and indeterminate state support.
 
+use crate::{
+    components::icon::{Icon, IconSize as IconSizeEnum},
+    theme::use_theme,
+};
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::{
-    theme::use_theme,
-    components::icon::{Icon, IconSize as IconSizeEnum},
-};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum CheckboxSize {
@@ -168,9 +168,7 @@ impl RenderOnce for Checkbox {
                     })
                     .when(self.disabled, |this| this.opacity(0.6))
                     .when(!self.disabled && !checked && !indeterminate, |this| {
-                        this.hover(|style| {
-                            style.border_color(theme.tokens.primary.opacity(0.5))
-                        })
+                        this.hover(|style| style.border_color(theme.tokens.primary.opacity(0.5)))
                     })
                     .child(checkbox_icon(
                         self.id.clone(),
@@ -182,7 +180,7 @@ impl RenderOnce for Checkbox {
                         self.indeterminate_icon.clone(),
                         window,
                         cx,
-                    ))
+                    )),
             )
             .when_some(self.label, |this, label| {
                 this.child(
@@ -202,7 +200,7 @@ impl RenderOnce for Checkbox {
                         } else {
                             CursorStyle::PointingHand
                         })
-                        .child(label)
+                        .child(label),
                 )
             })
             .on_mouse_down(MouseButton::Left, |_, window, _| {
@@ -275,9 +273,17 @@ fn checkbox_icon(
     }
 
     let opacity = if needs_animation {
-        if checked || indeterminate { 0.0 } else { 1.0 }
+        if checked || indeterminate {
+            0.0
+        } else {
+            1.0
+        }
     } else {
-        if checked || indeterminate { 1.0 } else { 0.0 }
+        if checked || indeterminate {
+            1.0
+        } else {
+            0.0
+        }
     };
 
     let icon_name = if checked && !indeterminate {
@@ -298,7 +304,7 @@ fn checkbox_icon(
             this.child(
                 Icon::new(icon.as_ref())
                     .size(IconSizeEnum::Custom(icon_size))
-                    .color(color)
+                    .color(color),
             )
         })
 }

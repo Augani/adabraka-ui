@@ -11,29 +11,19 @@ actions!(
     [ToggleSidebar, FocusNext, FocusPrevious, ActivateItem]
 );
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SidebarVariant {
     Fixed,
+    #[default]
     Collapsible,
     Overlay,
 }
 
-impl Default for SidebarVariant {
-    fn default() -> Self {
-        Self::Collapsible
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SidebarPosition {
+    #[default]
     Left,
     Right,
-}
-
-impl Default for SidebarPosition {
-    fn default() -> Self {
-        Self::Left
-    }
 }
 
 #[derive(Clone)]

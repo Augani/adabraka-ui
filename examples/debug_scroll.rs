@@ -1,8 +1,8 @@
 // Debug version to understand what's happening with ScrollContainer
 
 use gpui::{
-    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    rgb, size,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, Window, WindowBounds,
+    WindowOptions,
 };
 
 struct DebugScroll {}
@@ -13,22 +13,28 @@ impl Render for DebugScroll {
         let scroll_id = "debug-scroll-1";
 
         let mut container = div().id(scroll_id);
-        
+
         // User applies styling
-        container = container.h(px(200.)).w_full().border_1().border_color(rgb(0x3b82f6)).bg(rgb(0xfafafa)).p_4();
-        
+        container = container
+            .h(px(200.))
+            .w_full()
+            .border_1()
+            .border_color(rgb(0x3b82f6))
+            .bg(rgb(0xfafafa))
+            .p_4();
+
         // Then into_element applies overflow
         container = container.overflow_y_scroll();
-        
+
         // Add child
         container = container.child(
             div()
                 .h(px(800.))
                 .bg(rgb(0xdbeafe))
                 .p_4()
-                .child("Manually inlined ScrollContainer logic")
+                .child("Manually inlined ScrollContainer logic"),
         );
-        
+
         div()
             .size_full()
             .flex()
@@ -36,10 +42,7 @@ impl Render for DebugScroll {
             .gap_4()
             .p_4()
             .bg(gpui::white())
-            .child(
-                div()
-                    .child("Manually Inlined ScrollContainer:")
-            )
+            .child(div().child("Manually Inlined ScrollContainer:"))
             .child(container)
     }
 }
@@ -58,4 +61,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

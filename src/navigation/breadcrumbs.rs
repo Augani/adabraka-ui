@@ -54,7 +54,7 @@ impl<T: Clone + 'static> RenderOnce for Breadcrumbs<T> {
         let user_style = self.style;
 
         if self.items.is_empty() {
-            return div().into();
+            return div();
         }
 
         let mut elements: Vec<gpui::Div> = Vec::new();

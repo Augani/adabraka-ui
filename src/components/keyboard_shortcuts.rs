@@ -1,7 +1,7 @@
 //! Keyboard shortcuts manager component with categorized shortcuts and platform-specific key display.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 #[derive(Clone, Debug)]
 pub struct ShortcutItem {
@@ -126,56 +126,44 @@ impl Render for KeyboardShortcuts {
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
                             .text_color(theme.tokens.foreground)
-                            .child(category.name.clone())
+                            .child(category.name.clone()),
                     )
-                    .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap(px(8.0))
-                            .children(category.shortcuts.iter().map(|shortcut| {
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .justify_between()
-                                    .px(px(12.0))
-                                    .py(px(8.0))
-                                    .rounded(theme.tokens.radius_sm)
-                                    .hover(|style| style.bg(theme.tokens.muted.opacity(0.5)))
-                                    .child(
+                    .child(div().flex().flex_col().gap(px(8.0)).children(
+                        category.shortcuts.iter().map(|shortcut| {
+                            div()
+                                .flex()
+                                .items_center()
+                                .justify_between()
+                                .px(px(12.0))
+                                .py(px(8.0))
+                                .rounded(theme.tokens.radius_sm)
+                                .hover(|style| style.bg(theme.tokens.muted.opacity(0.5)))
+                                .child(
+                                    div().flex().items_center().gap(px(8.0)).child(
                                         div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(8.0))
-                                            .child(
-                                                div()
-                                                    .text_size(px(14.0))
-                                                    .text_color(theme.tokens.foreground)
-                                                    .child(shortcut.description.clone())
-                                            )
-                                    )
-                                    .child(
+                                            .text_size(px(14.0))
+                                            .text_color(theme.tokens.foreground)
+                                            .child(shortcut.description.clone()),
+                                    ),
+                                )
+                                .child(
+                                    div().flex().items_center().gap(px(4.0)).child(
                                         div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(
-                                                div()
-                                                    .px(px(8.0))
-                                                    .py(px(4.0))
-                                                    .rounded(theme.tokens.radius_sm)
-                                                    .bg(theme.tokens.muted)
-                                                    .border_1()
-                                                    .border_color(theme.tokens.border)
-                                                    .text_size(px(12.0))
-                                                    .font_family("monospace")
-                                                    .text_color(theme.tokens.muted_foreground)
-                                                    .child(shortcut.formatted_keys())
-                                            )
-                                    )
-                                    .into_any_element()
-                            }))
-                    )
+                                            .px(px(8.0))
+                                            .py(px(4.0))
+                                            .rounded(theme.tokens.radius_sm)
+                                            .bg(theme.tokens.muted)
+                                            .border_1()
+                                            .border_color(theme.tokens.border)
+                                            .text_size(px(12.0))
+                                            .font_family("monospace")
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child(shortcut.formatted_keys()),
+                                    ),
+                                )
+                                .into_any_element()
+                        }),
+                    ))
                     .into_any_element()
             }))
             .map(|this| {

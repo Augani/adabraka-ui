@@ -1,9 +1,5 @@
+use adabraka_ui::{layout::VStack, navigation::app_menu::*, theme::use_theme};
 use gpui::*;
-use adabraka_ui::{
-    navigation::app_menu::*,
-    layout::VStack,
-    theme::use_theme,
-};
 
 // Define all the actions our app will use
 actions!(
@@ -369,34 +365,34 @@ fn main() {
             .menu(
                 file_menu()
                     // These Styled trait methods can be called, maintaining API consistency
-                    .p_4()          // Styled trait: padding
-                    .rounded(px(8.0))  // Styled trait: border radius
+                    .p_4() // Styled trait: padding
+                    .rounded(px(8.0)) // Styled trait: border radius
                     .action("New File", NewFile)
                     .action("Open File", OpenFile)
                     .separator()
                     .action("Save", SaveFile)
                     .separator()
-                    .action("Quit", Quit)
+                    .action("Quit", Quit),
             )
             // Edit menu
             .menu(
                 edit_menu()
-                    .bg(rgb(0x3b82f6))  // Styled trait: background (demonstrates API, not visual)
+                    .bg(rgb(0x3b82f6)) // Styled trait: background (demonstrates API, not visual)
                     .action("Undo", Undo)
                     .action("Redo", Redo)
                     .separator()
                     .action("Cut", Cut)
                     .action("Copy", Copy)
-                    .action("Paste", Paste)
+                    .action("Paste", Paste),
             )
             // View menu
             .menu(
                 view_menu()
-                    .shadow_sm()  // Styled trait: shadow
+                    .shadow_sm() // Styled trait: shadow
                     .action("Toggle Sidebar", ToggleSidebar)
                     .separator()
                     .action("Zoom In", ZoomIn)
-                    .action("Zoom Out", ZoomOut)
+                    .action("Zoom Out", ZoomOut),
             );
 
         // Set the menus on the application
@@ -420,11 +416,13 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| cx.new(|cx| {
-                let view = AppMenuStyledDemo::new(cx);
-                window.focus(&view.focus);
-                view
-            }),
+            |window, cx| {
+                cx.new(|cx| {
+                    let view = AppMenuStyledDemo::new(cx);
+                    window.focus(&view.focus);
+                    view
+                })
+            },
         )
         .unwrap();
     });

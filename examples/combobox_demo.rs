@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    components::scrollable::scrollable_vertical,
-};
+use adabraka_ui::{components::scrollable::scrollable_vertical, prelude::*};
 use gpui::{prelude::FluentBuilder, *};
 use std::path::PathBuf;
 
@@ -188,9 +185,7 @@ impl ComboboxDemo {
             let entity = demo_entity.clone();
             Combobox::new(fruits.clone(), &fruits_state, cx)
                 .placeholder("Select a fruit...")
-                .filter_fn(|item, search| {
-                    item.to_lowercase().contains(&search.to_lowercase())
-                })
+                .filter_fn(|item, search| item.to_lowercase().contains(&search.to_lowercase()))
                 .render_item(|item| item.clone().into())
                 .on_select(move |item, _, cx| {
                     entity.update(cx, |demo, cx| {
@@ -238,18 +233,13 @@ impl ComboboxDemo {
                 .placeholder("Select framework...")
                 .filter_fn(|fw, search| {
                     let s = search.to_lowercase();
-                    fw.name.to_lowercase().contains(&s)
-                        || fw.category.to_lowercase().contains(&s)
+                    fw.name.to_lowercase().contains(&s) || fw.category.to_lowercase().contains(&s)
                 })
-                .render_item(|fw| {
-                    format!("{} ({})", fw.name, fw.category).into()
-                })
+                .render_item(|fw| format!("{} ({})", fw.name, fw.category).into())
                 .on_select(move |fw, _, cx| {
                     entity.update(cx, |demo, cx| {
-                        demo.selected_framework = Some(format!(
-                            "{} - {} Framework",
-                            fw.name, fw.category
-                        ));
+                        demo.selected_framework =
+                            Some(format!("{} - {} Framework", fw.name, fw.category));
                         cx.notify();
                     })
                 })
@@ -267,9 +257,7 @@ impl ComboboxDemo {
             Combobox::new(colors.clone(), &colors_state, cx)
                 .placeholder("Select colors...")
                 .multi_select(true)
-                .filter_fn(|color, search| {
-                    color.to_lowercase().contains(&search.to_lowercase())
-                })
+                .filter_fn(|color, search| color.to_lowercase().contains(&search.to_lowercase()))
                 .render_item(|color| color.clone().into())
                 .render_selected(|colors| {
                     if colors.is_empty() {
@@ -296,9 +284,7 @@ impl ComboboxDemo {
             Combobox::new(disabled_items.clone(), &disabled_state, cx)
                 .placeholder("This is disabled...")
                 .disabled(true)
-                .filter_fn(|item, search| {
-                    item.to_lowercase().contains(&search.to_lowercase())
-                })
+                .filter_fn(|item, search| item.to_lowercase().contains(&search.to_lowercase()))
                 .render_item(|item| item.clone().into())
                 .w_full()
         });

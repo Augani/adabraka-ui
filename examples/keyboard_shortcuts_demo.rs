@@ -1,9 +1,9 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    components::keyboard_shortcuts::{KeyboardShortcuts, ShortcutItem, ShortcutCategory},
+    components::keyboard_shortcuts::{KeyboardShortcuts, ShortcutCategory, ShortcutItem},
     layout::VStack,
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 
 actions!(keyboard_shortcuts_demo, [Quit]);
 
@@ -41,14 +41,14 @@ impl Render for KeyboardShortcutsDemo {
                                 div()
                                     .text_size(px(32.0))
                                     .font_weight(FontWeight::BOLD)
-                                    .child("Keyboard Shortcuts Demo")
+                                    .child("Keyboard Shortcuts Demo"),
                             )
                             .child(
                                 div()
                                     .text_size(px(16.0))
                                     .text_color(theme.tokens.muted_foreground)
-                                    .child("Display and organize keyboard shortcuts by category")
-                            )
+                                    .child("Display and organize keyboard shortcuts by category"),
+                            ),
                     )
                     // Instructions
                     .child(
@@ -65,28 +65,26 @@ impl Render for KeyboardShortcutsDemo {
                                 div()
                                     .text_size(px(16.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Features")
+                                    .child("Features"),
                             )
                             .child(
                                 div()
                                     .text_size(px(14.0))
-                                    .child("• Organized by category (File, Edit, View, etc.)")
+                                    .child("• Organized by category (File, Edit, View, etc.)"),
+                            )
+                            .child(div().text_size(px(14.0)).child(
+                                "• Platform-specific key display (⌘ on Mac, Ctrl on others)",
+                            ))
+                            .child(
+                                div()
+                                    .text_size(px(14.0))
+                                    .child("• Clean, readable layout with hover effects"),
                             )
                             .child(
                                 div()
                                     .text_size(px(14.0))
-                                    .child("• Platform-specific key display (⌘ on Mac, Ctrl on others)")
-                            )
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child("• Clean, readable layout with hover effects")
-                            )
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child("• Monospace font for key bindings")
-                            )
+                                    .child("• Monospace font for key bindings"),
+                            ),
                     )
                     // Keyboard shortcuts display
                     .child(
@@ -97,18 +95,22 @@ impl Render for KeyboardShortcutsDemo {
                             .rounded(theme.tokens.radius_md)
                             .border_1()
                             .border_color(theme.tokens.border)
-                            .child(
-                                cx.new(|_cx| {
-                                    KeyboardShortcuts::new()
-                                        .category("File", vec![
+                            .child(cx.new(|_cx| {
+                                KeyboardShortcuts::new()
+                                    .category(
+                                        "File",
+                                        vec![
                                             ShortcutItem::new("New File", "cmd-n"),
                                             ShortcutItem::new("Open File", "cmd-o"),
                                             ShortcutItem::new("Save", "cmd-s"),
                                             ShortcutItem::new("Save As", "cmd-shift-s"),
                                             ShortcutItem::new("Close File", "cmd-w"),
                                             ShortcutItem::new("Quit", "cmd-q"),
-                                        ])
-                                        .category("Edit", vec![
+                                        ],
+                                    )
+                                    .category(
+                                        "Edit",
+                                        vec![
                                             ShortcutItem::new("Undo", "cmd-z"),
                                             ShortcutItem::new("Redo", "cmd-shift-z"),
                                             ShortcutItem::new("Cut", "cmd-x"),
@@ -117,30 +119,39 @@ impl Render for KeyboardShortcutsDemo {
                                             ShortcutItem::new("Select All", "cmd-a"),
                                             ShortcutItem::new("Find", "cmd-f"),
                                             ShortcutItem::new("Replace", "cmd-shift-f"),
-                                        ])
-                                        .category("View", vec![
+                                        ],
+                                    )
+                                    .category(
+                                        "View",
+                                        vec![
                                             ShortcutItem::new("Toggle Sidebar", "cmd-b"),
                                             ShortcutItem::new("Toggle Status Bar", "cmd-shift-b"),
                                             ShortcutItem::new("Zoom In", "cmd-="),
                                             ShortcutItem::new("Zoom Out", "cmd--"),
                                             ShortcutItem::new("Reset Zoom", "cmd-0"),
                                             ShortcutItem::new("Full Screen", "cmd-ctrl-f"),
-                                        ])
-                                        .category("Window", vec![
+                                        ],
+                                    )
+                                    .category(
+                                        "Window",
+                                        vec![
                                             ShortcutItem::new("Minimize", "cmd-m"),
                                             ShortcutItem::new("New Window", "cmd-shift-n"),
                                             ShortcutItem::new("Close Window", "cmd-shift-w"),
                                             ShortcutItem::new("Next Tab", "cmd-shift-]"),
                                             ShortcutItem::new("Previous Tab", "cmd-shift-["),
-                                        ])
-                                        .category("Help", vec![
+                                        ],
+                                    )
+                                    .category(
+                                        "Help",
+                                        vec![
                                             ShortcutItem::new("Documentation", "f1"),
                                             ShortcutItem::new("Show All Commands", "cmd-shift-p"),
                                             ShortcutItem::new("Keyboard Shortcuts", "cmd-k cmd-s"),
-                                        ])
-                                })
-                            )
-                    )
+                                        ],
+                                    )
+                            })),
+                    ),
             )
     }
 }
@@ -156,9 +167,7 @@ fn main() {
         // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
 
-        cx.bind_keys([
-            KeyBinding::new("cmd-q", Quit, None),
-        ]);
+        cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.activate(true);
 
         // Create window

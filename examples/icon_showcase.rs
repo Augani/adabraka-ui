@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    components::icon::Icon,
-};
+use adabraka_ui::{components::icon::Icon, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -34,28 +31,30 @@ impl gpui::AssetSource for Assets {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(|cx| {
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.open_window(
-            WindowOptions {
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Icon Showcase - adabraka-ui".into()),
+            cx.open_window(
+                WindowOptions {
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Icon Showcase - adabraka-ui".into()),
+                        ..Default::default()
+                    }),
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1200.0), px(800.0)),
+                        cx,
+                    ))),
                     ..Default::default()
-                }),
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1200.0), px(800.0)),
-                    cx,
-                ))),
-                ..Default::default()
-            },
-            |window, cx| cx.new(|cx| IconShowcaseApp::new(window, cx)),
-        )
-        .unwrap();
-    });
+                },
+                |window, cx| cx.new(|cx| IconShowcaseApp::new(window, cx)),
+            )
+            .unwrap();
+        });
 }
 
 struct IconShowcaseApp {}
@@ -141,28 +140,33 @@ impl IconShowcaseApp {
                                 div()
                                     .text_2xl()
                                     .text_color(theme.tokens.foreground)
-                                    .child("Icon Showcase")
+                                    .child("Icon Showcase"),
                             )
                             .child(
                                 div()
                                     .text_lg()
                                     .text_color(theme.tokens.muted_foreground)
-                                    .child("Browse through available icons from the Lucide icon set")
-                            )
+                                    .child(
+                                        "Browse through available icons from the Lucide icon set",
+                                    ),
+                            ),
                     )
                     .child(
-                        div()
-                            .flex()
-                            .flex_wrap()
-                            .gap_4()
-                            .children(icons.into_iter().map(|(icon_name, label)| {
+                        div().flex().flex_wrap().gap_4().children(
+                            icons.into_iter().map(|(icon_name, label)| {
                                 self.render_icon_card(icon_name, label, cx)
-                            }))
-                    )
+                            }),
+                        ),
+                    ),
             )
     }
 
-    fn render_icon_card(&self, icon_name: &str, label: &str, _cx: &mut Context<Self>) -> impl IntoElement {
+    fn render_icon_card(
+        &self,
+        icon_name: &str,
+        label: &str,
+        _cx: &mut Context<Self>,
+    ) -> impl IntoElement {
         let theme = use_theme();
         let icon_name = icon_name.to_string();
         let label = label.to_string();
@@ -178,9 +182,7 @@ impl IconShowcaseApp {
             .bg(theme.tokens.card)
             .border_1()
             .border_color(theme.tokens.border)
-            .hover(|style| {
-                style.bg(theme.tokens.muted)
-            })
+            .hover(|style| style.bg(theme.tokens.muted))
             .child(
                 div()
                     .flex()
@@ -190,20 +192,20 @@ impl IconShowcaseApp {
                     .child(
                         Icon::new(icon_name.clone())
                             .size(px(32.0))
-                            .color(theme.tokens.foreground)
-                    )
+                            .color(theme.tokens.foreground),
+                    ),
             )
             .child(
                 div()
                     .text_sm()
                     .text_color(theme.tokens.foreground)
-                    .child(label.clone())
+                    .child(label.clone()),
             )
             .child(
                 div()
                     .text_xs()
                     .text_color(theme.tokens.muted_foreground)
-                    .child(icon_name.clone())
+                    .child(icon_name.clone()),
             )
     }
 }

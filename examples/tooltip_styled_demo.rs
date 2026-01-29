@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
         scrollable::scrollable_vertical,
         tooltip::{Tooltip, TooltipPlacement},
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

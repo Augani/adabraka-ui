@@ -1,7 +1,7 @@
 //! Table - Simple table component for structured data display.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 #[derive(Clone)]
 pub struct TableColumn {
@@ -47,6 +47,12 @@ pub struct Table {
     columns: Vec<TableColumn>,
     rows: Vec<TableRow>,
     style: StyleRefinement,
+}
+
+impl Default for Table {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Table {
@@ -99,9 +105,7 @@ impl IntoElement for Table {
                 .child(column.header.clone())
         });
 
-        let header = div()
-            .flex()
-            .children(header_cells);
+        let header = div().flex().children(header_cells);
 
         let row_elements = self.rows.into_iter().map(|row| {
             let cell_elements = row.cells.iter().enumerate().map(|(col_index, cell)| {

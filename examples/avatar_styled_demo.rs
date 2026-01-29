@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
-        scrollable::scrollable_vertical,
         avatar::{Avatar, AvatarSize},
+        scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

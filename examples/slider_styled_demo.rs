@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
-    components::slider::{Slider, SliderState, SliderSize, SliderAxis},
+    components::slider::{Slider, SliderAxis, SliderSize, SliderState},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

@@ -1,9 +1,9 @@
 //! Textarea component - Multi-line text input component.
 
+use crate::components::input::InputVariant;
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
-use crate::components::input::InputVariant;
 
 #[derive(IntoElement)]
 pub struct Textarea {

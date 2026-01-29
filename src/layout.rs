@@ -37,6 +37,12 @@ pub struct VStack {
     align: Option<Align>,
 }
 
+impl Default for VStack {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VStack {
     pub fn new() -> Self {
         Self {
@@ -137,6 +143,12 @@ pub struct HStack {
     spacing: Option<Pixels>,
     align: Option<Align>,
     justify: Option<Justify>,
+}
+
+impl Default for HStack {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl HStack {
@@ -263,6 +275,12 @@ pub struct Flow {
     align: Option<Align>,
 }
 
+impl Default for Flow {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Flow {
     pub fn new() -> Self {
         Self {
@@ -340,6 +358,12 @@ pub struct Grid {
     columns: usize,
     gap: Option<Pixels>,
     grid_children: Vec<AnyElement>,
+}
+
+impl Default for Grid {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Grid {
@@ -427,6 +451,12 @@ pub struct Cluster {
     align: Option<Align>,
 }
 
+impl Default for Cluster {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Cluster {
     pub fn new() -> Self {
         Self {
@@ -490,6 +520,12 @@ impl IntoElement for Cluster {
 
 pub struct Spacer {
     size: Option<Pixels>,
+}
+
+impl Default for Spacer {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Spacer {
@@ -707,6 +743,12 @@ pub struct Panel {
     base: Div,
 }
 
+impl Default for Panel {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Panel {
     pub fn new() -> Self {
         Self { base: div() }
@@ -775,6 +817,12 @@ pub struct Container {
     base: Div,
     max_width: Option<Pixels>,
     centered: bool,
+}
+
+impl Default for Container {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Container {
@@ -856,6 +904,12 @@ impl IntoElement for Container {
 pub struct ScrollList {
     scroll_container: ScrollContainer,
     stack: VStack,
+}
+
+impl Default for ScrollList {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl ScrollList {

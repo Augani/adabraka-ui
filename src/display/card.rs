@@ -1,13 +1,19 @@
 //! Card - Content container with header, body, and footer sections.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 pub struct Card {
     header: Option<AnyElement>,
     content: Option<AnyElement>,
     footer: Option<AnyElement>,
     style: StyleRefinement,
+}
+
+impl Default for Card {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Card {
@@ -76,12 +82,7 @@ impl IntoElement for Card {
         }
 
         if let Some(content) = self.content {
-            base = base.child(
-                div()
-                    .px(px(24.0))
-                    .py(px(16.0))
-                    .child(content),
-            );
+            base = base.child(div().px(px(24.0)).py(px(16.0)).child(content));
         }
 
         if let Some(footer) = self.footer {

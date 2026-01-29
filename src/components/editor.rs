@@ -20,13 +20,13 @@
 //!     .show_line_numbers(true)
 //! ```
 
-use gpui::{prelude::FluentBuilder as _, *};
-use crate::theme::use_theme;
 use crate::components::scrollable::scrollable_vertical;
-use tree_sitter::{Parser, Tree, Node};
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 use once_cell::sync::Lazy;
 use std::cmp::min;
 use std::ops::Range;
+use tree_sitter::{Node, Parser, Tree};
 
 static SQL_PARSER: Lazy<std::sync::Mutex<Parser>> = Lazy::new(|| {
     let mut parser = Parser::new();
@@ -396,7 +396,12 @@ impl EditorState {
         cx.notify();
     }
 
-    pub fn move_to_line_start(&mut self, _: &MoveToLineStart, _: &mut Window, cx: &mut Context<Self>) {
+    pub fn move_to_line_start(
+        &mut self,
+        _: &MoveToLineStart,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.cursor.col = 0;
         self.selection = None;
         cx.notify();
@@ -408,7 +413,12 @@ impl EditorState {
         cx.notify();
     }
 
-    pub fn move_to_doc_start(&mut self, _: &MoveToDocStart, _: &mut Window, cx: &mut Context<Self>) {
+    pub fn move_to_doc_start(
+        &mut self,
+        _: &MoveToDocStart,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.cursor = Position::zero();
         self.selection = None;
         cx.notify();
@@ -496,7 +506,12 @@ impl EditorState {
         cx.notify();
     }
 
-    pub fn select_to_line_start(&mut self, _: &SelectToLineStart, _: &mut Window, cx: &mut Context<Self>) {
+    pub fn select_to_line_start(
+        &mut self,
+        _: &SelectToLineStart,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.start_selection_if_needed();
         self.cursor.col = 0;
         if let Some(ref mut sel) = self.selection {
@@ -505,7 +520,12 @@ impl EditorState {
         cx.notify();
     }
 
-    pub fn select_to_line_end(&mut self, _: &SelectToLineEnd, _: &mut Window, cx: &mut Context<Self>) {
+    pub fn select_to_line_end(
+        &mut self,
+        _: &SelectToLineEnd,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         self.start_selection_if_needed();
         self.cursor.col = self.current_line().len();
         if let Some(ref mut sel) = self.selection {
@@ -516,10 +536,7 @@ impl EditorState {
 
     pub fn select_all(&mut self, _: &SelectAll, _: &mut Window, cx: &mut Context<Self>) {
         let start = Position::zero();
-        let end = Position::new(
-            self.lines.len() - 1,
-            self.lines[self.lines.len() - 1].len(),
-        );
+        let end = Position::new(self.lines.len() - 1, self.lines[self.lines.len() - 1].len());
         self.selection = Some(Selection::new(start, end));
         self.cursor = end;
         cx.notify();
@@ -647,7 +664,8 @@ impl EditorState {
             for (i, line) in lines.iter().enumerate().skip(1) {
                 self.cursor.line += 1;
                 if i == lines.len() - 1 {
-                    self.lines.insert(self.cursor.line, format!("{}{}", line, remainder));
+                    self.lines
+                        .insert(self.cursor.line, format!("{}{}", line, remainder));
                     self.cursor.col = line.len();
                 } else {
                     self.lines.insert(self.cursor.line, line.to_string());
@@ -688,8 +706,12 @@ impl EditorState {
         }
 
         let max_offset = self.scroll_handle.max_offset().height;
-        if new_offset_y < -max_offset { new_offset_y = -max_offset; }
-        if new_offset_y > px(0.0) { new_offset_y = px(0.0); }
+        if new_offset_y < -max_offset {
+            new_offset_y = -max_offset;
+        }
+        if new_offset_y > px(0.0) {
+            new_offset_y = px(0.0);
+        }
 
         if (new_offset_y - offset.y).abs() > px(0.0) {
             self.scroll_handle.set_offset(point(offset.x, new_offset_y));
@@ -715,15 +737,18 @@ impl EditorState {
 
         if cursor_y < current_top {
             new_offset_y = -cursor_y;
-        }
-        else if cursor_y + line_height > current_bottom {
+        } else if cursor_y + line_height > current_bottom {
             let target_top = cursor_y + line_height - viewport_height;
             new_offset_y = -target_top;
         }
 
         let max_offset = self.scroll_handle.max_offset().height;
-        if new_offset_y < -max_offset { new_offset_y = -max_offset; }
-        if new_offset_y > px(0.0) { new_offset_y = px(0.0); }
+        if new_offset_y < -max_offset {
+            new_offset_y = -max_offset;
+        }
+        if new_offset_y > px(0.0) {
+            new_offset_y = px(0.0);
+        }
 
         if (new_offset_y - offset.y).abs() > px(0.0) {
             self.scroll_handle.set_offset(point(offset.x, new_offset_y));
@@ -770,7 +795,15 @@ impl EditorState {
         }
     }
 
-    fn position_for_mouse(&self, mouse_pos: Point<Pixels>, bounds: Bounds<Pixels>, gutter_width: Pixels, line_height: Pixels, _font_size: Pixels, _window: &Window) -> Position {
+    fn position_for_mouse(
+        &self,
+        mouse_pos: Point<Pixels>,
+        bounds: Bounds<Pixels>,
+        gutter_width: Pixels,
+        line_height: Pixels,
+        _font_size: Pixels,
+        _window: &Window,
+    ) -> Position {
         let padding_top = px(12.0);
         let relative_y = mouse_pos.y - bounds.top() - padding_top;
         let line = self.scroll_offset + (relative_y / line_height).floor() as usize;
@@ -787,8 +820,24 @@ impl EditorState {
         Position::new(line, col)
     }
 
-    fn on_mouse_down(&mut self, event: &MouseDownEvent, bounds: Bounds<Pixels>, gutter_width: Pixels, line_height: Pixels, font_size: Pixels, window: &Window, cx: &mut Context<Self>) {
-        let pos = self.position_for_mouse(event.position, bounds, gutter_width, line_height, font_size, window);
+    fn on_mouse_down(
+        &mut self,
+        event: &MouseDownEvent,
+        bounds: Bounds<Pixels>,
+        gutter_width: Pixels,
+        line_height: Pixels,
+        font_size: Pixels,
+        window: &Window,
+        cx: &mut Context<Self>,
+    ) {
+        let pos = self.position_for_mouse(
+            event.position,
+            bounds,
+            gutter_width,
+            line_height,
+            font_size,
+            window,
+        );
 
         let now = std::time::Instant::now();
         let is_double_click = if let Some(last_time) = self.last_click_time {
@@ -821,9 +870,25 @@ impl EditorState {
         cx.notify();
     }
 
-    fn on_mouse_move(&mut self, event: &MouseMoveEvent, bounds: Bounds<Pixels>, gutter_width: Pixels, line_height: Pixels, font_size: Pixels, window: &Window, cx: &mut Context<Self>) {
+    fn on_mouse_move(
+        &mut self,
+        event: &MouseMoveEvent,
+        bounds: Bounds<Pixels>,
+        gutter_width: Pixels,
+        line_height: Pixels,
+        font_size: Pixels,
+        window: &Window,
+        cx: &mut Context<Self>,
+    ) {
         if self.is_selecting {
-            let pos = self.position_for_mouse(event.position, bounds, gutter_width, line_height, font_size, window);
+            let pos = self.position_for_mouse(
+                event.position,
+                bounds,
+                gutter_width,
+                line_height,
+                font_size,
+                window,
+            );
             if let Some(ref mut sel) = self.selection {
                 sel.cursor = pos;
             } else {
@@ -894,7 +959,9 @@ impl EntityInputHandler for EditorState {
         _window: &mut Window,
         _cx: &mut Context<Self>,
     ) -> Option<Range<usize>> {
-        self.marked_range.as_ref().map(|range| self.range_to_utf16(range))
+        self.marked_range
+            .as_ref()
+            .map(|range| self.range_to_utf16(range))
     }
 
     fn unmark_text(&mut self, _window: &mut Window, _cx: &mut Context<Self>) {
@@ -1006,7 +1073,14 @@ impl EntityInputHandler for EditorState {
             let gutter_width = px(60.0);
             let line_height = px(20.0);
             let font_size = px(14.0);
-            let pos = self.position_for_mouse(point, bounds, gutter_width, line_height, font_size, window);
+            let pos = self.position_for_mouse(
+                point,
+                bounds,
+                gutter_width,
+                line_height,
+                font_size,
+                window,
+            );
             let offset = self.position_to_offset(pos);
             Some(self.offset_to_utf16(offset))
         } else {
@@ -1017,9 +1091,7 @@ impl EntityInputHandler for EditorState {
 
 impl Render for EditorState {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        EditorElement {
-            state: cx.entity(),
-        }
+        EditorElement { state: cx.entity() }
     }
 }
 
@@ -1161,12 +1233,7 @@ impl Element for EditorElement {
                     None,
                 );
 
-                let _ = shaped.paint(
-                    point(bounds.left() + px(10.0), y),
-                    line_height,
-                    window,
-                    cx,
-                );
+                let _ = shaped.paint(point(bounds.left() + px(10.0), y), line_height, window, cx);
             }
 
             if line.is_empty() {
@@ -1224,7 +1291,7 @@ impl Element for EditorElement {
                     text_runs.push(TextRun {
                         len: end - start,
                         font: text_style.font(),
-                        color: color,
+                        color,
                         background_color: None,
                         underline: None,
                         strikethrough: None,
@@ -1278,6 +1345,7 @@ impl Element for EditorElement {
         if let Some(selection) = &selection {
             let (start, end) = selection.range();
 
+            #[allow(clippy::needless_range_loop)]
             for line_idx in start.line..=end.line {
                 let line_y = bounds.top() + padding_top + line_height * line_idx as f32;
                 let start_col = if line_idx == start.line { start.col } else { 0 };
@@ -1287,19 +1355,17 @@ impl Element for EditorElement {
                     lines[line_idx].len()
                 };
 
-                let (sel_x, sel_width) = if let Some(Some(layout)) = self.state.read(cx).line_layouts.get(line_idx) {
-                    let x_start = layout.x_for_index(start_col);
-                    let x_end = layout.x_for_index(end_col);
-                    (bounds.left() + gutter_width + x_start, (x_end - x_start))
-                } else {
-                    (bounds.left() + gutter_width, px(0.0))
-                };
+                let (sel_x, sel_width) =
+                    if let Some(Some(layout)) = self.state.read(cx).line_layouts.get(line_idx) {
+                        let x_start = layout.x_for_index(start_col);
+                        let x_end = layout.x_for_index(end_col);
+                        (bounds.left() + gutter_width + x_start, (x_end - x_start))
+                    } else {
+                        (bounds.left() + gutter_width, px(0.0))
+                    };
 
                 window.paint_quad(fill(
-                    Bounds::new(
-                        point(sel_x, line_y),
-                        size(sel_width, line_height),
-                    ),
+                    Bounds::new(point(sel_x, line_y), size(sel_width, line_height)),
                     rgba(0x4444ff40),
                 ));
             }
@@ -1314,17 +1380,15 @@ impl Element for EditorElement {
 
             let cursor_y = bounds.top() + padding_top + line_height * cursor.line as f32;
 
-            let cursor_x = if let Some(Some(layout)) = self.state.read(cx).line_layouts.get(cursor.line) {
-                bounds.left() + gutter_width + layout.x_for_index(cursor_col)
-            } else {
-                bounds.left() + gutter_width
-            };
+            let cursor_x =
+                if let Some(Some(layout)) = self.state.read(cx).line_layouts.get(cursor.line) {
+                    bounds.left() + gutter_width + layout.x_for_index(cursor_col)
+                } else {
+                    bounds.left() + gutter_width
+                };
 
             window.paint_quad(fill(
-                Bounds::new(
-                    point(cursor_x, cursor_y),
-                    size(px(2.0), line_height),
-                ),
+                Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
                 rgb(0x0099ff),
             ));
         }
@@ -1420,7 +1484,8 @@ impl RenderOnce for Editor {
             base = base.max_h(h);
         }
 
-        let styled_base = base.bg(theme.tokens.background)
+        let styled_base = base
+            .bg(theme.tokens.background)
             .rounded(theme.tokens.radius_md);
 
         let final_base = if self.show_border {
@@ -1470,7 +1535,15 @@ impl RenderOnce for Editor {
                     let line_height = px(20.0);
                     let font_size = px(14.0);
                     state.update(cx, |s, cx| {
-                        s.on_mouse_down(event, bounds, gutter_width, line_height, font_size, window, cx);
+                        s.on_mouse_down(
+                            event,
+                            bounds,
+                            gutter_width,
+                            line_height,
+                            font_size,
+                            window,
+                            cx,
+                        );
                     });
                     window.focus(&state.read(cx).focus_handle(cx));
                 }
@@ -1483,11 +1556,25 @@ impl RenderOnce for Editor {
                     let line_height = px(20.0);
                     let font_size = px(14.0);
                     state.update(cx, |s, cx| {
-                        s.on_mouse_move(event, bounds, gutter_width, line_height, font_size, window, cx);
+                        s.on_mouse_move(
+                            event,
+                            bounds,
+                            gutter_width,
+                            line_height,
+                            font_size,
+                            window,
+                            cx,
+                        );
                     });
                 }
             })
-            .on_mouse_up(MouseButton::Left, window.listener_for(&self.state, EditorState::on_mouse_up))
-            .child(scrollable_vertical(self.state.clone()).with_scroll_handle(self.state.read(cx).scroll_handle.clone()))
+            .on_mouse_up(
+                MouseButton::Left,
+                window.listener_for(&self.state, EditorState::on_mouse_up),
+            )
+            .child(
+                scrollable_vertical(self.state.clone())
+                    .with_scroll_handle(self.state.read(cx).scroll_handle.clone()),
+            )
     }
 }

@@ -1,14 +1,14 @@
-use gpui::*;
 use adabraka_ui::{
     components::{
-        input::{Input, InputVariant, InputSize},
+        button::{Button, ButtonSize, ButtonVariant},
+        input::{Input, InputSize, InputVariant},
         input_state::{InputState, *},
-        button::{Button, ButtonVariant, ButtonSize},
         scrollable::scrollable_vertical,
     },
-    layout::{VStack, HStack, Justify, Align},
+    layout::{Align, HStack, Justify, VStack},
     theme::{install_theme, Theme},
 };
+use gpui::*;
 
 struct InputDemoApp {
     // Interactive inputs
@@ -51,9 +51,12 @@ impl InputDemoApp {
     fn new(cx: &mut Context<Self>) -> Self {
         Self {
             // Create interactive inputs
-            interactive_input1: cx.new(|cx| InputState::new(cx).placeholder("Type anything here...")),
-            interactive_input2: cx.new(|cx| InputState::new(cx).placeholder("Try copy & paste (Cmd/Ctrl+C/V)")),
-            interactive_input3: cx.new(|cx| InputState::new(cx).placeholder("Use arrow keys, Home, End...")),
+            interactive_input1: cx
+                .new(|cx| InputState::new(cx).placeholder("Type anything here...")),
+            interactive_input2: cx
+                .new(|cx| InputState::new(cx).placeholder("Try copy & paste (Cmd/Ctrl+C/V)")),
+            interactive_input3: cx
+                .new(|cx| InputState::new(cx).placeholder("Use arrow keys, Home, End...")),
 
             // Input Variants
             variant_default: cx.new(|cx| InputState::new(cx)),
@@ -421,35 +424,33 @@ fn render_section<I: IntoElement + 'static>(
                         .text_size(px(20.0))
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_color(theme.tokens.foreground)
-                        .child(title.into())
+                        .child(title.into()),
                 )
                 .child(
                     div()
                         .text_size(px(14.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child(description.into())
-                )
+                        .child(description.into()),
+                ),
         )
         // Input examples
         .child(
             VStack::new()
                 .w_full()
                 .gap(px(16.0))
-                .children(
-                    inputs.into_iter().map(|(label, input)| {
-                        VStack::new()
-                            .w_full()
-                            .gap(px(8.0))
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .text_color(theme.tokens.foreground)
-                                    .child(label)
-                            )
-                            .child(input)
-                    })
-                )
+                .children(inputs.into_iter().map(|(label, input)| {
+                    VStack::new()
+                        .w_full()
+                        .gap(px(8.0))
+                        .child(
+                            div()
+                                .text_size(px(14.0))
+                                .font_weight(FontWeight::MEDIUM)
+                                .text_color(theme.tokens.foreground)
+                                .child(label),
+                        )
+                        .child(input)
+                })),
         )
 }
 
@@ -476,14 +477,14 @@ fn render_prefix_suffix_section(
                         .text_size(px(20.0))
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_color(theme.tokens.foreground)
-                        .child("Input with Prefix/Suffix")
+                        .child("Input with Prefix/Suffix"),
                 )
                 .child(
                     div()
                         .text_size(px(14.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child("Inputs can have prefix and suffix elements like icons or labels")
-                )
+                        .child("Inputs can have prefix and suffix elements like icons or labels"),
+                ),
         )
         .child(
             VStack::new()
@@ -498,18 +499,16 @@ fn render_prefix_suffix_section(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("With Prefix")
+                                .child("With Prefix"),
                         )
                         .child(
-                            Input::new(prefix_input)
-                                .placeholder("Enter URL")
-                                .prefix(
-                                    div()
-                                        .text_size(px(14.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("https://")
-                                )
-                        )
+                            Input::new(prefix_input).placeholder("Enter URL").prefix(
+                                div()
+                                    .text_size(px(14.0))
+                                    .text_color(theme.tokens.muted_foreground)
+                                    .child("https://"),
+                            ),
+                        ),
                 )
                 .child(
                     VStack::new()
@@ -520,18 +519,16 @@ fn render_prefix_suffix_section(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("With Suffix")
+                                .child("With Suffix"),
                         )
                         .child(
-                            Input::new(suffix_input)
-                                .placeholder("Enter amount")
-                                .suffix(
-                                    div()
-                                        .text_size(px(14.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("USD")
-                                )
-                        )
+                            Input::new(suffix_input).placeholder("Enter amount").suffix(
+                                div()
+                                    .text_size(px(14.0))
+                                    .text_color(theme.tokens.muted_foreground)
+                                    .child("USD"),
+                            ),
+                        ),
                 )
                 .child(
                     VStack::new()
@@ -542,7 +539,7 @@ fn render_prefix_suffix_section(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("With Both")
+                                .child("With Both"),
                         )
                         .child(
                             Input::new(both_input)
@@ -551,16 +548,16 @@ fn render_prefix_suffix_section(
                                     div()
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
-                                        .child("$")
+                                        .child("$"),
                                 )
                                 .suffix(
                                     div()
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
-                                        .child(".00")
-                                )
-                        )
-                )
+                                        .child(".00"),
+                                ),
+                        ),
+                ),
         )
 }
 
@@ -588,14 +585,14 @@ fn render_form_example(
                         .text_size(px(20.0))
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_color(theme.tokens.foreground)
-                        .child("Complete Form Example")
+                        .child("Complete Form Example"),
                 )
                 .child(
                     div()
                         .text_size(px(14.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child("A typical form using various input components")
-                )
+                        .child("A typical form using various input components"),
+                ),
         )
         .child(
             VStack::new()
@@ -611,13 +608,13 @@ fn render_form_example(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("Full Name")
+                                .child("Full Name"),
                         )
                         .child(
                             Input::new(form_name)
                                 .placeholder("John Doe")
-                                .variant(InputVariant::Outline)
-                        )
+                                .variant(InputVariant::Outline),
+                        ),
                 )
                 // Email field
                 .child(
@@ -629,7 +626,7 @@ fn render_form_example(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("Email")
+                                .child("Email"),
                         )
                         .child(
                             Input::new(form_email)
@@ -639,9 +636,9 @@ fn render_form_example(
                                     div()
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
-                                        .child("📧")
-                                )
-                        )
+                                        .child("📧"),
+                                ),
+                        ),
                 )
                 // Password field
                 .child(
@@ -653,14 +650,14 @@ fn render_form_example(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("Password")
+                                .child("Password"),
                         )
                         .child(
                             Input::new(form_password)
                                 .placeholder("Enter a secure password")
                                 .variant(InputVariant::Outline)
-                                .password(true)
-                        )
+                                .password(true),
+                        ),
                 )
                 // Bio field (using a regular input but with a note)
                 .child(
@@ -672,14 +669,14 @@ fn render_form_example(
                                 .text_size(px(14.0))
                                 .font_weight(FontWeight::MEDIUM)
                                 .text_color(theme.tokens.foreground)
-                                .child("Bio (Note: Multi-line textarea coming soon)")
+                                .child("Bio (Note: Multi-line textarea coming soon)"),
                         )
                         .child(
                             Input::new(form_bio)
                                 .placeholder("Tell us about yourself...")
                                 .variant(InputVariant::Outline)
-                                .size(InputSize::Lg)
-                        )
+                                .size(InputSize::Lg),
+                        ),
                 )
                 // Form actions
                 .child(
@@ -690,14 +687,14 @@ fn render_form_example(
                         .child(
                             Button::new("cancel-btn", "Cancel")
                                 .variant(ButtonVariant::Outline)
-                                .size(ButtonSize::Md)
+                                .size(ButtonSize::Md),
                         )
                         .child(
                             Button::new("submit-btn", "Submit")
                                 .variant(ButtonVariant::Default)
-                                .size(ButtonSize::Md)
-                        )
-                )
+                                .size(ButtonSize::Md),
+                        ),
+                ),
         )
 }
 

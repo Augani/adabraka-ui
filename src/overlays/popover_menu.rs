@@ -1,10 +1,10 @@
 //! Popover menu component with positioned menu items.
 
-use gpui::*;
-use gpui::prelude::FluentBuilder;
-use std::rc::Rc;
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
+use crate::theme::use_theme;
+use gpui::prelude::FluentBuilder;
+use gpui::*;
+use std::rc::Rc;
 
 pub struct PopoverMenuItem {
     pub id: SharedString,
@@ -95,81 +95,74 @@ impl RenderOnce for PopoverMenu {
             })
             .child(
                 deferred(
-                    anchored()
-                        .snap_to_window()
-                        .position(self.position)
-                        .child(
+                    anchored().snap_to_window().position(self.position).child(
+                        div().occlude().child(
                             div()
-                                .occlude()
-                                .child(
-                                    div()
-                                        .min_w(px(200.0))
-                                        .max_w(px(300.0))
-                                        .flex()
-                                        .flex_col()
-                                        .bg(theme.tokens.popover)
-                                        .text_color(theme.tokens.popover_foreground)
-                                        .border_1()
-                                        .border_color(theme.tokens.border)
-                                        .rounded(theme.tokens.radius_md)
-                                        .shadow_lg()
-                                        .p(px(4.0))
-                                        .map(|this| {
-                                            let mut div = this;
-                                            div.style().refine(&user_style);
-                                            div
-                                        })
-                                        .on_mouse_down(MouseButton::Left, |_, _, cx| {
-                                            cx.stop_propagation();
-                                        })
-                                        .children(self.items.into_iter().map(|item| {
-                            let on_click = item.on_click;
-                            let disabled = item.disabled;
-
-                            div()
-                            .flex()
-                            .items_center()
-                            .gap(px(8.0))
-                            .px(px(12.0))
-                            .py(px(8.0))
-                            .rounded(px(4.0))
-                            .cursor(if disabled {
-                                CursorStyle::Arrow
-                            } else {
-                                CursorStyle::PointingHand
-                            })
-                            .when(!disabled, |this| {
-                                this.hover(|style| {
-                                    style.bg(theme.tokens.accent.opacity(0.1))
+                                .min_w(px(200.0))
+                                .max_w(px(300.0))
+                                .flex()
+                                .flex_col()
+                                .bg(theme.tokens.popover)
+                                .text_color(theme.tokens.popover_foreground)
+                                .border_1()
+                                .border_color(theme.tokens.border)
+                                .rounded(theme.tokens.radius_md)
+                                .shadow_lg()
+                                .p(px(4.0))
+                                .map(|this| {
+                                    let mut div = this;
+                                    div.style().refine(&user_style);
+                                    div
                                 })
-                            })
-                            .when(disabled, |this| {
-                                this.opacity(0.5)
-                            })
-                            .when_some(item.icon, |this, icon_name| {
-                                this.child(
-                                    Icon::new(icon_name)
-                                        .size(px(16.0))
-                                        .color(theme.tokens.foreground)
-                                )
-                            })
-                            .child(
-                                div()
-                                    .text_size(px(14.0))
-                                    .child(item.label)
-                            )
-                            .when(!disabled && on_click.is_some(), |this| {
-                                this.on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                    if let Some(ref handler) = on_click {
-                                        handler(window, cx);
-                                    }
+                                .on_mouse_down(MouseButton::Left, |_, _, cx| {
                                     cx.stop_propagation();
                                 })
-                            })
-                    }))
-                                )
-                        )
-                ).with_priority(1)
+                                .children(self.items.into_iter().map(|item| {
+                                    let on_click = item.on_click;
+                                    let disabled = item.disabled;
+
+                                    div()
+                                        .flex()
+                                        .items_center()
+                                        .gap(px(8.0))
+                                        .px(px(12.0))
+                                        .py(px(8.0))
+                                        .rounded(px(4.0))
+                                        .cursor(if disabled {
+                                            CursorStyle::Arrow
+                                        } else {
+                                            CursorStyle::PointingHand
+                                        })
+                                        .when(!disabled, |this| {
+                                            this.hover(|style| {
+                                                style.bg(theme.tokens.accent.opacity(0.1))
+                                            })
+                                        })
+                                        .when(disabled, |this| this.opacity(0.5))
+                                        .when_some(item.icon, |this, icon_name| {
+                                            this.child(
+                                                Icon::new(icon_name)
+                                                    .size(px(16.0))
+                                                    .color(theme.tokens.foreground),
+                                            )
+                                        })
+                                        .child(div().text_size(px(14.0)).child(item.label))
+                                        .when(!disabled && on_click.is_some(), |this| {
+                                            this.on_mouse_down(
+                                                MouseButton::Left,
+                                                move |_, window, cx| {
+                                                    if let Some(ref handler) = on_click {
+                                                        handler(window, cx);
+                                                    }
+                                                    cx.stop_propagation();
+                                                },
+                                            )
+                                        })
+                                })),
+                        ),
+                    ),
+                )
+                .with_priority(1),
             )
     }
 }

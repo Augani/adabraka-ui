@@ -1,14 +1,14 @@
 use adabraka_ui::{
     components::{
-        input::{Input, InputType, InputVariant, InputSize},
+        button::{Button, ButtonSize, ButtonVariant},
+        input::{Input, InputSize, InputType, InputVariant},
         input_state::InputState,
-        button::{Button, ButtonVariant, ButtonSize},
         scrollable::scrollable_vertical,
     },
     layout::VStack,
     theme::{install_theme, Theme},
 };
-use gpui::{*, prelude::FluentBuilder};
+use gpui::{prelude::FluentBuilder, *};
 use std::path::PathBuf;
 
 struct Assets {
@@ -61,39 +61,51 @@ impl ValidationDemoApp {
     fn new(cx: &mut Context<Self>) -> Self {
         Self {
             // Email with built-in validation
-            email_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Email)
-                .required(true)
-                .placeholder("email@example.com")),
+            email_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Email)
+                    .required(true)
+                    .placeholder("email@example.com")
+            }),
 
             // Password with minimum length
-            password_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Password)
-                .required(true)
-                .min_length(8)
-                .placeholder("Enter password")),
+            password_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Password)
+                    .required(true)
+                    .min_length(8)
+                    .placeholder("Enter password")
+            }),
 
             // Confirm password (will validate match)
-            confirm_password_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Password)
-                .required(true)
-                .placeholder("Confirm password")),
+            confirm_password_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Password)
+                    .required(true)
+                    .placeholder("Confirm password")
+            }),
 
             // Phone with formatting
-            phone_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Tel)
-                .required(true)
-                .placeholder("(555) 555-5555")),
+            phone_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Tel)
+                    .required(true)
+                    .placeholder("(555) 555-5555")
+            }),
 
             // Credit card with validation
-            credit_card_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::CreditCard)
-                .placeholder("1234 5678 9012 3456")),
+            credit_card_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::CreditCard)
+                    .placeholder("1234 5678 9012 3456")
+            }),
 
             // URL validation
-            url_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Url)
-                .placeholder("https://example.com")),
+            url_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Url)
+                    .placeholder("https://example.com")
+            }),
 
             // Number with min/max
             number_input: cx.new(|cx| {
@@ -105,26 +117,34 @@ impl ValidationDemoApp {
             }),
 
             // Date input
-            date_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Date)
-                .placeholder("MM/DD/YYYY")),
+            date_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Date)
+                    .placeholder("MM/DD/YYYY")
+            }),
 
             // Time input
-            time_input: cx.new(|cx| InputState::new(cx)
-                .input_type(InputType::Time)
-                .placeholder("HH:MM")),
+            time_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .input_type(InputType::Time)
+                    .placeholder("HH:MM")
+            }),
 
             // Username with length constraints
-            username_input: cx.new(|cx| InputState::new(cx)
-                .required(true)
-                .min_length(3)
-                .max_length(20)
-                .placeholder("johndoe")),
+            username_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .required(true)
+                    .min_length(3)
+                    .max_length(20)
+                    .placeholder("johndoe")
+            }),
 
             // Bio with character count
-            bio_input: cx.new(|cx| InputState::new(cx)
-                .max_length(200)
-                .placeholder("Tell us about yourself...")),
+            bio_input: cx.new(|cx| {
+                InputState::new(cx)
+                    .max_length(200)
+                    .placeholder("Tell us about yourself...")
+            }),
 
             form_is_valid: false,
             form_submitted: false,
@@ -148,21 +168,29 @@ impl ValidationDemoApp {
 
         // Check overall form validity
         let email_valid = self.email_input.read(cx).validation_error.is_none();
-        let password_valid = self.password_input.read(cx).validation_error.is_none() && password.len() >= 8;
+        let password_valid =
+            self.password_input.read(cx).validation_error.is_none() && password.len() >= 8;
         let passwords_match = password == confirm;
         let phone_valid = self.phone_input.read(cx).validation_error.is_none();
         let username_valid = self.username_input.read(cx).validation_error.is_none();
 
-        self.form_is_valid = email_valid && password_valid && passwords_match && phone_valid && username_valid;
+        self.form_is_valid =
+            email_valid && password_valid && passwords_match && phone_valid && username_valid;
     }
 
     fn submit_form(&mut self, cx: &mut Context<Self>) {
         // Validate all fields
         let _ = self.email_input.update(cx, |state, cx| state.validate(cx));
-        let _ = self.password_input.update(cx, |state, cx| state.validate(cx));
-        let _ = self.confirm_password_input.update(cx, |state, cx| state.validate(cx));
+        let _ = self
+            .password_input
+            .update(cx, |state, cx| state.validate(cx));
+        let _ = self
+            .confirm_password_input
+            .update(cx, |state, cx| state.validate(cx));
         let _ = self.phone_input.update(cx, |state, cx| state.validate(cx));
-        let _ = self.username_input.update(cx, |state, cx| state.validate(cx));
+        let _ = self
+            .username_input
+            .update(cx, |state, cx| state.validate(cx));
 
         self.validate_form(cx);
 
@@ -609,30 +637,32 @@ impl Render for ValidationDemoApp {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx| {
-        // Install dark theme
-        install_theme(cx, Theme::dark());
+            // Install dark theme
+            install_theme(cx, Theme::dark());
 
-        // Initialize input system
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            // Initialize input system
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(900.0), px(800.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Input Validation Demo - Industry Standard".into()),
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(900.0), px(800.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Input Validation Demo - Industry Standard".into()),
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| ValidationDemoApp::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| ValidationDemoApp::new(cx)),
+            )
+            .unwrap();
+        });
 }

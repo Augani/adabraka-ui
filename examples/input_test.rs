@@ -1,4 +1,4 @@
-use adabraka_ui::components::input::{self, Input, InputState, InputVariant, InputSize};
+use adabraka_ui::components::input::{self, Input, InputSize, InputState, InputVariant};
 use gpui::{prelude::*, *};
 
 struct InputTestApp {
@@ -33,7 +33,7 @@ impl Render for InputTestApp {
                 div()
                     .text_xl()
                     .text_color(rgb(0xcdd6f4))
-                    .child("Input Component Test")
+                    .child("Input Component Test"),
             )
             .child(
                 div()
@@ -44,7 +44,7 @@ impl Render for InputTestApp {
                         div()
                             .text_sm()
                             .text_color(rgb(0xa6adc8))
-                            .child("Basic Input with Clear Button")
+                            .child("Basic Input with Clear Button"),
                     )
                     .child(
                         Input::new(&self.input_state)
@@ -63,12 +63,13 @@ impl Render for InputTestApp {
                                 let entity = cx.entity();
                                 move |value, cx| {
                                     entity.update(cx, |this, cx| {
-                                        this.output_text = format!("Enter pressed with: {}", value).into();
+                                        this.output_text =
+                                            format!("Enter pressed with: {}", value).into();
                                         cx.notify();
                                     });
                                 }
-                            })
-                    )
+                            }),
+                    ),
             )
             .child(
                 div()
@@ -79,35 +80,30 @@ impl Render for InputTestApp {
                         div()
                             .text_sm()
                             .text_color(rgb(0xa6adc8))
-                            .child("Password Input with Toggle")
+                            .child("Password Input with Toggle"),
                     )
                     .child(
                         Input::new(&self.password_input_state)
                             .placeholder("Enter password...")
                             .password(true)
                             .variant(InputVariant::Outline)
-                            .size(InputSize::Lg)
-                    )
+                            .size(InputSize::Lg),
+                    ),
             )
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap_2()
-                    .child(
-                        div()
-                            .text_sm()
-                            .text_color(rgb(0xa6adc8))
-                            .child("Output")
-                    )
+                    .child(div().text_sm().text_color(rgb(0xa6adc8)).child("Output"))
                     .child(
                         div()
                             .p_4()
                             .bg(rgb(0x313244))
                             .rounded_md()
                             .text_color(rgb(0xf5e0dc))
-                            .child(self.output_text.clone())
-                    )
+                            .child(self.output_text.clone()),
+                    ),
             )
     }
 }
@@ -125,9 +121,7 @@ fn main() {
                 })),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| InputTestApp::new(cx))
-            },
+            |window, cx| cx.new(|cx| InputTestApp::new(cx)),
         )
         .unwrap();
     });

@@ -65,10 +65,8 @@
 //! - **Consistency**: All components automatically use theme tokens
 //!
 
-mod tokens;
 mod theme;
+mod tokens;
 
-pub use tokens::ThemeTokens;
 pub use theme::{install_theme, use_theme, Theme, ThemeVariant};
-
-
+pub use tokens::ThemeTokens;

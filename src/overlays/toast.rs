@@ -1,11 +1,11 @@
 //! Toast notification component with auto-dismiss.
 
 use gpui::{prelude::FluentBuilder as _, *};
-use std::time::Duration;
 use smol::Timer;
+use std::time::Duration;
 
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
+use crate::theme::use_theme;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum ToastVariant {
@@ -190,112 +190,110 @@ impl Render for ToastManager {
             toasts_to_show.reverse();
         }
 
-        container.children(
-            toasts_to_show
-                .into_iter()
-                .map(|toast| {
-                    let (bg_color, border_color, icon, icon_color) = match toast.variant {
-                        ToastVariant::Default => (
-                            theme.tokens.card,
-                            theme.tokens.border,
-                            "info",
-                            theme.tokens.foreground,
-                        ),
-                        ToastVariant::Success => (
-                            theme.tokens.card,
-                            theme.tokens.border,
-                            "check-circle",
-                            gpui::hsla(142.0 / 360.0, 0.71, 0.45, 1.0), // green-500
-                        ),
-                        ToastVariant::Warning => (
-                            theme.tokens.card,
-                            theme.tokens.border,
-                            "alert-circle",
-                            gpui::hsla(48.0 / 360.0, 0.96, 0.53, 1.0), // yellow-500
-                        ),
-                        ToastVariant::Error => (
-                            theme.tokens.destructive.opacity(0.1),
-                            theme.tokens.destructive,
-                            "x-circle",
-                            theme.tokens.destructive,
-                        ),
-                    };
+        container
+            .children(
+                toasts_to_show
+                    .into_iter()
+                    .map(|toast| {
+                        let (bg_color, border_color, icon, icon_color) = match toast.variant {
+                            ToastVariant::Default => (
+                                theme.tokens.card,
+                                theme.tokens.border,
+                                "info",
+                                theme.tokens.foreground,
+                            ),
+                            ToastVariant::Success => (
+                                theme.tokens.card,
+                                theme.tokens.border,
+                                "check-circle",
+                                gpui::hsla(142.0 / 360.0, 0.71, 0.45, 1.0), // green-500
+                            ),
+                            ToastVariant::Warning => (
+                                theme.tokens.card,
+                                theme.tokens.border,
+                                "alert-circle",
+                                gpui::hsla(48.0 / 360.0, 0.96, 0.53, 1.0), // yellow-500
+                            ),
+                            ToastVariant::Error => (
+                                theme.tokens.destructive.opacity(0.1),
+                                theme.tokens.destructive,
+                                "x-circle",
+                                theme.tokens.destructive,
+                            ),
+                        };
 
-                    let user_style = toast.style.clone();
+                        let user_style = toast.style.clone();
 
-                    div()
-                        .id(("toast", toast.id))
-                        .flex()
-                        .items_start()
-                        .gap(px(12.0))
-                        .w_full()
-                        .min_w(px(300.0))
-                        .bg(bg_color)
-                        .border_1()
-                        .border_color(border_color)
-                        .rounded(theme.tokens.radius_md)
-                        .p(px(16.0))
-                        .shadow_lg()
-                        .map(|this| {
-                            let mut div = this;
-                            div.style().refine(&user_style);
-                            div
-                        })
-                        .child(
-                            Icon::new(icon)
-                                .size(px(20.0))
-                                .color(icon_color)
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .flex_col()
-                                .gap(px(4.0))
-                                .flex_1()
-                                .child(
-                                    div()
-                                        .text_size(px(14.0))
-                                        .font_family(theme.tokens.font_family.clone())
-                                        .font_weight(FontWeight::SEMIBOLD)
-                                        .text_color(theme.tokens.foreground)
-                                        .line_height(relative(1.4))
-                                        .child(toast.title)
-                                )
-                                .when_some(toast.description, |this, desc| {
-                                    this.child(
+                        div()
+                            .id(("toast", toast.id))
+                            .flex()
+                            .items_start()
+                            .gap(px(12.0))
+                            .w_full()
+                            .min_w(px(300.0))
+                            .bg(bg_color)
+                            .border_1()
+                            .border_color(border_color)
+                            .rounded(theme.tokens.radius_md)
+                            .p(px(16.0))
+                            .shadow_lg()
+                            .map(|this| {
+                                let mut div = this;
+                                div.style().refine(&user_style);
+                                div
+                            })
+                            .child(Icon::new(icon).size(px(20.0)).color(icon_color))
+                            .child(
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(px(4.0))
+                                    .flex_1()
+                                    .child(
                                         div()
-                                            .text_size(px(13.0))
+                                            .text_size(px(14.0))
                                             .font_family(theme.tokens.font_family.clone())
-                                            .text_color(theme.tokens.muted_foreground)
+                                            .font_weight(FontWeight::SEMIBOLD)
+                                            .text_color(theme.tokens.foreground)
                                             .line_height(relative(1.4))
-                                            .child(desc)
+                                            .child(toast.title),
                                     )
-                                })
-                        )
-                        .child(
-                            div()
-                                .w(px(20.0))
-                                .h(px(20.0))
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .rounded(theme.tokens.radius_sm)
-                                .cursor(CursorStyle::PointingHand)
-                                .text_color(theme.tokens.muted_foreground)
-                                .text_size(px(16.0))
-                                .font_family(theme.tokens.font_family.clone())
-                                .hover(|style| {
-                                    style.bg(theme.tokens.accent)
-                                })
-                                .on_mouse_down(MouseButton::Left, cx.listener(move |this, _, _, cx| {
-                                    this.dismiss_toast(toast.id, cx);
-                                }))
-                                .child("×")
-                        )
-                })
-                .collect::<Vec<_>>(),
-        )
-        .into_any_element()
+                                    .when_some(toast.description, |this, desc| {
+                                        this.child(
+                                            div()
+                                                .text_size(px(13.0))
+                                                .font_family(theme.tokens.font_family.clone())
+                                                .text_color(theme.tokens.muted_foreground)
+                                                .line_height(relative(1.4))
+                                                .child(desc),
+                                        )
+                                    }),
+                            )
+                            .child(
+                                div()
+                                    .w(px(20.0))
+                                    .h(px(20.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(theme.tokens.radius_sm)
+                                    .cursor(CursorStyle::PointingHand)
+                                    .text_color(theme.tokens.muted_foreground)
+                                    .text_size(px(16.0))
+                                    .font_family(theme.tokens.font_family.clone())
+                                    .hover(|style| style.bg(theme.tokens.accent))
+                                    .on_mouse_down(
+                                        MouseButton::Left,
+                                        cx.listener(move |this, _, _, cx| {
+                                            this.dismiss_toast(toast.id, cx);
+                                        }),
+                                    )
+                                    .child("×"),
+                            )
+                    })
+                    .collect::<Vec<_>>(),
+            )
+            .into_any_element()
     }
 }
 

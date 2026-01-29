@@ -1,16 +1,12 @@
 //! Scrollbar component - Scrollbar control for scrollable containers.
 
-use std::{
-    cell::Cell,
-    rc::Rc,
-    time::Instant,
-};
+use std::{cell::Cell, rc::Rc, time::Instant};
 
 use gpui::{
-    point, px, relative, size, App, Axis, Bounds, ContentMask, Corner, CursorStyle,
-    Element, GlobalElementId, Hitbox, HitboxBehavior, Hsla, InspectorElementId, IntoElement,
-    LayoutId, MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels, Point, Position,
-    ScrollHandle, ScrollWheelEvent, Size, Style, Window, fill,
+    fill, point, px, relative, size, App, Axis, Bounds, ContentMask, Corner, CursorStyle, Element,
+    GlobalElementId, Hitbox, HitboxBehavior, Hsla, InspectorElementId, IntoElement, LayoutId,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, Pixels, Point, Position, ScrollHandle,
+    ScrollWheelEvent, Size, Style, Window,
 };
 
 use crate::theme::use_theme;
@@ -97,7 +93,8 @@ impl Default for ScrollbarState {
 impl ScrollbarState {
     pub fn init_visible(&self) {
         let inner = self.0.get();
-        self.0.set(inner.with_last_scroll(inner.last_scroll_offset, Some(Instant::now())));
+        self.0
+            .set(inner.with_last_scroll(inner.last_scroll_offset, Some(Instant::now())));
     }
 }
 
@@ -128,7 +125,11 @@ impl ScrollbarStateInner {
         state
     }
 
-    fn with_last_scroll(&self, last_scroll_offset: Point<Pixels>, last_scroll_time: Option<Instant>) -> Self {
+    fn with_last_scroll(
+        &self,
+        last_scroll_offset: Point<Pixels>,
+        last_scroll_time: Option<Instant>,
+    ) -> Self {
         let mut state = *self;
         state.last_scroll_offset = last_scroll_offset;
         state.last_scroll_time = last_scroll_time;
@@ -165,11 +166,7 @@ pub struct Scrollbar {
 }
 
 impl Scrollbar {
-    pub fn new(
-        axis: ScrollbarAxis,
-        state: &ScrollbarState,
-        scroll_handle: &ScrollHandle,
-    ) -> Self {
+    pub fn new(axis: ScrollbarAxis, state: &ScrollbarState, scroll_handle: &ScrollHandle) -> Self {
         Self {
             state: state.clone(),
             axis,
@@ -272,12 +269,16 @@ impl Element for Scrollbar {
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
-        style.position = Position::Absolute;
-        style.flex_grow = 1.0;
-        style.flex_shrink = 1.0;
-        style.size.width = relative(1.).into();
-        style.size.height = relative(1.).into();
+        let style = Style {
+            position: Position::Absolute,
+            flex_grow: 1.0,
+            flex_shrink: 1.0,
+            size: gpui::Size {
+                width: relative(1.).into(),
+                height: relative(1.).into(),
+            },
+            ..Style::default()
+        };
 
         (window.request_layout(style, None, cx), ())
     }
@@ -300,9 +301,9 @@ impl Element for Scrollbar {
         let mut states = vec![];
         let mut has_both = self.axis.is_both();
 
-        let scroll_size = self.scroll_size.unwrap_or_else(|| {
-            self.scroll_handle.max_offset() + self.scroll_handle.bounds().size
-        });
+        let scroll_size = self
+            .scroll_size
+            .unwrap_or_else(|| self.scroll_handle.max_offset() + self.scroll_handle.bounds().size);
 
         for axis in self.axis.all().into_iter() {
             let is_vertical = axis == Axis::Vertical;
@@ -351,8 +352,16 @@ impl Element for Scrollbar {
                     )
                 },
                 size: size(
-                    if is_vertical { WIDTH } else { hitbox.size.width },
-                    if is_vertical { hitbox.size.height } else { WIDTH },
+                    if is_vertical {
+                        WIDTH
+                    } else {
+                        hitbox.size.width
+                    },
+                    if is_vertical {
+                        hitbox.size.height
+                    } else {
+                        WIDTH
+                    },
                 ),
             };
 
@@ -360,23 +369,24 @@ impl Element for Scrollbar {
             let is_hovered_on_thumb = state_inner.hovered_on_thumb == Some(axis);
             let is_dragged = state_inner.dragged_axis == Some(axis);
 
-            let (thumb_bg, track_bg, thumb_width, inset, radius) = if is_dragged || is_hovered_on_thumb {
-                (
-                    self.get_hover_thumb_color(&theme),
-                    self.get_track_color(&theme),
-                    THUMB_ACTIVE_WIDTH,
-                    THUMB_ACTIVE_INSET,
-                    THUMB_ACTIVE_RADIUS,
-                )
-            } else {
-                (
-                    self.get_thumb_color(&theme),
-                    self.get_track_color(&theme),
-                    THUMB_WIDTH,
-                    THUMB_INSET,
-                    THUMB_RADIUS,
-                )
-            };
+            let (thumb_bg, track_bg, thumb_width, inset, radius) =
+                if is_dragged || is_hovered_on_thumb {
+                    (
+                        self.get_hover_thumb_color(&theme),
+                        self.get_track_color(&theme),
+                        THUMB_ACTIVE_WIDTH,
+                        THUMB_ACTIVE_INSET,
+                        THUMB_ACTIVE_RADIUS,
+                    )
+                } else {
+                    (
+                        self.get_thumb_color(&theme),
+                        self.get_track_color(&theme),
+                        THUMB_WIDTH,
+                        THUMB_INSET,
+                        THUMB_RADIUS,
+                    )
+                };
 
             let thumb_length = thumb_end - thumb_start - inset * 2;
             let thumb_bounds = if is_vertical {
@@ -458,8 +468,10 @@ impl Element for Scrollbar {
 
         if self.scroll_handle.offset() != self.state.0.get().last_scroll_offset {
             self.state.0.set(
-                self.state.0.get()
-                    .with_last_scroll(self.scroll_handle.offset(), Some(Instant::now()))
+                self.state
+                    .0
+                    .get()
+                    .with_last_scroll(self.scroll_handle.offset(), Some(Instant::now())),
             );
             cx.notify(view_id);
         }

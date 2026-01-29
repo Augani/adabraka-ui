@@ -880,13 +880,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xFFFBF8).into(), // Soft cream background
             foreground: rgb(0x2D3748).into(), // Dark slate text
-            card: rgb(0xFFFFFF).into(), // Pure white cards
+            card: rgb(0xFFFFFF).into(),       // Pure white cards
             card_foreground: rgb(0x2D3748).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x2D3748).into(),
-            muted: rgb(0xFFF5F0).into(), // Light coral tint
+            muted: rgb(0xFFF5F0).into(),            // Light coral tint
             muted_foreground: rgb(0x718096).into(), // Medium gray
-            accent: rgb(0xFFE4D6).into(), // Peach accent
+            accent: rgb(0xFFE4D6).into(),           // Peach accent
             accent_foreground: rgb(0x2D3748).into(),
             primary: rgb(0xFF6B6B).into(), // Vibrant coral
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -949,13 +949,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xF8F7FF).into(), // Soft lavender white
             foreground: rgb(0x2D2A3D).into(), // Deep purple-gray
-            card: rgb(0xFFFFFF).into(), // Pure white
+            card: rgb(0xFFFFFF).into(),       // Pure white
             card_foreground: rgb(0x2D2A3D).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x2D2A3D).into(),
-            muted: rgb(0xF0EDFF).into(), // Light lavender
+            muted: rgb(0xF0EDFF).into(),            // Light lavender
             muted_foreground: rgb(0x6B6880).into(), // Purple-gray
-            accent: rgb(0xE8E3FF).into(), // Soft purple
+            accent: rgb(0xE8E3FF).into(),           // Soft purple
             accent_foreground: rgb(0x2D2A3D).into(),
             primary: rgb(0x9F7AEA).into(), // Vibrant lavender
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -1018,13 +1018,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xF7FDFB).into(), // Mint-tinted white
             foreground: rgb(0x1A4D3C).into(), // Forest green text
-            card: rgb(0xFFFFFF).into(), // Pure white
+            card: rgb(0xFFFFFF).into(),       // Pure white
             card_foreground: rgb(0x1A4D3C).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x1A4D3C).into(),
-            muted: rgb(0xE6F9F3).into(), // Soft mint
+            muted: rgb(0xE6F9F3).into(),            // Soft mint
             muted_foreground: rgb(0x4A7C69).into(), // Medium green
-            accent: rgb(0xD4F4E8).into(), // Light mint
+            accent: rgb(0xD4F4E8).into(),           // Light mint
             accent_foreground: rgb(0x1A4D3C).into(),
             primary: rgb(0x38B2AC).into(), // Teal/turquoise
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -1087,13 +1087,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xFFFAF5).into(), // Warm cream
             foreground: rgb(0x3D2817).into(), // Dark brown
-            card: rgb(0xFFFFFF).into(), // Pure white
+            card: rgb(0xFFFFFF).into(),       // Pure white
             card_foreground: rgb(0x3D2817).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x3D2817).into(),
-            muted: rgb(0xFFF0E0).into(), // Soft peach
+            muted: rgb(0xFFF0E0).into(),            // Soft peach
             muted_foreground: rgb(0x8B6B47).into(), // Warm brown
-            accent: rgb(0xFFE4CC).into(), // Light peach
+            accent: rgb(0xFFE4CC).into(),           // Light peach
             accent_foreground: rgb(0x3D2817).into(),
             primary: rgb(0xFF9966).into(), // Vibrant peach
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -1156,13 +1156,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xF7FAFD).into(), // Sky-tinted white
             foreground: rgb(0x1E3A5F).into(), // Deep blue text
-            card: rgb(0xFFFFFF).into(), // Pure white
+            card: rgb(0xFFFFFF).into(),       // Pure white
             card_foreground: rgb(0x1E3A5F).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x1E3A5F).into(),
-            muted: rgb(0xE3F2FD).into(), // Light blue
+            muted: rgb(0xE3F2FD).into(),            // Light blue
             muted_foreground: rgb(0x5B7C99).into(), // Steel blue
-            accent: rgb(0xBBDEFB).into(), // Sky blue accent
+            accent: rgb(0xBBDEFB).into(),           // Sky blue accent
             accent_foreground: rgb(0x1E3A5F).into(),
             primary: rgb(0x2196F3).into(), // Bright blue
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -1225,13 +1225,13 @@ impl ThemeTokens {
         Self {
             background: rgb(0xFFF8FB).into(), // Soft pink-white
             foreground: rgb(0x4A1942).into(), // Deep magenta text
-            card: rgb(0xFFFFFF).into(), // Pure white
+            card: rgb(0xFFFFFF).into(),       // Pure white
             card_foreground: rgb(0x4A1942).into(),
             popover: rgb(0xFFFFFF).into(),
             popover_foreground: rgb(0x4A1942).into(),
-            muted: rgb(0xFFE8F5).into(), // Light pink
+            muted: rgb(0xFFE8F5).into(),            // Light pink
             muted_foreground: rgb(0x9B4F96).into(), // Mauve
-            accent: rgb(0xFFD6ED).into(), // Soft pink accent
+            accent: rgb(0xFFD6ED).into(),           // Soft pink accent
             accent_foreground: rgb(0x4A1942).into(),
             primary: rgb(0xE91E63).into(), // Vibrant pink/magenta
             primary_foreground: rgb(0xFFFFFF).into(),
@@ -1333,5 +1333,3 @@ impl ThemeTokens {
         }
     }
 }
-
-

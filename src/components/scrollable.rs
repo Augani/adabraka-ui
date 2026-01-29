@@ -23,9 +23,7 @@ where
     E: Element,
 {
     pub(crate) fn new(axis: ScrollbarAxis, element: E) -> Self {
-        let id = ElementId::Name(SharedString::from(
-            format!("scrollable-{:?}", element.id()),
-        ));
+        let id = ElementId::Name(SharedString::from(format!("scrollable-{:?}", element.id())));
 
         Self {
             element: Some(element),
@@ -163,58 +161,68 @@ where
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        let mut style = Style::default();
-        style.flex_grow = 1.0;
-        style.position = Position::Relative;
-        style.size.width = relative(1.0).into();
-        style.size.height = relative(1.0).into();
+        let style = Style {
+            flex_grow: 1.0,
+            position: Position::Relative,
+            size: gpui::Size {
+                width: relative(1.0).into(),
+                height: relative(1.0).into(),
+            },
+            ..Style::default()
+        };
 
         let axis = self.axis;
         let scroll_id = self.id.clone();
         let content = self.element.take().map(|c| c.into_any_element());
         let always_show = self.always_show_scrollbars;
 
-        self.with_element_state(id.unwrap(), window, cx, |scrollable, element_state, window, cx| {
-            let scroll_handle = if let Some(ref external_handle) = scrollable.external_scroll_handle {
-                external_handle
-            } else {
-                &element_state.handle
-            };
+        self.with_element_state(
+            id.unwrap(),
+            window,
+            cx,
+            |scrollable, element_state, window, cx| {
+                let scroll_handle =
+                    if let Some(ref external_handle) = scrollable.external_scroll_handle {
+                        external_handle
+                    } else {
+                        &element_state.handle
+                    };
 
-            let mut scrollbar = Scrollbar::new(axis, &element_state.state, scroll_handle);
-            if always_show {
-                scrollbar = scrollbar.always_visible();
-            }
+                let mut scrollbar = Scrollbar::new(axis, &element_state.state, scroll_handle);
+                if always_show {
+                    scrollbar = scrollbar.always_visible();
+                }
 
-            let mut element = div()
-                .relative()
-                .size_full()
-                .overflow_hidden()
-                .child(
-                    div()
-                        .id(scroll_id)
-                        .track_scroll(scroll_handle)
-                        .overflow_scroll()
-                        .relative()
-                        .size_full()
-                        .child(div().children(content)),
-                )
-                .child(
-                    div()
-                        .absolute()
-                        .top_0()
-                        .left_0()
-                        .right_0()
-                        .bottom_0()
-                        .child(scrollbar),
-                )
-                .into_any_element();
+                let mut element = div()
+                    .relative()
+                    .size_full()
+                    .overflow_hidden()
+                    .child(
+                        div()
+                            .id(scroll_id)
+                            .track_scroll(scroll_handle)
+                            .overflow_scroll()
+                            .relative()
+                            .size_full()
+                            .child(div().children(content)),
+                    )
+                    .child(
+                        div()
+                            .absolute()
+                            .top_0()
+                            .left_0()
+                            .right_0()
+                            .bottom_0()
+                            .child(scrollbar),
+                    )
+                    .into_any_element();
 
-            let element_id = element.request_layout(window, cx);
-            let layout_id = window.request_layout(style, vec![element_id], cx);
+                let element_id = element.request_layout(window, cx);
+                let layout_id = window.request_layout(style, vec![element_id], cx);
 
-            (layout_id, element)
-        })
+                (layout_id, element)
+            },
+        )
     }
 
     fn prepaint(

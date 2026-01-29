@@ -1,6 +1,6 @@
 use adabraka_ui::{
+    components::{color_picker::ColorPickerState, scrollable::scrollable_vertical},
     prelude::*,
-    components::{scrollable::scrollable_vertical, color_picker::ColorPickerState},
 };
 use gpui::*;
 use std::path::PathBuf;

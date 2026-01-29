@@ -1,14 +1,14 @@
-use gpui::{prelude::FluentBuilder as _, *};
-use std::time::Duration;
 use adabraka_ui::{
-    animations::{self, presets, durations, pulse_scale, pulse_opacity, shake_offset},
-    theme::{install_theme, Theme, use_theme},
+    animations::{self, durations, presets, pulse_opacity, pulse_scale, shake_offset},
     components::{
         button::{Button, ButtonVariant},
         scrollable::scrollable_vertical,
-        text::{h1, h2, body, caption, muted},
+        text::{body, caption, h1, h2, muted},
     },
+    theme::{install_theme, use_theme, Theme},
 };
+use gpui::{prelude::FluentBuilder as _, *};
+use std::time::Duration;
 
 struct AnimationsDemo {
     show_fade: bool,

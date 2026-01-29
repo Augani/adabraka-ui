@@ -1,6 +1,6 @@
 use adabraka_ui::{
+    components::{pagination::Pagination, scrollable::scrollable_vertical},
     prelude::*,
-    components::{scrollable::scrollable_vertical, pagination::Pagination},
 };
 use gpui::*;
 use std::path::PathBuf;

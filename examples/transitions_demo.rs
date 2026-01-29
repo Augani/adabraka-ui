@@ -1,9 +1,9 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    transitions::Transition,
     components::button::{Button, ButtonVariant},
     theme::use_theme,
+    transitions::Transition,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 
 actions!(transitions_demo, [Quit]);
 
@@ -86,14 +86,14 @@ impl Render for TransitionsDemo {
                         div()
                             .text_size(px(32.0))
                             .font_weight(FontWeight::BOLD)
-                            .child("Transitions Demo")
+                            .child("Transitions Demo"),
                     )
                     .child(
                         div()
                             .text_size(px(16.0))
                             .text_color(theme.tokens.muted_foreground)
-                            .child("Smooth animations for appearing components")
-                    )
+                            .child("Smooth animations for appearing components"),
+                    ),
             )
             // Show All Button
             .child(
@@ -101,7 +101,7 @@ impl Render for TransitionsDemo {
                     .variant(ButtonVariant::Secondary)
                     .on_click(_cx.listener(|this, _, _, cx| {
                         this.toggle_all(cx);
-                    }))
+                    })),
             )
             // Transition Examples Grid
             .child(
@@ -119,7 +119,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Fade In")
+                                    .child("Fade In"),
                             )
                             .child(
                                 div()
@@ -132,24 +132,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_fade = !this.show_fade;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_fade || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::fade_normal()
-                                                .id("fade-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.primary)
-                                                        .text_color(theme.tokens.primary_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Faded in smoothly!")
-                                                )
+                                            Transition::fade_normal().id("fade-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.primary)
+                                                    .text_color(theme.tokens.primary_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Faded in smoothly!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Slide Up Transition
                     .child(
@@ -161,7 +159,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Slide Up with Fade")
+                                    .child("Slide Up with Fade"),
                             )
                             .child(
                                 div()
@@ -174,24 +172,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_up = !this.show_slide_up;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_slide_up || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::slide_up()
-                                                .id("slide-up-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.accent)
-                                                        .text_color(theme.tokens.accent_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Slid up from bottom!")
-                                                )
+                                            Transition::slide_up().id("slide-up-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.accent)
+                                                    .text_color(theme.tokens.accent_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Slid up from bottom!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Slide Down Transition
                     .child(
@@ -203,7 +199,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Slide Down with Fade")
+                                    .child("Slide Down with Fade"),
                             )
                             .child(
                                 div()
@@ -216,24 +212,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_down = !this.show_slide_down;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_slide_down || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::slide_down()
-                                                .id("slide-down-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.secondary)
-                                                        .text_color(theme.tokens.secondary_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Slid down from top!")
-                                                )
+                                            Transition::slide_down().id("slide-down-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.secondary)
+                                                    .text_color(theme.tokens.secondary_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Slid down from top!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Slide Left Transition
                     .child(
@@ -245,7 +239,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Slide from Left")
+                                    .child("Slide from Left"),
                             )
                             .child(
                                 div()
@@ -258,24 +252,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_left = !this.show_slide_left;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_slide_left || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::slide_left()
-                                                .id("slide-left-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.primary)
-                                                        .text_color(theme.tokens.primary_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Slid in from left!")
-                                                )
+                                            Transition::slide_left().id("slide-left-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.primary)
+                                                    .text_color(theme.tokens.primary_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Slid in from left!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Slide Right Transition
                     .child(
@@ -287,7 +279,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Slide from Right")
+                                    .child("Slide from Right"),
                             )
                             .child(
                                 div()
@@ -300,24 +292,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_slide_right = !this.show_slide_right;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_slide_right || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::slide_right()
-                                                .id("slide-right-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.accent)
-                                                        .text_color(theme.tokens.accent_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Slid in from right!")
-                                                )
+                                            Transition::slide_right().id("slide-right-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.accent)
+                                                    .text_color(theme.tokens.accent_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Slid in from right!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Scale Transition
                     .child(
@@ -329,7 +319,7 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Scale In (Smooth)")
+                                    .child("Scale In (Smooth)"),
                             )
                             .child(
                                 div()
@@ -342,24 +332,22 @@ impl Render for TransitionsDemo {
                                             .on_click(_cx.listener(|this, _, _, cx| {
                                                 this.show_scale = !this.show_scale;
                                                 cx.notify();
-                                            }))
+                                            })),
                                     )
                                     .when(self.show_scale || self.show_all, |parent| {
                                         parent.child(
-                                            Transition::scale_smooth()
-                                                .id("scale-demo")
-                                                .child(
-                                                    div()
-                                                        .px(px(16.0))
-                                                        .py(px(12.0))
-                                                        .bg(theme.tokens.destructive)
-                                                        .text_color(theme.tokens.destructive_foreground)
-                                                        .rounded(theme.tokens.radius_md)
-                                                        .child("Scaled in smoothly!")
-                                                )
+                                            Transition::scale_smooth().id("scale-demo").child(
+                                                div()
+                                                    .px(px(16.0))
+                                                    .py(px(12.0))
+                                                    .bg(theme.tokens.destructive)
+                                                    .text_color(theme.tokens.destructive_foreground)
+                                                    .rounded(theme.tokens.radius_md)
+                                                    .child("Scaled in smoothly!"),
+                                            ),
                                         )
-                                    })
-                            )
+                                    }),
+                            ),
                     )
                     // Custom Transition
                     .child(
@@ -371,47 +359,40 @@ impl Render for TransitionsDemo {
                                 div()
                                     .text_size(px(18.0))
                                     .font_weight(FontWeight::SEMIBOLD)
-                                    .child("Custom Transition (Scale + Bounce)")
+                                    .child("Custom Transition (Scale + Bounce)"),
                             )
-                            .child(
-                                div()
-                                    .flex()
-                                    .gap(px(12.0))
-                                    .items_start()
-                                    .when(self.show_all, |parent| {
-                                        parent.child(
-                                            Transition::scale_bounce()
-                                                .id("custom-demo")
+                            .child(div().flex().gap(px(12.0)).items_start().when(
+                                self.show_all,
+                                |parent| {
+                                    parent.child(
+                                        Transition::scale_bounce().id("custom-demo").child(
+                                            div()
+                                                .px(px(20.0))
+                                                .py(px(16.0))
+                                                .bg(theme.tokens.primary)
+                                                .text_color(theme.tokens.primary_foreground)
+                                                .rounded(theme.tokens.radius_lg)
+                                                .shadow_md()
                                                 .child(
                                                     div()
-                                                        .px(px(20.0))
-                                                        .py(px(16.0))
-                                                        .bg(theme.tokens.primary)
-                                                        .text_color(theme.tokens.primary_foreground)
-                                                        .rounded(theme.tokens.radius_lg)
-                                                        .shadow_md()
+                                                        .flex()
+                                                        .flex_col()
+                                                        .gap(px(4.0))
                                                         .child(
                                                             div()
-                                                                .flex()
-                                                                .flex_col()
-                                                                .gap(px(4.0))
-                                                                .child(
-                                                                    div()
-                                                                        .text_size(px(16.0))
-                                                                        .font_weight(FontWeight::SEMIBOLD)
-                                                                        .child("Spring Animation!")
-                                                                )
-                                                                .child(
-                                                                    div()
-                                                                        .text_size(px(14.0))
-                                                                        .child("Scales in with a subtle bounce effect")
-                                                                )
+                                                                .text_size(px(16.0))
+                                                                .font_weight(FontWeight::SEMIBOLD)
+                                                                .child("Spring Animation!"),
                                                         )
-                                                )
-                                        )
-                                    })
-                            )
-                    )
+                                                        .child(div().text_size(px(14.0)).child(
+                                                            "Scales in with a subtle bounce effect",
+                                                        )),
+                                                ),
+                                        ),
+                                    )
+                                },
+                            )),
+                    ),
             )
     }
 }

@@ -7,37 +7,29 @@ struct ScrollTestApp;
 
 impl Render for ScrollTestApp {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .flex()
-            .size_full()
-            .bg(rgb(0x1e1e2e))
-            .child(
-                div()
-                    .flex()
-                    .flex_col()
-                    .w(px(400.0))
-                    .h(px(300.0))
-                    .m(px(50.0))
-                    .bg(rgb(0x313244))
-                    .rounded_lg()
-                    .p(px(20.0))
-                    .child(
-                        scrollable_vertical(
+        div().flex().size_full().bg(rgb(0x1e1e2e)).child(
+            div()
+                .flex()
+                .flex_col()
+                .w(px(400.0))
+                .h(px(300.0))
+                .m(px(50.0))
+                .bg(rgb(0x313244))
+                .rounded_lg()
+                .p(px(20.0))
+                .child(
+                    scrollable_vertical(div().flex().flex_col().gap(px(10.0)).children(
+                        (0..50).map(|i| {
                             div()
-                                .flex()
-                                .flex_col()
-                                .gap(px(10.0))
-                                .children((0..50).map(|i| {
-                                    div()
-                                        .p(px(15.0))
-                                        .bg(rgb(0x45475a))
-                                        .rounded_md()
-                                        .child(format!("Item {}", i + 1))
-                                }))
-                        )
-                        .always_show_scrollbars()
-                    )
-            )
+                                .p(px(15.0))
+                                .bg(rgb(0x45475a))
+                                .rounded_md()
+                                .child(format!("Item {}", i + 1))
+                        }),
+                    ))
+                    .always_show_scrollbars(),
+                ),
+        )
     }
 }
 

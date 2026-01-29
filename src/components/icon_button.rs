@@ -1,11 +1,11 @@
 //! Icon button component for icon-only actions with multiple variants.
 
-use gpui::{prelude::FluentBuilder as _, *};
-use std::rc::Rc;
-use crate::theme::use_theme;
 use crate::components::button::ButtonVariant;
 use crate::components::icon_source::IconSource;
 use crate::icon_config::resolve_icon_path;
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
+use std::rc::Rc;
 
 fn icon_path_from_name(name: &str) -> String {
     resolve_icon_path(name)
@@ -89,9 +89,7 @@ impl IconButton {
     fn get_svg_path(&self) -> Option<SharedString> {
         match &self.icon_source {
             IconSource::FilePath(path) => Some(path.clone()),
-            IconSource::Named(name) => {
-                Some(SharedString::from(icon_path_from_name(name)))
-            }
+            IconSource::Named(name) => Some(SharedString::from(icon_path_from_name(name))),
         }
     }
 }
@@ -223,7 +221,7 @@ impl RenderOnce for IconButton {
                             theme.tokens.primary
                         } else {
                             fg
-                        })
+                        }),
                 )
             })
     }

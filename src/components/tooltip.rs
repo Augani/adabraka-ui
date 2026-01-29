@@ -1,32 +1,26 @@
 //! Tooltip component - Tooltip with hover and keyboard support.
 
-use gpui::{prelude::*, *};
 use crate::theme::use_theme;
+use gpui::{prelude::*, *};
 use std::time::Duration;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TooltipPlacement {
+    #[default]
     Top,
     Bottom,
     Left,
     Right,
 }
 
-impl Default for TooltipPlacement {
-    fn default() -> Self {
-        Self::Top
-    }
-}
-
+#[derive(Default)]
 pub struct TooltipState {
     is_visible: bool,
 }
 
 impl TooltipState {
     pub fn new() -> Self {
-        Self {
-            is_visible: false,
-        }
+        Self::default()
     }
 
     pub fn is_visible(&self) -> bool {
@@ -148,10 +142,10 @@ impl IntoElement for Tooltip {
                                         div.style().refine(&user_style);
                                         div
                                     })
-                                    .child(self.content)
-                            )
+                                    .child(self.content),
+                            ),
                     )
-                    .with_priority(1)
+                    .with_priority(1),
                 )
             })
     }

@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
-    navigation::tabs::{Tabs, TabItem, TabPanel, TabVariant},
+    navigation::tabs::{TabItem, TabPanel, TabVariant, Tabs},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -89,21 +89,16 @@ impl TabsStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child(title)
+                            .child(title),
                     )
                     .child(
                         div()
                             .text_size(px(13.0))
                             .text_color(theme.tokens.muted_foreground)
-                            .child(description)
-                    )
+                            .child(description),
+                    ),
             )
-            .child(
-                div()
-                    .w(px(600.0))
-                    .h(px(300.0))
-                    .child(tabs)
-            )
+            .child(div().w(px(600.0)).h(px(300.0)).child(tabs))
     }
 }
 

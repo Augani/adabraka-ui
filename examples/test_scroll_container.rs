@@ -2,8 +2,8 @@
 
 use adabraka_ui::prelude::*;
 use gpui::{
-    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    rgb, size, FontWeight,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, FontWeight, Window,
+    WindowBounds, WindowOptions,
 };
 
 struct TestScrollContainer {}
@@ -20,7 +20,7 @@ impl Render for TestScrollContainer {
             .child(
                 div()
                     .font_weight(FontWeight::BOLD)
-                    .child("Raw GPUI Pattern (WORKS):")
+                    .child("Raw GPUI Pattern (WORKS):"),
             )
             .child(
                 // RAW GPUI - This works
@@ -38,13 +38,13 @@ impl Render for TestScrollContainer {
                             .h(px(800.))
                             .bg(rgb(0xdbeafe))
                             .p_4()
-                            .child("✓ Tall content (800px) - THIS SCROLLS")
-                    )
+                            .child("✓ Tall content (800px) - THIS SCROLLS"),
+                    ),
             )
             .child(
                 div()
                     .font_weight(FontWeight::BOLD)
-                    .child("ScrollContainer Pattern:")
+                    .child("ScrollContainer Pattern:"),
             )
             .child(
                 // OUR ScrollContainer
@@ -60,8 +60,8 @@ impl Render for TestScrollContainer {
                             .h(px(800.))
                             .bg(rgb(0xd1fae5))
                             .p_4()
-                            .child("? Tall content (800px) - DOES THIS SCROLL?")
-                    )
+                            .child("? Tall content (800px) - DOES THIS SCROLL?"),
+                    ),
             )
     }
 }
@@ -80,4 +80,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

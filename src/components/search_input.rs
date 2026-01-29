@@ -1,16 +1,16 @@
 //! Search input component - Specialized search with filters and advanced capabilities.
 
-use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
-use std::rc::Rc;
 use crate::{
-    theme::use_theme,
     components::{
-        input::Input,
-        input_state::{InputState, InputEvent},
         icon::Icon,
         icon_source::IconSource,
+        input::Input,
+        input_state::{InputEvent, InputState},
     },
+    theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
+use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct SearchFilter {
@@ -47,9 +47,7 @@ pub struct SearchInputState {
 
 impl SearchInputState {
     pub fn new(cx: &mut Context<Self>) -> Self {
-        let input = cx.new(|cx| {
-            InputState::new(cx).placeholder("Search...")
-        });
+        let input = cx.new(|cx| InputState::new(cx).placeholder("Search..."));
 
         Self {
             input,
@@ -63,7 +61,12 @@ impl SearchInputState {
         }
     }
 
-    pub fn placeholder(self, placeholder: impl Into<SharedString>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn placeholder(
+        self,
+        placeholder: impl Into<SharedString>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         self.input.update(cx, |input, cx| {
             input.set_placeholder(placeholder, window, cx);
         });
@@ -147,24 +150,23 @@ pub struct SearchInput {
 
 impl SearchInput {
     pub fn new(cx: &mut Context<Self>) -> Self {
-        let state = cx.new(|cx| SearchInputState::new(cx));
+        let state = cx.new(SearchInputState::new);
 
         let state_clone = state.clone();
         let input_entity = state.read(cx).input.clone();
-        cx.subscribe(&input_entity, move |_this, _input, event, cx| {
-            match event {
-                InputEvent::Change => {
-                    let query = state_clone.read(cx).input.read(cx).content().to_string();
-                    let handler = state_clone.read(cx).on_search.clone();
-                    if let Some(handler) = handler {
-                        cx.defer(move |cx| {
-                            handler(&query, cx);
-                        });
-                    }
+        cx.subscribe(&input_entity, move |_this, _input, event, cx| match event {
+            InputEvent::Change => {
+                let query = state_clone.read(cx).input.read(cx).content().to_string();
+                let handler = state_clone.read(cx).on_search.clone();
+                if let Some(handler) = handler {
+                    cx.defer(move |cx| {
+                        handler(&query, cx);
+                    });
                 }
-                _ => {}
             }
-        }).detach();
+            _ => {}
+        })
+        .detach();
 
         Self {
             state,
@@ -172,7 +174,12 @@ impl SearchInput {
         }
     }
 
-    pub fn placeholder(self, placeholder: impl Into<SharedString>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn placeholder(
+        self,
+        placeholder: impl Into<SharedString>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         self.state.update(cx, |state, cx| {
             state.input.update(cx, |input, cx| {
                 input.set_placeholder(placeholder, window, cx);
@@ -249,13 +256,9 @@ impl Render for SearchInput {
                             IconSource::Named("search".into())
                         })
                         .size(px(16.0))
-                        .color(theme.tokens.muted_foreground)
+                        .color(theme.tokens.muted_foreground),
                     )
-                    .child(
-                        div()
-                            .flex_1()
-                            .child(Input::new(&state.input))
-                    )
+                    .child(div().flex_1().child(Input::new(&state.input)))
                     .when_some(state.results_count, |parent_div, count| {
                         parent_div.child(
                             div()
@@ -265,7 +268,7 @@ impl Render for SearchInput {
                                 .bg(theme.tokens.muted)
                                 .text_size(px(12.0))
                                 .text_color(theme.tokens.muted_foreground)
-                                .child(format!("{} results", count))
+                                .child(format!("{} results", count)),
                         )
                     })
                     .child(
@@ -278,11 +281,14 @@ impl Render for SearchInput {
                             .when(!state.case_sensitive, |div| {
                                 div.hover(|style| style.bg(theme.tokens.muted))
                             })
-                            .on_mouse_down(MouseButton::Left, cx.listener(|this, _event, _window, cx| {
-                                this.state.update(cx, |state, cx| {
-                                    state.toggle_case_sensitive(cx);
-                                });
-                            }))
+                            .on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener(|this, _event, _window, cx| {
+                                    this.state.update(cx, |state, cx| {
+                                        state.toggle_case_sensitive(cx);
+                                    });
+                                }),
+                            )
                             .child(
                                 div()
                                     .text_size(px(12.0))
@@ -292,8 +298,8 @@ impl Render for SearchInput {
                                     } else {
                                         theme.tokens.muted_foreground
                                     })
-                                    .child("Aa")
-                            )
+                                    .child("Aa"),
+                            ),
                     )
                     .child(
                         div()
@@ -305,11 +311,14 @@ impl Render for SearchInput {
                             .when(!state.use_regex, |div| {
                                 div.hover(|style| style.bg(theme.tokens.muted))
                             })
-                            .on_mouse_down(MouseButton::Left, cx.listener(|this, _event, _window, cx| {
-                                this.state.update(cx, |state, cx| {
-                                    state.toggle_use_regex(cx);
-                                });
-                            }))
+                            .on_mouse_down(
+                                MouseButton::Left,
+                                cx.listener(|this, _event, _window, cx| {
+                                    this.state.update(cx, |state, cx| {
+                                        state.toggle_use_regex(cx);
+                                    });
+                                }),
+                            )
                             .child(
                                 div()
                                     .text_size(px(12.0))
@@ -319,8 +328,8 @@ impl Render for SearchInput {
                                     } else {
                                         theme.tokens.muted_foreground
                                     })
-                                    .child(".*")
-                            )
+                                    .child(".*"),
+                            ),
                     )
                     .when(has_query, |parent_div| {
                         parent_div.child(
@@ -329,18 +338,21 @@ impl Render for SearchInput {
                                 .rounded(theme.tokens.radius_sm)
                                 .cursor(CursorStyle::PointingHand)
                                 .hover(|style| style.bg(theme.tokens.muted))
-                                .on_mouse_down(MouseButton::Left, cx.listener(|this, _event, window, cx| {
-                                    this.state.update(cx, |state, cx| {
-                                        state.clear(window, cx);
-                                    });
-                                }))
+                                .on_mouse_down(
+                                    MouseButton::Left,
+                                    cx.listener(|this, _event, window, cx| {
+                                        this.state.update(cx, |state, cx| {
+                                            state.clear(window, cx);
+                                        });
+                                    }),
+                                )
                                 .child(
                                     Icon::new(IconSource::Named("x".into()))
                                         .size(px(14.0))
-                                        .color(theme.tokens.muted_foreground)
-                                )
+                                        .color(theme.tokens.muted_foreground),
+                                ),
                         )
-                    })
+                    }),
             )
             .when(!state.filters.is_empty(), |parent_div| {
                 parent_div.child(
@@ -368,11 +380,14 @@ impl Render for SearchInput {
                                 })
                                 .cursor(CursorStyle::PointingHand)
                                 .hover(|style| style.bg(theme.tokens.muted))
-                                .on_mouse_down(MouseButton::Left, cx.listener(move |this, _event, _window, cx| {
-                                    this.state.update(cx, |state, cx| {
-                                        state.toggle_filter(idx, cx);
-                                    });
-                                }))
+                                .on_mouse_down(
+                                    MouseButton::Left,
+                                    cx.listener(move |this, _event, _window, cx| {
+                                        this.state.update(cx, |state, cx| {
+                                            state.toggle_filter(idx, cx);
+                                        });
+                                    }),
+                                )
                                 .child(
                                     div()
                                         .text_size(px(12.0))
@@ -381,10 +396,10 @@ impl Render for SearchInput {
                                         } else {
                                             theme.tokens.foreground
                                         })
-                                        .child(filter.label.clone())
+                                        .child(filter.label.clone()),
                                 )
                                 .into_any_element()
-                        }))
+                        })),
                 )
             })
             .map(|this| {

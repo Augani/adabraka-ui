@@ -1,7 +1,5 @@
 use adabraka_ui::{
-    prelude::*,
-    components::scrollable::scrollable_vertical,
-    navigation::toolbar::*,
+    components::scrollable::scrollable_vertical, navigation::toolbar::*, prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

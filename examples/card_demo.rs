@@ -311,7 +311,11 @@ impl Render for CardDemoApp {
 }
 
 // Helper functions for rendering card content
-fn notification_item(message: impl Into<SharedString>, time: impl Into<SharedString>, color: Hsla) -> impl IntoElement {
+fn notification_item(
+    message: impl Into<SharedString>,
+    time: impl Into<SharedString>,
+    color: Hsla,
+) -> impl IntoElement {
     let theme = use_theme();
     let message: SharedString = message.into();
     let time: SharedString = time.into();
@@ -323,12 +327,7 @@ fn notification_item(message: impl Into<SharedString>, time: impl Into<SharedStr
         .p(px(8.0))
         .rounded(theme.tokens.radius_md)
         .hover(|style| style.bg(theme.tokens.muted.opacity(0.5)))
-        .child(
-            div()
-                .size(px(8.0))
-                .rounded(px(4.0))
-                .bg(color)
-        )
+        .child(div().size(px(8.0)).rounded(px(4.0)).bg(color))
         .child(
             VStack::new()
                 .spacing(2.0)
@@ -336,18 +335,23 @@ fn notification_item(message: impl Into<SharedString>, time: impl Into<SharedStr
                     div()
                         .text_size(px(13.0))
                         .text_color(theme.tokens.foreground)
-                        .child(message)
+                        .child(message),
                 )
                 .child(
                     div()
                         .text_size(px(11.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child(time)
-                )
+                        .child(time),
+                ),
         )
 }
 
-fn stat_box(label: impl Into<SharedString>, value: impl Into<SharedString>, change: impl Into<SharedString>, color: Hsla) -> impl IntoElement {
+fn stat_box(
+    label: impl Into<SharedString>,
+    value: impl Into<SharedString>,
+    change: impl Into<SharedString>,
+    color: Hsla,
+) -> impl IntoElement {
     let theme = use_theme();
     let label: SharedString = label.into();
     let value: SharedString = value.into();
@@ -366,26 +370,29 @@ fn stat_box(label: impl Into<SharedString>, value: impl Into<SharedString>, chan
                     div()
                         .text_size(px(12.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child(label)
+                        .child(label),
                 )
                 .child(
                     div()
                         .text_size(px(24.0))
                         .font_weight(FontWeight::BOLD)
                         .text_color(theme.tokens.foreground)
-                        .child(value)
+                        .child(value),
                 )
                 .child(
                     div()
                         .text_size(px(12.0))
                         .font_weight(FontWeight::MEDIUM)
                         .text_color(color)
-                        .child(change)
-                )
+                        .child(change),
+                ),
         )
 }
 
-fn activity_item(message: impl Into<SharedString>, time: impl Into<SharedString>) -> impl IntoElement {
+fn activity_item(
+    message: impl Into<SharedString>,
+    time: impl Into<SharedString>,
+) -> impl IntoElement {
     let theme = use_theme();
     let message: SharedString = message.into();
     let time: SharedString = time.into();
@@ -398,7 +405,7 @@ fn activity_item(message: impl Into<SharedString>, time: impl Into<SharedString>
                 .size(px(8.0))
                 .rounded(px(4.0))
                 .bg(theme.tokens.primary)
-                .mt(px(6.0))
+                .mt(px(6.0)),
         )
         .child(
             VStack::new()
@@ -407,13 +414,13 @@ fn activity_item(message: impl Into<SharedString>, time: impl Into<SharedString>
                     div()
                         .text_size(px(13.0))
                         .text_color(theme.tokens.foreground)
-                        .child(message)
+                        .child(message),
                 )
                 .child(
                     div()
                         .text_size(px(11.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child(time)
-                )
+                        .child(time),
+                ),
         )
 }

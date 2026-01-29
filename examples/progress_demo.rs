@@ -1,13 +1,13 @@
-use gpui::*;
 use adabraka_ui::{
-    theme::{install_theme, Theme, use_theme},
     components::{
-        text::{h1, h2, body, caption},
         button::{Button, ButtonVariant},
-        progress::{ProgressBar, CircularProgress, ProgressVariant, ProgressSize, SpinnerType},
+        progress::{CircularProgress, ProgressBar, ProgressSize, ProgressVariant, SpinnerType},
         scrollable::scrollable_vertical,
+        text::{body, caption, h1, h2},
     },
+    theme::{install_theme, use_theme, Theme},
 };
+use gpui::*;
 
 struct ProgressDemo {
     progress: f32,
@@ -31,7 +31,8 @@ impl Render for ProgressDemo {
 
         // Animate the growing circle progress using frame counter
         self.frame_counter += 1;
-        if self.frame_counter % 10 == 0 { // Update every 10 frames for slower animation
+        if self.frame_counter % 10 == 0 {
+            // Update every 10 frames for slower animation
             self.growing_circle_progress += 0.005; // Slow increment
             if self.growing_circle_progress > 1.0 {
                 self.growing_circle_progress = 0.0; // Reset to create continuous loop

@@ -4,10 +4,7 @@
 //! Note: Due to GPUI limitations with empty text rendering, this demo shows that
 //! the Styled trait is properly implemented and compiles successfully.
 
-use adabraka_ui::{
-    prelude::*,
-    components::text::Text,
-};
+use adabraka_ui::{components::text::Text, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 

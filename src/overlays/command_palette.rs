@@ -1,20 +1,23 @@
 //! Command palette component with fuzzy search.
 
-use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
-use std::rc::Rc;
 use crate::{
-    theme::use_theme,
     components::{
-        text::{body, caption, label_small},
         icon::Icon,
         icon_source::IconSource,
         input::Input,
         input_state::InputState,
         scrollable::scrollable_vertical,
+        text::{body, caption, label_small},
     },
+    theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, InteractiveElement, *};
+use std::rc::Rc;
 
-actions!(command_palette, [NavigateUp, NavigateDown, SelectCommand, CloseCommand]);
+actions!(
+    command_palette,
+    [NavigateUp, NavigateDown, SelectCommand, CloseCommand]
+);
 
 #[derive(Clone)]
 pub struct Command {
@@ -200,9 +203,8 @@ pub struct CommandPalette {
 impl CommandPalette {
     pub fn new(_window: &mut Window, cx: &mut Context<Self>, commands: Vec<Command>) -> Self {
         let state = cx.new(|_| CommandPaletteState::new(commands));
-        let search_input = cx.new(|cx| {
-            InputState::new(cx).placeholder("Type a command or search...")
-        });
+        let search_input =
+            cx.new(|cx| InputState::new(cx).placeholder("Type a command or search..."));
         let focus_handle = cx.focus_handle();
 
         cx.subscribe(&search_input, |this, _input, event, cx| {
@@ -217,7 +219,8 @@ impl CommandPalette {
                 }
                 _ => {}
             }
-        }).detach();
+        })
+        .detach();
 
         Self {
             state,
@@ -264,11 +267,14 @@ impl Render for CommandPalette {
             .items_center()
             .justify_center()
             .bg(gpui::rgba(0x00000088))
-            .on_mouse_down(MouseButton::Left, cx.listener(|this, _event, window, cx| {
-                if let Some(handler) = &this.on_close {
-                    handler(window, cx);
-                }
-            }))
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _event, window, cx| {
+                    if let Some(handler) = &this.on_close {
+                        handler(window, cx);
+                    }
+                }),
+            )
             .track_focus(&self.focus_handle)
             .on_action(cx.listener(|this, _: &NavigateUp, _window, cx| {
                 this.state.update(cx, |state, _cx| {
@@ -283,9 +289,9 @@ impl Render for CommandPalette {
                 cx.notify();
             }))
             .on_action(cx.listener(|this, _: &SelectCommand, window, cx| {
-                let executed = this.state.update(cx, |state, app_cx| {
-                    state.execute_selected(window, app_cx)
-                });
+                let executed = this
+                    .state
+                    .update(cx, |state, app_cx| state.execute_selected(window, app_cx));
                 if executed {
                     if let Some(handler) = &this.on_close {
                         handler(window, cx);
@@ -325,36 +331,32 @@ impl Render for CommandPalette {
                             .border_color(theme.tokens.border)
                             .child(
                                 Input::new(&self.search_input)
-                                    .placeholder("Type a command or search...")
-                            )
+                                    .placeholder("Type a command or search..."),
+                            ),
                     )
                     .child(
-                        div()
-                            .flex_1()
-                            .overflow_hidden()
-                            .child(
-                                scrollable_vertical(
+                        div().flex_1().overflow_hidden().child(scrollable_vertical(
+                            div()
+                                .flex()
+                                .flex_col()
+                                .p(px(8.0))
+                                .children(filtered.is_empty().then(|| {
                                     div()
                                         .flex()
-                                        .flex_col()
-                                        .p(px(8.0))
-                                        .children(
-                                            filtered.is_empty().then(|| {
-                                                div()
-                                                    .flex()
-                                                    .items_center()
-                                                    .justify_center()
-                                                    .h(px(200.0))
-                                                    .child(caption("No commands found").color(theme.tokens.muted_foreground))
-                                                    .into_any_element()
-                                            })
+                                        .items_center()
+                                        .justify_center()
+                                        .h(px(200.0))
+                                        .child(
+                                            caption("No commands found")
+                                                .color(theme.tokens.muted_foreground),
                                         )
-                                        .children(filtered.iter().enumerate().map(|(idx, command)| {
-                                            let is_selected = idx == selected_idx;
-                                            render_command_item(command.clone(), is_selected, cx)
-                                        }))
-                                )
-                            )
+                                        .into_any_element()
+                                }))
+                                .children(filtered.iter().enumerate().map(|(idx, command)| {
+                                    let is_selected = idx == selected_idx;
+                                    render_command_item(command.clone(), is_selected, cx)
+                                })),
+                        )),
                     )
                     .child(
                         div()
@@ -370,11 +372,20 @@ impl Render for CommandPalette {
                                 div()
                                     .flex()
                                     .gap(px(16.0))
-                                    .child(label_small("↑↓ Navigate").color(theme.tokens.muted_foreground))
-                                    .child(label_small("↵ Select").color(theme.tokens.muted_foreground))
-                                    .child(label_small("Esc Close").color(theme.tokens.muted_foreground))
-                            )
-                    )
+                                    .child(
+                                        label_small("↑↓ Navigate")
+                                            .color(theme.tokens.muted_foreground),
+                                    )
+                                    .child(
+                                        label_small("↵ Select")
+                                            .color(theme.tokens.muted_foreground),
+                                    )
+                                    .child(
+                                        label_small("Esc Close")
+                                            .color(theme.tokens.muted_foreground),
+                                    ),
+                            ),
+                    ),
             )
     }
 }
@@ -390,9 +401,7 @@ fn render_command_item(command: Command, selected: bool, _cx: &App) -> impl Into
         .py(px(10.0))
         .rounded(theme.tokens.radius_sm)
         .cursor(CursorStyle::PointingHand)
-        .when(selected, |div| {
-            div.bg(theme.tokens.accent)
-        })
+        .when(selected, |div| div.bg(theme.tokens.accent))
         .when(!selected, |div| {
             div.hover(|style| style.bg(theme.tokens.muted))
         })
@@ -402,15 +411,11 @@ fn render_command_item(command: Command, selected: bool, _cx: &App) -> impl Into
             })
         })
         .when_some(command.icon, |div, icon| {
-            div.child(
-                Icon::new(icon)
-                    .size(px(18.0))
-                    .color(if selected {
-                        theme.tokens.accent_foreground
-                    } else {
-                        theme.tokens.foreground
-                    })
-            )
+            div.child(Icon::new(icon).size(px(18.0)).color(if selected {
+                theme.tokens.accent_foreground
+            } else {
+                theme.tokens.foreground
+            }))
         })
         .child(
             div()
@@ -418,42 +423,34 @@ fn render_command_item(command: Command, selected: bool, _cx: &App) -> impl Into
                 .flex()
                 .flex_col()
                 .gap(px(2.0))
-                .child(
-                    body(command.name).color(if selected {
-                        theme.tokens.accent_foreground
-                    } else {
-                        theme.tokens.foreground
-                    })
-                )
+                .child(body(command.name).color(if selected {
+                    theme.tokens.accent_foreground
+                } else {
+                    theme.tokens.foreground
+                }))
                 .when_some(command.description, |div, desc| {
-                    div.child(
-                        caption(desc).color(if selected {
-                            theme.tokens.accent_foreground.opacity(0.8)
-                        } else {
-                            theme.tokens.muted_foreground
-                        })
-                    )
-                })
-        )
-        .children(
-            command.shortcut.map(|shortcut| {
-                div()
-                    .px(px(8.0))
-                    .py(px(4.0))
-                    .rounded(theme.tokens.radius_sm)
-                    .bg(if selected {
-                        theme.tokens.accent_foreground.opacity(0.2)
+                    div.child(caption(desc).color(if selected {
+                        theme.tokens.accent_foreground.opacity(0.8)
                     } else {
-                        theme.tokens.muted
-                    })
-                    .child(
-                        caption(shortcut).color(if selected {
-                            theme.tokens.accent_foreground
-                        } else {
-                            theme.tokens.muted_foreground
-                        })
-                    )
-                    .into_any_element()
-            })
+                        theme.tokens.muted_foreground
+                    }))
+                }),
         )
+        .children(command.shortcut.map(|shortcut| {
+            div()
+                .px(px(8.0))
+                .py(px(4.0))
+                .rounded(theme.tokens.radius_sm)
+                .bg(if selected {
+                    theme.tokens.accent_foreground.opacity(0.2)
+                } else {
+                    theme.tokens.muted
+                })
+                .child(caption(shortcut).color(if selected {
+                    theme.tokens.accent_foreground
+                } else {
+                    theme.tokens.muted_foreground
+                }))
+                .into_any_element()
+        }))
 }

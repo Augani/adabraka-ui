@@ -1,10 +1,10 @@
 //! Select component - Dropdown select with keyboard navigation.
 
-use gpui::{prelude::*, *};
-use crate::theme::use_theme;
-use crate::components::scrollable::scrollable_vertical;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
+use crate::components::scrollable::scrollable_vertical;
+use crate::theme::use_theme;
+use gpui::{prelude::*, *};
 
 actions!(select, [SelectUp, SelectDown, SelectConfirm, SelectCancel]);
 
@@ -119,7 +119,10 @@ impl<T: Clone + 'static> Select<T> {
         self
     }
 
-    pub fn on_change<F: Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>(mut self, f: F) -> Self {
+    pub fn on_change<F: Fn(&T, &mut Window, &mut App) + Send + Sync + 'static>(
+        mut self,
+        f: F,
+    ) -> Self {
         self.on_change = Some(Box::new(f));
         self
     }
@@ -130,11 +133,15 @@ impl<T: Clone + 'static> Select<T> {
     }
 
     pub fn selected_value(&self) -> Option<&T> {
-        self.selected_index.and_then(|i| self.options.get(i)).map(|opt| &opt.value)
+        self.selected_index
+            .and_then(|i| self.options.get(i))
+            .map(|opt| &opt.value)
     }
 
     pub fn selected_label(&self) -> Option<&SharedString> {
-        self.selected_index.and_then(|i| self.options.get(i)).map(|opt| &opt.label)
+        self.selected_index
+            .and_then(|i| self.options.get(i))
+            .map(|opt| &opt.label)
     }
 
     fn filtered_options(&self) -> Vec<(usize, &SelectOption<T>)> {
@@ -145,9 +152,7 @@ impl<T: Clone + 'static> Select<T> {
             self.options
                 .iter()
                 .enumerate()
-                .filter(|(_, opt)| {
-                    opt.label.to_lowercase().contains(&query_lower)
-                })
+                .filter(|(_, opt)| opt.label.to_lowercase().contains(&query_lower))
                 .collect()
         }
     }
@@ -205,9 +210,9 @@ impl<T: Clone + 'static> Select<T> {
             return;
         }
 
-        let current_pos = self.highlighted_index.and_then(|idx| {
-            filtered.iter().position(|(orig_idx, _)| *orig_idx == idx)
-        });
+        let current_pos = self
+            .highlighted_index
+            .and_then(|idx| filtered.iter().position(|(orig_idx, _)| *orig_idx == idx));
 
         let new_pos = match current_pos {
             Some(0) => filtered.len() - 1,
@@ -229,9 +234,9 @@ impl<T: Clone + 'static> Select<T> {
             return;
         }
 
-        let current_pos = self.highlighted_index.and_then(|idx| {
-            filtered.iter().position(|(orig_idx, _)| *orig_idx == idx)
-        });
+        let current_pos = self
+            .highlighted_index
+            .and_then(|idx| filtered.iter().position(|(orig_idx, _)| *orig_idx == idx));
 
         let new_pos = match current_pos {
             Some(pos) if pos < filtered.len() - 1 => pos + 1,
@@ -271,7 +276,8 @@ impl<T: Clone + 'static> Render for Select<T> {
         let theme = use_theme();
         let user_style = self.style.clone();
 
-        let display_text = self.selected_label()
+        let display_text = self
+            .selected_label()
             .cloned()
             .or_else(|| self.placeholder.clone())
             .unwrap_or_else(|| "Select...".into());
@@ -280,7 +286,8 @@ impl<T: Clone + 'static> Render for Select<T> {
         let highlighted_idx = self.highlighted_index;
         let bounds = self.bounds;
 
-        let maybe_selected_icon: Option<IconSource> = self.selected_index
+        let maybe_selected_icon: Option<IconSource> = self
+            .selected_index
             .and_then(|i| self.options.get(i))
             .and_then(|opt| opt.icon.clone());
         let leading_icon = self.leading_icon.clone().or(maybe_selected_icon);
@@ -295,7 +302,11 @@ impl<T: Clone + 'static> Render for Select<T> {
             .px(px(12.0))
             .bg(theme.tokens.background)
             .border_1()
-            .border_color(if open { theme.tokens.ring } else { theme.tokens.input })
+            .border_color(if open {
+                theme.tokens.ring
+            } else {
+                theme.tokens.input
+            })
             .rounded(theme.tokens.radius_md)
             .text_color(if self.selected_index.is_some() {
                 theme.tokens.foreground
@@ -304,16 +315,23 @@ impl<T: Clone + 'static> Render for Select<T> {
             })
             .text_size(px(14.0))
             .font_family(theme.tokens.font_family.clone())
-            .cursor(if self.disabled { CursorStyle::Arrow } else { CursorStyle::PointingHand })
+            .cursor(if self.disabled {
+                CursorStyle::Arrow
+            } else {
+                CursorStyle::PointingHand
+            })
             .when(!self.disabled, |div: Stateful<Div>| {
                 div.hover(|mut style| {
-                    style.border_color = Some(theme.tokens.ring.into());
+                    style.border_color = Some(theme.tokens.ring);
                     style
                 })
             })
-            .on_mouse_down(MouseButton::Left, cx.listener(|this, _, window, cx| {
-                this.toggle_dropdown(window, cx);
-            }))
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _, window, cx| {
+                    this.toggle_dropdown(window, cx);
+                }),
+            )
             .child(
                 div()
                     .flex()
@@ -323,10 +341,10 @@ impl<T: Clone + 'static> Render for Select<T> {
                         div.child(
                             Icon::new(src.clone())
                                 .size(px(14.0))
-                                .color(theme.tokens.muted_foreground)
+                                .color(theme.tokens.muted_foreground),
                         )
                     })
-                    .child(display_text)
+                    .child(display_text),
             )
             .child(
                 div()
@@ -348,13 +366,16 @@ impl<T: Clone + 'static> Render for Select<T> {
                                     style.background = Some(theme.tokens.muted.into());
                                     style
                                 })
-                                .on_mouse_down(MouseButton::Left, cx.listener(|this, _event: &MouseDownEvent, window, cx| {
-                                    this.clear_selection(window, cx);
-                                }))
+                                .on_mouse_down(
+                                    MouseButton::Left,
+                                    cx.listener(|this, _event: &MouseDownEvent, window, cx| {
+                                        this.clear_selection(window, cx);
+                                    }),
+                                )
                                 .child(
                                     Icon::new("x")
                                         .size(px(14.0))
-                                        .color(theme.tokens.muted_foreground)
+                                        .color(theme.tokens.muted_foreground),
                                 )
                                 .into_any_element()
                         } else {
@@ -365,11 +386,11 @@ impl<T: Clone + 'static> Render for Select<T> {
                                 .child(
                                     Icon::new(if open { "arrow-up" } else { "arrow-down" })
                                         .size(px(14.0))
-                                        .color(theme.tokens.muted_foreground)
+                                        .color(theme.tokens.muted_foreground),
                                 )
                                 .into_any_element()
-                        }
-                    )
+                        },
+                    ),
             )
             .child({
                 let entity = cx.entity().clone();

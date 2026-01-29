@@ -1,9 +1,5 @@
+use adabraka_ui::{layout::VStack, navigation::app_menu::*, theme::use_theme};
 use gpui::{prelude::FluentBuilder as _, *};
-use adabraka_ui::{
-    navigation::app_menu::*,
-    layout::VStack,
-    theme::use_theme,
-};
 
 // Define all the actions our app will use
 actions!(
@@ -403,7 +399,7 @@ fn main() {
                         AppMenu::new("Recent Files")
                             .action("project1.txt", OpenFile)
                             .action("project2.txt", OpenFile)
-                            .action("project3.txt", OpenFile)
+                            .action("project3.txt", OpenFile),
                     )
                     .separator()
                     .action("Save", SaveFile)
@@ -411,7 +407,7 @@ fn main() {
                     .separator()
                     .action("Close File", CloseFile)
                     .separator()
-                    .action("Quit", Quit)
+                    .action("Quit", Quit),
             )
             // Edit menu
             .menu(
@@ -426,7 +422,7 @@ fn main() {
                     .action("Select All", SelectAll)
                     .separator()
                     .action("Find", Find)
-                    .action("Replace", Replace)
+                    .action("Replace", Replace),
             )
             // View menu
             .menu(
@@ -438,13 +434,13 @@ fn main() {
                     .action("Zoom Out", ZoomOut)
                     .action("Reset Zoom", ZoomReset)
                     .separator()
-                    .action("Full Screen", FullScreen)
+                    .action("Full Screen", FullScreen),
             )
             // Window menu
             .menu(
                 window_menu()
                     .action("Minimize", Minimize)
-                    .action("New Window", NewWindow)
+                    .action("New Window", NewWindow),
             )
             // Help menu
             .menu(
@@ -452,7 +448,7 @@ fn main() {
                     .action("Documentation", Documentation)
                     .action("Report an Issue", ReportIssue)
                     .separator()
-                    .action("About", About)
+                    .action("About", About),
             );
 
         // Set the menus on the application
@@ -476,11 +472,13 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| cx.new(|cx| {
-                let view = AppMenuDemo::new(cx);
-                window.focus(&view.focus);
-                view
-            }),
+            |window, cx| {
+                cx.new(|cx| {
+                    let view = AppMenuDemo::new(cx);
+                    window.focus(&view.focus);
+                    view
+                })
+            },
         )
         .unwrap();
     });

@@ -1,11 +1,15 @@
 //! Text field component - Simple text input field.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 use std::ops::Range;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-pub enum TextFieldSize { Sm, Md, Lg }
+pub enum TextFieldSize {
+    Sm,
+    Md,
+    Lg,
+}
 
 pub struct TextFieldState {
     focus_handle: FocusHandle,
@@ -167,7 +171,7 @@ pub struct TextField {
 
 impl TextField {
     pub fn new(cx: &mut App) -> Self {
-        let state = cx.new(|cx| TextFieldState::new(cx));
+        let state = cx.new(TextFieldState::new);
         Self {
             state,
             size: TextFieldSize::Md,
@@ -256,84 +260,79 @@ impl RenderOnce for TextField {
             base = base.opacity(0.5);
         }
 
-        base
-            .map(|this| {
-                let mut div = this;
-                div.style().refine(&user_style);
-                div
-            })
-            .child(
-                div()
-                    .size_full()
-                    .flex()
-                    .items_center()
-                    .child(
-                        canvas(
-                            move |bounds, window, cx| {
-                                let focus_handle = focus_handle.clone();
-                                window.handle_input(
-                                    &focus_handle,
-                                    ElementInputHandler::new(bounds, self.state.clone()),
-                                    cx,
-                                );
-                            },
-                            move |bounds, _data, window, cx| {
-                                if !text_content.is_empty() {
-                                    let text_style = window.text_style();
-                                    let text_run = TextRun {
-                                        len: text_content.len(),
-                                        font: text_style.font(),
-                                        color: theme.tokens.foreground,
-                                        background_color: None,
-                                        underline: None,
-                                        strikethrough: None,
-                                    };
+        base.map(|this| {
+            let mut div = this;
+            div.style().refine(&user_style);
+            div
+        })
+        .child(
+            div().size_full().flex().items_center().child(
+                canvas(
+                    move |bounds, window, cx| {
+                        let focus_handle = focus_handle.clone();
+                        window.handle_input(
+                            &focus_handle,
+                            ElementInputHandler::new(bounds, self.state.clone()),
+                            cx,
+                        );
+                    },
+                    move |bounds, _data, window, cx| {
+                        if !text_content.is_empty() {
+                            let text_style = window.text_style();
+                            let text_run = TextRun {
+                                len: text_content.len(),
+                                font: text_style.font(),
+                                color: theme.tokens.foreground,
+                                background_color: None,
+                                underline: None,
+                                strikethrough: None,
+                            };
 
-                                    let shaped = window.text_system().shape_line(
-                                        text_content.clone().into(),
-                                        text_size,
-                                        &[text_run],
-                                        None,
-                                    );
+                            let shaped = window.text_system().shape_line(
+                                text_content.clone().into(),
+                                text_size,
+                                &[text_run],
+                                None,
+                            );
 
-                                    let _ = shaped.paint(
-                                        point(bounds.left(), bounds.top()),
-                                        height,
-                                        window,
-                                        cx,
-                                    );
-                                } else if let Some(placeholder) = &self.placeholder {
-                                    let text_style = window.text_style();
-                                    let text_run = TextRun {
-                                        len: placeholder.len(),
-                                        font: text_style.font(),
-                                        color: theme.tokens.muted_foreground,
-                                        background_color: None,
-                                        underline: None,
-                                        strikethrough: None,
-                                    };
+                            let _ = shaped.paint(
+                                point(bounds.left(), bounds.top()),
+                                height,
+                                window,
+                                cx,
+                            );
+                        } else if let Some(placeholder) = &self.placeholder {
+                            let text_style = window.text_style();
+                            let text_run = TextRun {
+                                len: placeholder.len(),
+                                font: text_style.font(),
+                                color: theme.tokens.muted_foreground,
+                                background_color: None,
+                                underline: None,
+                                strikethrough: None,
+                            };
 
-                                    let shaped = window.text_system().shape_line(
-                                        placeholder.clone().into(),
-                                        text_size,
-                                        &[text_run],
-                                        None,
-                                    );
+                            let shaped = window.text_system().shape_line(
+                                placeholder.clone(),
+                                text_size,
+                                &[text_run],
+                                None,
+                            );
 
-                                    let _ = shaped.paint(
-                                        point(bounds.left(), bounds.top()),
-                                        height,
-                                        window,
-                                        cx,
-                                    );
-                                }
-                            },
-                        )
-                        .size_full(),
-                    ),
-            )
-            .on_mouse_down(MouseButton::Left, move |_event, window, _cx| {
-                window.focus(&focus_handle_for_mouse);
-            })
+                            let _ = shaped.paint(
+                                point(bounds.left(), bounds.top()),
+                                height,
+                                window,
+                                cx,
+                            );
+                        }
+                    },
+                )
+                .size_full(),
+            ),
+        )
+        .on_mouse_down(MouseButton::Left, move |_event, window, _cx| {
+            window.focus(&focus_handle_for_mouse);
+        })
     }
 }

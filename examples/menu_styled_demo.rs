@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
     navigation::menu::{Menu, MenuItem},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -105,12 +105,9 @@ impl MenuStyledDemo {
 
     fn compact_menu_items() -> Vec<MenuItem> {
         vec![
-            MenuItem::new("cut", "Cut")
-                .with_shortcut("Cmd+X"),
-            MenuItem::new("copy", "Copy")
-                .with_shortcut("Cmd+C"),
-            MenuItem::new("paste", "Paste")
-                .with_shortcut("Cmd+V"),
+            MenuItem::new("cut", "Cut").with_shortcut("Cmd+X"),
+            MenuItem::new("copy", "Copy").with_shortcut("Cmd+C"),
+            MenuItem::new("paste", "Paste").with_shortcut("Cmd+V"),
         ]
     }
 }

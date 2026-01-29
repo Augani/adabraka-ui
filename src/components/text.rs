@@ -1,7 +1,7 @@
 //! Text component - Typography with theming and semantic variants.
 
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 /// Text variants for semantic typography
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -207,7 +207,8 @@ impl Text {
 
     /// Get the effective line height
     fn effective_line_height(&self) -> f32 {
-        self.line_height.unwrap_or_else(|| self.variant.line_height())
+        self.line_height
+            .unwrap_or_else(|| self.variant.line_height())
     }
 }
 
@@ -259,8 +260,7 @@ impl RenderOnce for Text {
             StyledText::new(self.content.clone())
         };
 
-        base
-            .font_family(font_family)
+        base.font_family(font_family)
             .text_size(size)
             .font_weight(weight)
             .text_color(text_color)
@@ -271,8 +271,6 @@ impl RenderOnce for Text {
             .child(styled_text)
     }
 }
-
-/// Builder-style shortcuts for common text patterns
 
 /// Create heading 1 text
 pub fn h1<S: Into<SharedString>>(content: S) -> Text {

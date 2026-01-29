@@ -3,23 +3,18 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
-use crate::theme::use_theme;
-use crate::components::text::{Text, TextVariant};
 use crate::animations::presets;
+use crate::components::text::{Text, TextVariant};
+use crate::theme::use_theme;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum BottomSheetSize {
     Sm,
+    #[default]
     Md,
     Lg,
     Xl,
     Custom,
-}
-
-impl Default for BottomSheetSize {
-    fn default() -> Self {
-        Self::Md
-    }
 }
 
 impl BottomSheetSize {
@@ -136,7 +131,8 @@ impl Styled for BottomSheet {
 impl RenderOnce for BottomSheet {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
-        let has_header = self.title.is_some() || self.description.is_some() || self.actions.is_some();
+        let has_header =
+            self.title.is_some() || self.description.is_some() || self.actions.is_some();
         let sheet_height = self.get_sheet_height();
         let on_close = self.on_close.clone();
         let user_style = self.style;
@@ -196,8 +192,8 @@ impl RenderOnce for BottomSheet {
                                             .w(px(40.0))
                                             .h(px(4.0))
                                             .bg(theme.tokens.muted.opacity(0.5))
-                                            .rounded(px(2.0))
-                                    )
+                                            .rounded(px(2.0)),
+                                    ),
                             )
                         })
                         .when(has_header, |this| {
@@ -218,46 +214,34 @@ impl RenderOnce for BottomSheet {
                                             .gap(px(4.0))
                                             .when_some(self.title, |this: Div, title| {
                                                 this.child(
-                                                    Text::new(title)
-                                                        .variant(TextVariant::H4)
+                                                    Text::new(title).variant(TextVariant::H4),
                                                 )
                                             })
                                             .when_some(self.description, |this: Div, desc| {
                                                 this.child(
                                                     Text::new(desc)
                                                         .variant(TextVariant::Caption)
-                                                        .color(theme.tokens.muted_foreground)
+                                                        .color(theme.tokens.muted_foreground),
                                                 )
-                                            })
+                                            }),
                                     )
                                     .when_some(self.actions, |this: Div, actions| {
                                         this.child(
-                                            div()
-                                                .flex()
-                                                .items_center()
-                                                .gap(px(8.0))
-                                                .child(actions)
+                                            div().flex().items_center().gap(px(8.0)).child(actions),
                                         )
-                                    })
+                                    }),
                             )
                         })
                         .when_some(self.content, |this, content| {
-                            this.child(
-                                div()
-                                    .flex_1()
-                                    .overflow_hidden()
-                                    .child(content)
-                            )
+                            this.child(div().flex_1().overflow_hidden().child(content))
                         })
                         .on_mouse_down(MouseButton::Left, |_, _, _| {})
                         .with_animation(
                             "bottom-sheet-slide",
                             presets::slide_in_bottom(),
-                            |div, delta| {
-                                div.mb(px(-600.0 * (1.0 - delta)))
-                            }
-                        )
-                )
+                            |div, delta| div.mb(px(-600.0 * (1.0 - delta))),
+                        ),
+                ),
         )
         .with_priority(1)
     }

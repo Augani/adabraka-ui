@@ -3,8 +3,8 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
 
 #[derive(IntoElement)]
 pub struct Pagination {
@@ -154,11 +154,10 @@ impl RenderOnce for Pagination {
             })
             .children({
                 let on_change_for_pages = on_change.clone();
-                page_range.into_iter().map(move |item| {
-                    match item {
-                        PageItem::Page(page) => {
-                            let is_current = page == current_page;
-                            let handler = on_change_for_pages.clone();
+                page_range.into_iter().map(move |item| match item {
+                    PageItem::Page(page) => {
+                        let is_current = page == current_page;
+                        let handler = on_change_for_pages.clone();
 
                         div()
                             .child(
@@ -175,23 +174,20 @@ impl RenderOnce for Pagination {
                                         btn.on_click(move |_, window, cx| {
                                             handler(page, window, cx);
                                         })
-                                    })
+                                    }),
                             )
                             .into_any_element()
                     }
-                    PageItem::Ellipsis => {
-                        div()
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .h(px(36.0))
-                            .w(px(36.0))
-                            .text_color(theme.tokens.muted_foreground)
-                            .child("...")
-                            .into_any_element()
-                    }
-                }
-            })
+                    PageItem::Ellipsis => div()
+                        .flex()
+                        .items_center()
+                        .justify_center()
+                        .h(px(36.0))
+                        .w(px(36.0))
+                        .text_color(theme.tokens.muted_foreground)
+                        .child("...")
+                        .into_any_element(),
+                })
             })
             .child({
                 let handler = on_change;

@@ -1,7 +1,7 @@
 use adabraka_ui::{
-    prelude::*,
     components::scrollable::scrollable_vertical,
     navigation::tree::{TreeList, TreeNode},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -75,28 +75,24 @@ impl TreeStyledDemo {
     }
 
     fn create_sample_tree() -> Vec<TreeNode<String>> {
-        vec![
-            TreeNode::new("root".to_string(), "Project Root")
-                .with_icon("folder")
-                .with_children(vec![
-                    TreeNode::new("folder1".to_string(), "src")
-                        .with_icon("folder")
-                        .with_children(vec![
-                            TreeNode::new("file1".to_string(), "main.rs")
-                                .with_icon("file"),
-                            TreeNode::new("file2".to_string(), "lib.rs")
-                                .with_icon("file"),
-                        ]),
-                    TreeNode::new("folder2".to_string(), "tests")
-                        .with_icon("folder")
-                        .with_children(vec![
-                            TreeNode::new("test1".to_string(), "integration_test.rs")
-                                .with_icon("file"),
-                        ]),
-                    TreeNode::new("file3".to_string(), "Cargo.toml")
-                        .with_icon("file"),
-                ]),
-        ]
+        vec![TreeNode::new("root".to_string(), "Project Root")
+            .with_icon("folder")
+            .with_children(vec![
+                TreeNode::new("folder1".to_string(), "src")
+                    .with_icon("folder")
+                    .with_children(vec![
+                        TreeNode::new("file1".to_string(), "main.rs").with_icon("file"),
+                        TreeNode::new("file2".to_string(), "lib.rs").with_icon("file"),
+                    ]),
+                TreeNode::new("folder2".to_string(), "tests")
+                    .with_icon("folder")
+                    .with_children(vec![TreeNode::new(
+                        "test1".to_string(),
+                        "integration_test.rs",
+                    )
+                    .with_icon("file")]),
+                TreeNode::new("file3".to_string(), "Cargo.toml").with_icon("file"),
+            ])]
     }
 }
 

@@ -1,6 +1,6 @@
 use adabraka_ui::{
-    prelude::*,
     overlays::command_palette::{Command, CommandPalette},
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;

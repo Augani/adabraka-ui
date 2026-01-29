@@ -1,10 +1,13 @@
-use gpui::*;
 use adabraka_ui::{
-    navigation::sidebar::{Sidebar, SidebarItem, SidebarVariant, SidebarPosition},
-    components::{icon_source::IconSource, resizable::{ResizableState, h_resizable, resizable_panel}},
+    components::{
+        icon_source::IconSource,
+        resizable::{h_resizable, resizable_panel, ResizableState},
+    },
     layout::VStack,
+    navigation::sidebar::{Sidebar, SidebarItem, SidebarPosition, SidebarVariant},
     theme::use_theme,
 };
+use gpui::*;
 
 struct SidebarDemo {
     selected_sidebar_item: Option<String>,
@@ -154,7 +157,9 @@ impl Render for SidebarDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
             adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
             adabraka_ui::init(cx);

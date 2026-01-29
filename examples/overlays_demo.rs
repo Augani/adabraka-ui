@@ -1,12 +1,12 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    overlays::dialog::DialogSize,
-    overlays::popover::{Popover, PopoverContent},
-    overlays::toast::{ToastManager, ToastItem, ToastVariant, ToastPosition},
     components::button::{Button, ButtonVariant},
     layout::VStack,
+    overlays::dialog::DialogSize,
+    overlays::popover::{Popover, PopoverContent},
+    overlays::toast::{ToastItem, ToastManager, ToastPosition, ToastVariant},
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 actions!(overlays_demo, [Quit]);
@@ -30,7 +30,14 @@ impl OverlaysDemo {
         }
     }
 
-    fn add_toast(&mut self, variant: ToastVariant, title: impl Into<SharedString>, description: Option<impl Into<SharedString>>, window: &mut Window, cx: &mut Context<Self>) {
+    fn add_toast(
+        &mut self,
+        variant: ToastVariant,
+        title: impl Into<SharedString>,
+        description: Option<impl Into<SharedString>>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let id = TOAST_ID_COUNTER.fetch_add(1, Ordering::SeqCst);
         let mut toast = ToastItem::new(id, title).variant(variant);
 

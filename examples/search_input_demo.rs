@@ -1,9 +1,9 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    components::search_input::{SearchInput, SearchInputState, SearchFilter},
+    components::search_input::{SearchFilter, SearchInput, SearchInputState},
     layout::VStack,
     theme::use_theme,
 };
+use gpui::{prelude::FluentBuilder as _, *};
 
 actions!(search_input_demo, [Quit]);
 
@@ -31,37 +31,49 @@ impl SearchInputDemo {
             "examples/input_demo.rs",
             "tests/button_test.rs",
             "tests/input_test.rs",
-        ].into_iter().map(String::from).collect::<Vec<_>>();
+        ]
+        .into_iter()
+        .map(String::from)
+        .collect::<Vec<_>>();
 
         let entity = cx.entity().clone();
 
         let search = cx.new(|cx| {
             SearchInput::new(cx)
-                .filters(vec![
-                    SearchFilter::new("*.rs", "rs"),
-                    SearchFilter::new("*.toml", "toml"),
-                    SearchFilter::new("*.md", "md"),
-                    SearchFilter::new("src/", "src"),
-                    SearchFilter::new("examples/", "examples"),
-                    SearchFilter::new("tests/", "tests"),
-                ], cx)
-                .on_search({
-                    let entity = entity.clone();
-                    move |query, app_cx: &mut App| {
-                        app_cx.update_entity(&entity, |this: &mut SearchInputDemo, cx| {
-                            this.handle_search(query, cx);
-                        });
-                    }
-                }, cx)
-                .on_filter_toggle({
-                    let entity = entity.clone();
-                    move |_idx, app_cx: &mut App| {
-                        app_cx.update_entity(&entity, |this: &mut SearchInputDemo, cx| {
-                            let query = this.current_query.clone();
-                            this.handle_search(&query, cx);
-                        });
-                    }
-                }, cx)
+                .filters(
+                    vec![
+                        SearchFilter::new("*.rs", "rs"),
+                        SearchFilter::new("*.toml", "toml"),
+                        SearchFilter::new("*.md", "md"),
+                        SearchFilter::new("src/", "src"),
+                        SearchFilter::new("examples/", "examples"),
+                        SearchFilter::new("tests/", "tests"),
+                    ],
+                    cx,
+                )
+                .on_search(
+                    {
+                        let entity = entity.clone();
+                        move |query, app_cx: &mut App| {
+                            app_cx.update_entity(&entity, |this: &mut SearchInputDemo, cx| {
+                                this.handle_search(query, cx);
+                            });
+                        }
+                    },
+                    cx,
+                )
+                .on_filter_toggle(
+                    {
+                        let entity = entity.clone();
+                        move |_idx, app_cx: &mut App| {
+                            app_cx.update_entity(&entity, |this: &mut SearchInputDemo, cx| {
+                                let query = this.current_query.clone();
+                                this.handle_search(&query, cx);
+                            });
+                        }
+                    },
+                    cx,
+                )
         });
 
         Self {
@@ -76,7 +88,11 @@ impl SearchInputDemo {
         self.current_query = query.to_string();
 
         // Get active filters
-        let active_filters: Vec<String> = self.search.read(cx).state().read(cx)
+        let active_filters: Vec<String> = self
+            .search
+            .read(cx)
+            .state()
+            .read(cx)
             .active_filters()
             .iter()
             .map(|f| f.value.to_string())
@@ -85,7 +101,9 @@ impl SearchInputDemo {
         let case_sensitive = self.search.read(cx).state().read(cx).case_sensitive();
 
         // Filter results
-        self.filtered_results = self.results.iter()
+        self.filtered_results = self
+            .results
+            .iter()
             .filter(|item| {
                 // Check if matches query
                 let matches_query = if query.is_empty() {
@@ -128,9 +146,11 @@ impl SearchInputDemo {
 
         // Update results count
         self.search.update(cx, |_search: &mut SearchInput, cx| {
-            _search.state().update(cx, |state: &mut SearchInputState, cx| {
-                state.set_results_count(Some(self.filtered_results.len()), cx);
-            });
+            _search
+                .state()
+                .update(cx, |state: &mut SearchInputState, cx| {
+                    state.set_results_count(Some(self.filtered_results.len()), cx);
+                });
         });
 
         cx.notify();
@@ -381,9 +401,7 @@ fn main() {
         // Set up actions
         cx.on_action(|_: &Quit, cx| cx.quit());
 
-        cx.bind_keys([
-            KeyBinding::new("cmd-q", Quit, None),
-        ]);
+        cx.bind_keys([KeyBinding::new("cmd-q", Quit, None)]);
         cx.activate(true);
 
         // Create window

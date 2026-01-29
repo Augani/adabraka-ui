@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
         drag_drop::{DragData, Draggable, DropZone, DropZoneStyle},
         scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::{prelude::FluentBuilder as _, *};
 use std::path::PathBuf;
@@ -81,10 +81,10 @@ enum Priority {
 impl Priority {
     fn color(&self) -> Hsla {
         match self {
-            Priority::Low => rgb(0x10b981).into(),      // green
-            Priority::Medium => rgb(0x3b82f6).into(),   // blue
-            Priority::High => rgb(0xf59e0b).into(),     // amber
-            Priority::Urgent => rgb(0xef4444).into(),   // red
+            Priority::Low => rgb(0x10b981).into(),    // green
+            Priority::Medium => rgb(0x3b82f6).into(), // blue
+            Priority::High => rgb(0xf59e0b).into(),   // amber
+            Priority::Urgent => rgb(0xef4444).into(), // red
         }
     }
 
@@ -124,20 +124,16 @@ impl DragDropStyledDemo {
                     priority: Priority::Low,
                 },
             ],
-            in_progress: vec![
-                Task {
-                    id: 4,
-                    title: "Implement dark mode".to_string(),
-                    priority: Priority::Medium,
-                },
-            ],
-            completed: vec![
-                Task {
-                    id: 5,
-                    title: "Set up CI/CD pipeline".to_string(),
-                    priority: Priority::High,
-                },
-            ],
+            in_progress: vec![Task {
+                id: 4,
+                title: "Implement dark mode".to_string(),
+                priority: Priority::Medium,
+            }],
+            completed: vec![Task {
+                id: 5,
+                title: "Set up CI/CD pipeline".to_string(),
+                priority: Priority::High,
+            }],
         }
     }
 }
@@ -258,7 +254,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child(title)
+                            .child(title),
                     )
                     .child(
                         div()
@@ -269,8 +265,8 @@ impl DragDropStyledDemo {
                             .text_color(accent_color)
                             .text_size(px(12.0))
                             .font_weight(FontWeight::MEDIUM)
-                            .child(format!("{}", tasks.len()))
-                    )
+                            .child(format!("{}", tasks.len())),
+                    ),
             )
             .child(
                 // Drop zone with custom styling
@@ -315,8 +311,8 @@ impl DragDropStyledDemo {
                                             div()
                                                 .text_size(px(14.0))
                                                 .text_color(theme.tokens.muted_foreground)
-                                                .child("Drop tasks here")
-                                        )
+                                                .child("Drop tasks here"),
+                                        ),
                                 )
                             })
                             .children(tasks.iter().enumerate().map(|(ix, task)| {
@@ -348,7 +344,7 @@ impl DragDropStyledDemo {
                                                 div()
                                                     .text_size(px(14.0))
                                                     .font_weight(FontWeight::MEDIUM)
-                                                    .child(task.title.clone())
+                                                    .child(task.title.clone()),
                                             )
                                             .child(
                                                 div()
@@ -360,18 +356,20 @@ impl DragDropStyledDemo {
                                                             .w(px(8.0))
                                                             .h(px(8.0))
                                                             .rounded(px(4.0))
-                                                            .bg(task.priority.color())
+                                                            .bg(task.priority.color()),
                                                     )
                                                     .child(
                                                         div()
                                                             .text_size(px(12.0))
-                                                            .text_color(theme.tokens.muted_foreground)
-                                                            .child(task.priority.label())
-                                                    )
-                                            )
+                                                            .text_color(
+                                                                theme.tokens.muted_foreground,
+                                                            )
+                                                            .child(task.priority.label()),
+                                                    ),
+                                            ),
                                     )
-                            }))
-                    )
+                            })),
+                    ),
             )
     }
 
@@ -389,7 +387,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("1. Gradient Background Draggables")
+                            .child("1. Gradient Background Draggables"),
                     )
                     .child(
                         HStack::new()
@@ -410,8 +408,8 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(gpui::white())
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("Purple Gradient")
-                                    )
+                                            .child("Purple Gradient"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("gradient-2", DragData::new("Item 2".to_string()))
@@ -429,8 +427,8 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(gpui::white())
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("Pink Gradient")
-                                    )
+                                            .child("Pink Gradient"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("gradient-3", DragData::new("Item 3".to_string()))
@@ -448,10 +446,10 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(gpui::white())
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("Cyan Gradient")
-                                    )
-                            )
-                    )
+                                            .child("Cyan Gradient"),
+                                    ),
+                            ),
+                    ),
             )
             // Variation 2: Large shadow drop zones
             .child(
@@ -461,7 +459,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("2. Large Shadow Drop Zones")
+                            .child("2. Large Shadow Drop Zones"),
                     )
                     .child(
                         HStack::new()
@@ -481,8 +479,8 @@ impl DragDropStyledDemo {
                                         div()
                                             .text_size(px(13.0))
                                             .text_color(theme.tokens.muted_foreground)
-                                            .child("Drop Zone 1")
-                                    )
+                                            .child("Drop Zone 1"),
+                                    ),
                             )
                             .child(
                                 DropZone::<String>::new("shadow-zone-2")
@@ -499,10 +497,10 @@ impl DragDropStyledDemo {
                                         div()
                                             .text_size(px(13.0))
                                             .text_color(theme.tokens.muted_foreground)
-                                            .child("Drop Zone 2")
-                                    )
-                            )
-                    )
+                                            .child("Drop Zone 2"),
+                                    ),
+                            ),
+                    ),
             )
             // Variation 3: Rounded and bordered draggables
             .child(
@@ -512,7 +510,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("3. Rounded and Bordered Draggables")
+                            .child("3. Rounded and Bordered Draggables"),
                     )
                     .child(
                         HStack::new()
@@ -530,8 +528,8 @@ impl DragDropStyledDemo {
                                             .text_color(Hsla::from(rgb(0x10b981)))
                                             .font_weight(FontWeight::MEDIUM)
                                             .text_size(px(13.0))
-                                            .child("Success Tag")
-                                    )
+                                            .child("Success Tag"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("border-2", DragData::new("Tag".to_string()))
@@ -546,8 +544,8 @@ impl DragDropStyledDemo {
                                             .text_color(Hsla::from(rgb(0xf59e0b)))
                                             .font_weight(FontWeight::MEDIUM)
                                             .text_size(px(13.0))
-                                            .child("Warning Tag")
-                                    )
+                                            .child("Warning Tag"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("border-3", DragData::new("Tag".to_string()))
@@ -562,10 +560,10 @@ impl DragDropStyledDemo {
                                             .text_color(Hsla::from(rgb(0xef4444)))
                                             .font_weight(FontWeight::MEDIUM)
                                             .text_size(px(13.0))
-                                            .child("Error Tag")
-                                    )
-                            )
-                    )
+                                            .child("Error Tag"),
+                                    ),
+                            ),
+                    ),
             )
             // Variation 4: Custom padding and margins
             .child(
@@ -575,7 +573,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("4. Custom Padding & Margins")
+                            .child("4. Custom Padding & Margins"),
                     )
                     .child(
                         HStack::new()
@@ -593,8 +591,8 @@ impl DragDropStyledDemo {
                                             .text_color(theme.tokens.primary_foreground)
                                             .rounded(px(4.0))
                                             .text_size(px(13.0))
-                                            .child("Compact")
-                                    )
+                                            .child("Compact"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("padding-2", DragData::new("Regular".to_string()))
@@ -609,8 +607,8 @@ impl DragDropStyledDemo {
                                             .text_color(theme.tokens.primary_foreground)
                                             .rounded(px(6.0))
                                             .text_size(px(14.0))
-                                            .child("Regular")
-                                    )
+                                            .child("Regular"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("padding-3", DragData::new("Spacious".to_string()))
@@ -625,10 +623,10 @@ impl DragDropStyledDemo {
                                             .text_color(theme.tokens.primary_foreground)
                                             .rounded(px(8.0))
                                             .text_size(px(15.0))
-                                            .child("Spacious")
-                                    )
-                            )
-                    )
+                                            .child("Spacious"),
+                                    ),
+                            ),
+                    ),
             )
             // Variation 5: Different opacity levels
             .child(
@@ -638,7 +636,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("5. Opacity Variations")
+                            .child("5. Opacity Variations"),
                     )
                     .child(
                         HStack::new()
@@ -654,8 +652,8 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(theme.tokens.primary_foreground)
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("100% Opacity")
-                                    )
+                                            .child("100% Opacity"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("opacity-2", DragData::new("70%".to_string()))
@@ -668,8 +666,8 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(theme.tokens.primary_foreground)
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("70% Opacity")
-                                    )
+                                            .child("70% Opacity"),
+                                    ),
                             )
                             .child(
                                 Draggable::new("opacity-3", DragData::new("40%".to_string()))
@@ -682,10 +680,10 @@ impl DragDropStyledDemo {
                                             .py(px(12.0))
                                             .text_color(theme.tokens.primary_foreground)
                                             .font_weight(FontWeight::MEDIUM)
-                                            .child("40% Opacity")
-                                    )
-                            )
-                    )
+                                            .child("40% Opacity"),
+                                    ),
+                            ),
+                    ),
             )
             // Variation 6: Custom border styles for drop zones
             .child(
@@ -695,7 +693,7 @@ impl DragDropStyledDemo {
                         div()
                             .text_size(px(16.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("6. Custom Border Styles for Drop Zones")
+                            .child("6. Custom Border Styles for Drop Zones"),
                     )
                     .child(
                         HStack::new()
@@ -712,8 +710,8 @@ impl DragDropStyledDemo {
                                         div()
                                             .text_size(px(13.0))
                                             .text_color(theme.tokens.muted_foreground)
-                                            .child("Thick Border")
-                                    )
+                                            .child("Thick Border"),
+                                    ),
                             )
                             .child(
                                 DropZone::<String>::new("border-zone-2")
@@ -728,8 +726,8 @@ impl DragDropStyledDemo {
                                         div()
                                             .text_size(px(13.0))
                                             .text_color(theme.tokens.muted_foreground)
-                                            .child("Rounded Border")
-                                    )
+                                            .child("Rounded Border"),
+                                    ),
                             )
                             .child(
                                 DropZone::<String>::new("border-zone-3")
@@ -744,10 +742,10 @@ impl DragDropStyledDemo {
                                         div()
                                             .text_size(px(13.0))
                                             .text_color(theme.tokens.muted_foreground)
-                                            .child("Filled + Border")
-                                    )
-                            )
-                    )
+                                            .child("Filled + Border"),
+                                    ),
+                            ),
+                    ),
             )
     }
 }

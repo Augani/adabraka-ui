@@ -1,10 +1,10 @@
 //! ColorPicker component - Full-featured color selection with HSL/RGB/HEX modes.
 
+use crate::components::text::{Text, TextVariant};
+use crate::overlays::popover::{Popover, PopoverContent};
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
-use crate::overlays::popover::{Popover, PopoverContent};
-use crate::components::text::{Text, TextVariant};
 
 const MAX_RECENT_COLORS: usize = 10;
 
@@ -52,9 +52,8 @@ impl ColorPickerState {
     }
 
     pub fn add_to_recent(&mut self, color: Hsla) {
-        self.recent_colors.retain(|&c| {
-            !(c.h == color.h && c.s == color.s && c.l == color.l && c.a == color.a)
-        });
+        self.recent_colors
+            .retain(|&c| !(c.h == color.h && c.s == color.s && c.l == color.l && c.a == color.a));
 
         self.recent_colors.insert(0, color);
 
@@ -118,10 +117,7 @@ impl ColorPicker {
     }
 
     /// Set the change callback.
-    pub fn on_change(
-        mut self,
-        handler: impl Fn(Hsla, &mut Window, &mut App) + 'static,
-    ) -> Self {
+    pub fn on_change(mut self, handler: impl Fn(Hsla, &mut Window, &mut App) + 'static) -> Self {
         self.on_change = Some(Rc::new(handler));
         self
     }
@@ -234,13 +230,13 @@ impl RenderOnce for ColorPicker {
                     .rounded(px(4.0))
                     .bg(color)
                     .border_1()
-                    .border_color(theme.tokens.border)
+                    .border_color(theme.tokens.border),
             )
             .child(
                 Text::new(Self::hsla_to_hex(color))
-                .variant(TextVariant::Custom)
-                .size(px(14.0))
-                .color(theme.tokens.foreground)
+                    .variant(TextVariant::Custom)
+                    .size(px(14.0))
+                    .color(theme.tokens.foreground),
             )
             .map(|mut this| {
                 this.style().refine(&user_style);
@@ -275,28 +271,31 @@ impl RenderOnce for ColorPicker {
                             .flex_col()
                             .gap_3()
                             .w(px(280.0))
-                            .child(
-                                render_color_preview(current_color)
-                            )
-                            .child(
-                                render_mode_selector(current_mode, state_for_content.clone())
-                            )
-                            .child(
-                                render_color_value(current_color, current_mode)
-                            )
+                            .child(render_color_preview(current_color))
+                            .child(render_mode_selector(
+                                current_mode,
+                                state_for_content.clone(),
+                            ))
+                            .child(render_color_value(current_color, current_mode))
                             .when(!swatches_clone.is_empty(), |this| {
-                                this.child(
-                                    render_swatches(swatches_clone, state_for_content.clone(), on_change_clone.clone())
-                                )
+                                this.child(render_swatches(
+                                    swatches_clone,
+                                    state_for_content.clone(),
+                                    on_change_clone.clone(),
+                                ))
                             })
                             .when(!recent_vec.is_empty(), |this| {
-                                this.child(
-                                    render_recent_colors(recent_vec, state_for_content.clone(), on_change_clone.clone())
-                                )
+                                this.child(render_recent_colors(
+                                    recent_vec,
+                                    state_for_content.clone(),
+                                    on_change_clone.clone(),
+                                ))
                             })
-                            .child(
-                                render_actions(current_color, state_for_content.clone(), on_change_clone.clone())
-                            )
+                            .child(render_actions(
+                                current_color,
+                                state_for_content.clone(),
+                                on_change_clone.clone(),
+                            ))
                             .into_any_element()
                     })
                 })
@@ -316,7 +315,7 @@ fn render_color_preview(color: Hsla) -> impl IntoElement {
             Text::new("Selected Color")
                 .variant(TextVariant::Custom)
                 .size(px(12.0))
-                .color(theme.tokens.muted_foreground)
+                .color(theme.tokens.muted_foreground),
         )
         .child(
             div()
@@ -325,7 +324,7 @@ fn render_color_preview(color: Hsla) -> impl IntoElement {
                 .rounded(theme.tokens.radius_md)
                 .bg(color)
                 .border_1()
-                .border_color(theme.tokens.border)
+                .border_color(theme.tokens.border),
         )
 }
 
@@ -336,9 +335,24 @@ fn render_mode_selector(
     div()
         .flex()
         .gap_1()
-        .child(render_mode_button("HSL", ColorMode::HSL, current_mode, state.clone()))
-        .child(render_mode_button("RGB", ColorMode::RGB, current_mode, state.clone()))
-        .child(render_mode_button("HEX", ColorMode::HEX, current_mode, state))
+        .child(render_mode_button(
+            "HSL",
+            ColorMode::HSL,
+            current_mode,
+            state.clone(),
+        ))
+        .child(render_mode_button(
+            "RGB",
+            ColorMode::RGB,
+            current_mode,
+            state.clone(),
+        ))
+        .child(render_mode_button(
+            "HEX",
+            ColorMode::HEX,
+            current_mode,
+            state,
+        ))
 }
 
 fn render_mode_button(
@@ -390,14 +404,9 @@ fn render_color_value(color: Hsla, mode: ColorMode) -> impl IntoElement {
         }
         ColorMode::RGB => {
             let (r, g, b) = ColorPicker::hsla_to_rgb(color);
-            format!(
-                "rgb({}, {}, {})",
-                r, g, b
-            )
+            format!("rgb({}, {}, {})", r, g, b)
         }
-        ColorMode::HEX => {
-            ColorPicker::hsla_to_hex(color)
-        }
+        ColorMode::HEX => ColorPicker::hsla_to_hex(color),
     };
 
     div()
@@ -411,7 +420,7 @@ fn render_color_value(color: Hsla, mode: ColorMode) -> impl IntoElement {
             Text::new(value)
                 .variant(TextVariant::Custom)
                 .size(px(13.0))
-                .color(theme.tokens.foreground)
+                .color(theme.tokens.foreground),
         )
 }
 
@@ -430,16 +439,14 @@ fn render_swatches(
             Text::new("Swatches")
                 .variant(TextVariant::Custom)
                 .size(px(12.0))
-                .color(theme.tokens.muted_foreground)
+                .color(theme.tokens.muted_foreground),
         )
         .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_2()
-                .children(swatches.into_iter().map(move |swatch| {
+            div().flex().flex_wrap().gap_2().children(
+                swatches.into_iter().map(move |swatch| {
                     render_color_swatch(swatch, state.clone(), on_change.clone())
-                }))
+                }),
+            ),
         )
 }
 
@@ -458,16 +465,14 @@ fn render_recent_colors(
             Text::new("Recent Colors")
                 .variant(TextVariant::Custom)
                 .size(px(12.0))
-                .color(theme.tokens.muted_foreground)
+                .color(theme.tokens.muted_foreground),
         )
         .child(
-            div()
-                .flex()
-                .flex_wrap()
-                .gap_2()
-                .children(recent.into_iter().map(move |color| {
-                    render_color_swatch(color, state.clone(), on_change.clone())
-                }))
+            div().flex().flex_wrap().gap_2().children(
+                recent
+                    .into_iter()
+                    .map(move |color| render_color_swatch(color, state.clone(), on_change.clone())),
+            ),
         )
 }
 
@@ -524,7 +529,7 @@ fn render_actions(
                     let hex = ColorPicker::hsla_to_hex(color);
                     cx.write_to_clipboard(ClipboardItem::new_string(hex));
                     cx.stop_propagation();
-                })
+                }),
         )
         .child(
             div()
@@ -547,7 +552,7 @@ fn render_actions(
                     if let Some(handler) = on_change.as_ref() {
                         handler(color, window, cx);
                     }
-                })
+                }),
         )
 }
 

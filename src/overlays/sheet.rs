@@ -3,38 +3,28 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
 
 actions!(sheet, [SheetClose]);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum SheetSide {
     Left,
+    #[default]
     Right,
     Top,
     Bottom,
 }
 
-impl Default for SheetSide {
-    fn default() -> Self {
-        Self::Right
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum SheetSize {
     Sm,
+    #[default]
     Md,
     Lg,
     Xl,
     Custom,
-}
-
-impl Default for SheetSize {
-    fn default() -> Self {
-        Self::Md
-    }
 }
 
 impl SheetSize {
@@ -165,8 +155,7 @@ impl Sheet {
     }
 }
 
-pub fn init_sheet(_cx: &mut App) {
-}
+pub fn init_sheet(_cx: &mut App) {}
 
 impl Styled for Sheet {
     fn style(&mut self) -> &mut StyleRefinement {
@@ -177,7 +166,8 @@ impl Styled for Sheet {
 impl Render for Sheet {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
-        let has_header = self.title.is_some() || self.description.is_some() || self.show_close_button;
+        let has_header =
+            self.title.is_some() || self.description.is_some() || self.show_close_button;
         let sheet_size = self.get_sheet_size();
         let user_style = self.style.clone();
 
@@ -189,9 +179,12 @@ impl Render for Sheet {
             .flex()
             .bg(hsla(0.0, 0.0, 0.0, 0.5))
             .when(self.close_on_backdrop_click, |this: Div| {
-                this.on_mouse_down(MouseButton::Left, cx.listener(|this, _, window, cx| {
-                    this.handle_close(window, cx);
-                }))
+                this.on_mouse_down(
+                    MouseButton::Left,
+                    cx.listener(|this, _, window, cx| {
+                        this.handle_close(window, cx);
+                    }),
+                )
             })
             .child(
                 div()
@@ -261,7 +254,7 @@ impl Render for Sheet {
                                                     .text_size(px(18.0))
                                                     .font_weight(FontWeight::SEMIBOLD)
                                                     .text_color(theme.tokens.foreground)
-                                                    .child(title)
+                                                    .child(title),
                                             )
                                         })
                                         .when_some(self.description.clone(), |this: Div, desc| {
@@ -269,9 +262,9 @@ impl Render for Sheet {
                                                 div()
                                                     .text_size(px(14.0))
                                                     .text_color(theme.tokens.muted_foreground)
-                                                    .child(desc)
+                                                    .child(desc),
                                             )
-                                        })
+                                        }),
                                 )
                                 .when(self.show_close_button, |this: Div| {
                                     this.child(
@@ -280,18 +273,13 @@ impl Render for Sheet {
                                             .size(ButtonSize::Sm)
                                             .on_click(cx.listener(|this, _, window, cx| {
                                                 this.handle_close(window, cx);
-                                            }))
+                                            })),
                                     )
-                                })
+                                }),
                         )
                     })
                     .when_some(self.content.take(), |this: Div, content| {
-                        this.child(
-                            div()
-                                .flex_1()
-                                .overflow_hidden()
-                                .child(content)
-                        )
+                        this.child(div().flex_1().overflow_hidden().child(content))
                     })
                     .map(|this| {
                         let mut div = this;
@@ -305,9 +293,9 @@ impl Render for Sheet {
                                 .py(px(16.0))
                                 .border_t_1()
                                 .border_color(theme.tokens.border)
-                                .child(footer)
+                                .child(footer),
                         )
-                    })
+                    }),
             )
     }
 }

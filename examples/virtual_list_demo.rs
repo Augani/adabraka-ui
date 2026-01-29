@@ -1,19 +1,21 @@
-use gpui::*;
 use adabraka_ui::layout::VStack;
 use adabraka_ui::theme::use_theme;
+use gpui::*;
 
 use std::ops::Range;
 
-use adabraka_ui::virtual_list::{
-    vlist_uniform, vlist_variable, ItemExtentProvider,
-};
+use adabraka_ui::virtual_list::{vlist_uniform, vlist_variable, ItemExtentProvider};
 
 struct UniformDemo {
     scroll: ScrollHandle,
 }
 
 impl UniformDemo {
-    fn new(_cx: &mut Context<Self>) -> Self { Self { scroll: ScrollHandle::new() } }
+    fn new(_cx: &mut Context<Self>) -> Self {
+        Self {
+            scroll: ScrollHandle::new(),
+        }
+    }
 }
 
 impl Render for UniformDemo {
@@ -31,8 +33,12 @@ impl Render for UniformDemo {
                         .h(item_extent)
                         .px(px(12.0))
                         .items_center()
-                        .bg(if i % 2 == 0 { theme.tokens.background } else { theme.tokens.muted.opacity(0.3) })
-                        .child(format!("Row #{}", i))
+                        .bg(if i % 2 == 0 {
+                            theme.tokens.background
+                        } else {
+                            theme.tokens.muted.opacity(0.3)
+                        })
+                        .child(format!("Row #{}", i)),
                 );
             }
             out
@@ -49,7 +55,9 @@ struct RandomHeightsProvider;
 impl ItemExtentProvider for RandomHeightsProvider {
     fn extent(&self, index: usize) -> Pixels {
         // Simple deterministic pseudo-random: 24..=72 px
-        let x = (index as u64).wrapping_mul(6364136223846793005).wrapping_add(1);
+        let x = (index as u64)
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1);
         let r = ((x >> 33) as u32) % 49; // 0..=48
         px(24.0 + r as f32)
     }
@@ -59,7 +67,13 @@ struct VariableDemo {
     scroll: ScrollHandle,
 }
 
-impl VariableDemo { fn new(_cx: &mut Context<Self>) -> Self { Self { scroll: ScrollHandle::new() } } }
+impl VariableDemo {
+    fn new(_cx: &mut Context<Self>) -> Self {
+        Self {
+            scroll: ScrollHandle::new(),
+        }
+    }
+}
 
 impl Render for VariableDemo {
     fn render(&mut self, _window: &mut Window, _cx: &mut Context<Self>) -> impl IntoElement {
@@ -70,13 +84,17 @@ impl Render for VariableDemo {
         let renderer = move |range: Range<usize>, _window: &mut Window, _cx: &mut App| {
             let mut out = Vec::with_capacity(range.len());
             for i in range {
-                let bg = if i % 2 == 0 { theme.tokens.background } else { theme.tokens.muted.opacity(0.3) };
+                let bg = if i % 2 == 0 {
+                    theme.tokens.background
+                } else {
+                    theme.tokens.muted.opacity(0.3)
+                };
                 out.push(
                     div()
                         .w_full()
                         .px(px(12.0))
                         .bg(bg)
-                        .child(format!("Variable row #{}", i))
+                        .child(format!("Variable row #{}", i)),
                 );
             }
             out
@@ -93,7 +111,14 @@ struct VirtualListDemoApp {
     variable: Entity<VariableDemo>,
 }
 
-impl VirtualListDemoApp { fn new(cx: &mut Context<Self>) -> Self { Self { uniform: cx.new(UniformDemo::new), variable: cx.new(VariableDemo::new) } } }
+impl VirtualListDemoApp {
+    fn new(cx: &mut Context<Self>) -> Self {
+        Self {
+            uniform: cx.new(UniformDemo::new),
+            variable: cx.new(VariableDemo::new),
+        }
+    }
+}
 
 impl Render for VirtualListDemoApp {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -108,7 +133,7 @@ impl Render for VirtualListDemoApp {
                 div()
                     .text_size(px(18.0))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child("Uniform VirtualList (10M items)")
+                    .child("Uniform VirtualList (10M items)"),
             )
             .child(
                 div()
@@ -117,13 +142,13 @@ impl Render for VirtualListDemoApp {
                     .border_color(theme.tokens.border)
                     .rounded(px(8.0))
                     .overflow_hidden()
-                    .child(self.uniform.clone())
+                    .child(self.uniform.clone()),
             )
             .child(
                 div()
                     .text_size(px(18.0))
                     .font_weight(FontWeight::SEMIBOLD)
-                    .child("Variable-size VirtualList (1M items)")
+                    .child("Variable-size VirtualList (1M items)"),
             )
             .child(
                 div()
@@ -132,13 +157,15 @@ impl Render for VirtualListDemoApp {
                     .border_color(theme.tokens.border)
                     .rounded(px(8.0))
                     .overflow_hidden()
-                    .child(self.variable.clone())
+                    .child(self.variable.clone()),
             )
     }
 }
 
 fn main() {
-    struct Assets { base: std::path::PathBuf }
+    struct Assets {
+        base: std::path::PathBuf,
+    }
     impl gpui::AssetSource for Assets {
         fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
             std::fs::read(self.base.join(path))
@@ -162,7 +189,9 @@ fn main() {
     }
 
     Application::new()
-        .with_assets(Assets { base: std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
             adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
             adabraka_ui::init(cx);
@@ -187,5 +216,3 @@ fn main() {
             .unwrap();
         });
 }
-
-

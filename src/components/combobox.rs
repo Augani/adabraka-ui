@@ -9,18 +9,21 @@
 //! - Clear button to reset selection
 //! - Full Styled trait support for customization
 
-use gpui::{prelude::*, *};
-use crate::theme::use_theme;
-use crate::components::scrollable::scrollable_vertical;
 use crate::components::icon::Icon;
+use crate::components::scrollable::scrollable_vertical;
+use crate::theme::use_theme;
+use gpui::{prelude::*, *};
 
-actions!(combobox, [
-    ComboboxUp,
-    ComboboxDown,
-    ComboboxConfirm,
-    ComboboxCancel,
-    ComboboxClear
-]);
+actions!(
+    combobox,
+    [
+        ComboboxUp,
+        ComboboxDown,
+        ComboboxConfirm,
+        ComboboxCancel,
+        ComboboxClear
+    ]
+);
 
 const DROPDOWN_MARGIN: Pixels = px(4.0);
 
@@ -249,7 +252,7 @@ impl<T: Clone + 'static> Combobox<T> {
                     window.focus(&self.focus_handle);
                     state.focused_index = Some(0);
                 }
-                cx.notify();  // Trigger re-render
+                cx.notify(); // Trigger re-render
             });
         }
     }
@@ -258,7 +261,7 @@ impl<T: Clone + 'static> Combobox<T> {
     fn close_dropdown(&mut self, cx: &mut Context<Self>) {
         self.state.update(cx, |state, cx| {
             state.close();
-            cx.notify();  // Trigger re-render
+            cx.notify(); // Trigger re-render
         });
     }
 
@@ -266,7 +269,7 @@ impl<T: Clone + 'static> Combobox<T> {
     fn clear_selection(&mut self, _window: &mut Window, cx: &mut Context<Self>) {
         self.state.update(cx, |state, cx| {
             state.clear();
-            cx.notify();  // Trigger re-render
+            cx.notify(); // Trigger re-render
         });
         cx.emit(ComboboxEvent::Change);
     }
@@ -278,7 +281,7 @@ impl<T: Clone + 'static> Combobox<T> {
             if let Some(item) = self.items.get(original_idx).cloned() {
                 self.state.update(cx, |state, cx| {
                     state.select_item(item.clone(), self.multi_select);
-                    cx.notify();  // Trigger re-render
+                    cx.notify(); // Trigger re-render
                 });
 
                 cx.emit(ComboboxEvent::Change);
@@ -335,7 +338,12 @@ impl<T: Clone + 'static> Combobox<T> {
     }
 
     /// Handle enter key (confirm selection)
-    fn combobox_confirm(&mut self, _: &ComboboxConfirm, window: &mut Window, cx: &mut Context<Self>) {
+    fn combobox_confirm(
+        &mut self,
+        _: &ComboboxConfirm,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         let state = self.state.read(cx);
         if state.is_open {
             if let Some(idx) = state.focused_index {
@@ -403,7 +411,11 @@ impl<T: Clone + PartialEq + 'static> Render for Combobox<T> {
             .px(px(12.0))
             .bg(theme.tokens.background)
             .border_1()
-            .border_color(if is_open { theme.tokens.ring } else { theme.tokens.input })
+            .border_color(if is_open {
+                theme.tokens.ring
+            } else {
+                theme.tokens.input
+            })
             .rounded(theme.tokens.radius_md)
             .text_color(if has_selection && !is_searching {
                 theme.tokens.foreground
@@ -412,63 +424,76 @@ impl<T: Clone + PartialEq + 'static> Render for Combobox<T> {
             })
             .text_size(px(14.0))
             .font_family(theme.tokens.font_family.clone())
-            .cursor(if self.disabled { CursorStyle::Arrow } else { CursorStyle::PointingHand })
+            .cursor(if self.disabled {
+                CursorStyle::Arrow
+            } else {
+                CursorStyle::PointingHand
+            })
             .when(!self.disabled, |div: Stateful<Div>| {
                 div.hover(|mut style| {
-                    style.border_color = Some(theme.tokens.ring.into());
+                    style.border_color = Some(theme.tokens.ring);
                     style
                 })
             })
-            .on_mouse_down(MouseButton::Left, cx.listener(|this, _, window, cx| {
-                if !this.disabled {
-                    window.focus(&this.focus_handle);
-                    this.state.update(cx, |state, _| {
-                        if !state.is_open {
-                            state.is_open = true;
-                            state.focused_index = Some(0);
-                        }
-                    });
-                }
-            }))
-            .child(
-                div()
-                    .flex_1()
-                    .child(display_text)
+            .on_mouse_down(
+                MouseButton::Left,
+                cx.listener(|this, _, window, cx| {
+                    if !this.disabled {
+                        window.focus(&this.focus_handle);
+                        this.state.update(cx, |state, _| {
+                            if !state.is_open {
+                                state.is_open = true;
+                                state.focused_index = Some(0);
+                            }
+                        });
+                    }
+                }),
             )
+            .child(div().flex_1().child(display_text))
             .child(
                 div()
                     .flex()
                     .items_center()
                     .gap(px(4.0))
-                    .when(self.clearable && has_selection && !self.disabled, |this_div| {
-                        this_div.child(
-                            div()
-                                .w(px(20.0))
-                                .h(px(20.0))
-                                .flex()
-                                .items_center()
-                                .justify_center()
-                                .rounded(px(10.0))
-                                .cursor(CursorStyle::PointingHand)
-                                .hover(|mut style| {
-                                    style.background = Some(theme.tokens.muted.into());
-                                    style
-                                })
-                                .on_mouse_down(MouseButton::Left, cx.listener(|this, _event, window, cx| {
-                                    this.clear_selection(window, cx);
-                                }))
-                                .child(
-                                    Icon::new("x")
-                                        .size(px(14.0))
-                                        .color(theme.tokens.muted_foreground)
-                                )
-                        )
-                    })
-                    .child(
-                        Icon::new(if is_open { "chevron-up" } else { "chevron-down" })
-                            .size(px(14.0))
-                            .color(theme.tokens.muted_foreground)
+                    .when(
+                        self.clearable && has_selection && !self.disabled,
+                        |this_div| {
+                            this_div.child(
+                                div()
+                                    .w(px(20.0))
+                                    .h(px(20.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(px(10.0))
+                                    .cursor(CursorStyle::PointingHand)
+                                    .hover(|mut style| {
+                                        style.background = Some(theme.tokens.muted.into());
+                                        style
+                                    })
+                                    .on_mouse_down(
+                                        MouseButton::Left,
+                                        cx.listener(|this, _event, window, cx| {
+                                            this.clear_selection(window, cx);
+                                        }),
+                                    )
+                                    .child(
+                                        Icon::new("x")
+                                            .size(px(14.0))
+                                            .color(theme.tokens.muted_foreground),
+                                    ),
+                            )
+                        },
                     )
+                    .child(
+                        Icon::new(if is_open {
+                            "chevron-up"
+                        } else {
+                            "chevron-down"
+                        })
+                        .size(px(14.0))
+                        .color(theme.tokens.muted_foreground),
+                    ),
             )
             .child({
                 let entity = cx.entity().clone();

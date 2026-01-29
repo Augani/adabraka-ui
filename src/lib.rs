@@ -53,17 +53,17 @@
 
 extern crate gpui;
 
+pub mod animations;
+pub mod charts;
+pub mod components;
+pub mod display;
+pub mod layout;
+pub mod navigation;
+pub mod overlays;
 pub mod prelude;
 pub mod theme;
-pub mod layout;
-pub mod components;
-pub mod navigation;
-pub mod display;
-pub mod overlays;
-pub mod animations;
 pub mod transitions;
 pub mod virtual_list;
-pub mod charts;
 
 /// Extension traits for common types
 pub mod util;

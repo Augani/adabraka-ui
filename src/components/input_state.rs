@@ -76,7 +76,7 @@ pub struct ValidationError {
 }
 
 /// Input validation rules
-#[derive(Clone)]
+#[derive(Clone, Default)]
 pub struct ValidationRules {
     /// Minimum length requirement
     pub min_length: Option<usize>,
@@ -111,22 +111,6 @@ impl std::fmt::Debug for ValidationRules {
             .field("custom_formatter", &self.custom_formatter.is_some())
             .field("required", &self.required)
             .finish()
-    }
-}
-
-impl Default for ValidationRules {
-    fn default() -> Self {
-        Self {
-            min_length: None,
-            max_length: None,
-            min_value: None,
-            max_value: None,
-            pattern: None,
-            custom_validator: None,
-            custom_filter: None,
-            custom_formatter: None,
-            required: false,
-        }
     }
 }
 

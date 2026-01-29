@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    overlays::alert_dialog::AlertDialog,
-};
+use adabraka_ui::{overlays::alert_dialog::AlertDialog, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 

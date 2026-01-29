@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    components::icon::Icon,
-};
+use adabraka_ui::{components::icon::Icon, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -34,28 +31,30 @@ impl gpui::AssetSource for Assets {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(|cx| {
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.open_window(
-            WindowOptions {
-                titlebar: Some(TitlebarOptions {
-                    title: Some("Icon Test".into()),
+            cx.open_window(
+                WindowOptions {
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("Icon Test".into()),
+                        ..Default::default()
+                    }),
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(600.0), px(400.0)),
+                        cx,
+                    ))),
                     ..Default::default()
-                }),
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(600.0), px(400.0)),
-                    cx,
-                ))),
-                ..Default::default()
-            },
-            |window, cx| cx.new(|cx| IconTestApp::new(window, cx)),
-        )
-        .unwrap();
-    });
+                },
+                |window, cx| cx.new(|cx| IconTestApp::new(window, cx)),
+            )
+            .unwrap();
+        });
 }
 
 struct IconTestApp {}
@@ -84,7 +83,7 @@ impl Render for IconTestApp {
                 div()
                     .text_2xl()
                     .text_color(theme.tokens.foreground)
-                    .child("Icon Test - If you see icons below, it works!")
+                    .child("Icon Test - If you see icons below, it works!"),
             )
             .child(
                 div()
@@ -102,14 +101,14 @@ impl Render for IconTestApp {
                             .child(
                                 Icon::new("heart")
                                     .size(px(64.0))
-                                    .color(rgb(0xff0000).into())
+                                    .color(rgb(0xff0000).into()),
                             )
                             .child(
                                 div()
                                     .text_sm()
                                     .text_color(theme.tokens.foreground)
-                                    .child("heart (red)")
-                            )
+                                    .child("heart (red)"),
+                            ),
                     )
                     .child(
                         div()
@@ -120,14 +119,14 @@ impl Render for IconTestApp {
                             .child(
                                 Icon::new("arrow-down")
                                     .size(px(64.0))
-                                    .color(rgb(0x0000ff).into())
+                                    .color(rgb(0x0000ff).into()),
                             )
                             .child(
                                 div()
                                     .text_sm()
                                     .text_color(theme.tokens.foreground)
-                                    .child("arrow-down (blue)")
-                            )
+                                    .child("arrow-down (blue)"),
+                            ),
                     )
                     .child(
                         div()
@@ -138,21 +137,21 @@ impl Render for IconTestApp {
                             .child(
                                 Icon::new("check")
                                     .size(px(64.0))
-                                    .color(rgb(0x00ff00).into())
+                                    .color(rgb(0x00ff00).into()),
                             )
                             .child(
                                 div()
                                     .text_sm()
                                     .text_color(theme.tokens.foreground)
-                                    .child("check (green)")
-                            )
-                    )
+                                    .child("check (green)"),
+                            ),
+                    ),
             )
             .child(
                 div()
                     .text_sm()
                     .text_color(theme.tokens.muted_foreground)
-                    .child("Icons should be rendered above in different colors")
+                    .child("Icons should be rendered above in different colors"),
             )
     }
 }

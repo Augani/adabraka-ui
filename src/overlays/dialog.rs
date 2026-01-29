@@ -3,8 +3,8 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
 
 actions!(dialog, [DialogCancel]);
 
@@ -148,7 +148,10 @@ impl Render for Dialog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let has_slot_header = self.header.is_some();
-        let has_header = has_slot_header || self.title.is_some() || self.description.is_some() || self.show_close_button;
+        let has_header = has_slot_header
+            || self.title.is_some()
+            || self.description.is_some()
+            || self.show_close_button;
 
         let dialog_entity = cx.entity().clone();
         let user_style = self.style.clone();
@@ -205,9 +208,10 @@ impl Render for Dialog {
                                     .px(px(24.0))
                                     .pt(px(24.0))
                                     .pb(px(16.0))
-                                    .when(self.footer.is_none() && self.children.is_empty(), |this| {
-                                        this.pb(px(24.0))
-                                    })
+                                    .when(
+                                        self.footer.is_none() && self.children.is_empty(),
+                                        |this| this.pb(px(24.0)),
+                                    )
                                     .child(
                                         div()
                                             .flex()
@@ -224,23 +228,40 @@ impl Render for Dialog {
                                                         this.child(
                                                             div()
                                                                 .text_size(px(18.0))
-                                                                .font_family(theme.tokens.font_family.clone())
+                                                                .font_family(
+                                                                    theme
+                                                                        .tokens
+                                                                        .font_family
+                                                                        .clone(),
+                                                                )
                                                                 .font_weight(FontWeight::SEMIBOLD)
                                                                 .text_color(theme.tokens.foreground)
                                                                 .line_height(relative(1.2))
-                                                                .child(title)
+                                                                .child(title),
                                                         )
                                                     })
-                                                    .when_some(self.description.clone(), |this, desc| {
-                                                        this.child(
-                                                            div()
-                                                                .text_size(px(14.0))
-                                                                .font_family(theme.tokens.font_family.clone())
-                                                                .text_color(theme.tokens.muted_foreground)
-                                                                .line_height(relative(1.5))
-                                                                .child(desc)
-                                                        )
-                                                    })
+                                                    .when_some(
+                                                        self.description.clone(),
+                                                        |this, desc| {
+                                                            this.child(
+                                                                div()
+                                                                    .text_size(px(14.0))
+                                                                    .font_family(
+                                                                        theme
+                                                                            .tokens
+                                                                            .font_family
+                                                                            .clone(),
+                                                                    )
+                                                                    .text_color(
+                                                                        theme
+                                                                            .tokens
+                                                                            .muted_foreground,
+                                                                    )
+                                                                    .line_height(relative(1.5))
+                                                                    .child(desc),
+                                                            )
+                                                        },
+                                                    ),
                                             )
                                             .when(self.show_close_button, |this| {
                                                 let dialog_entity = dialog_entity.clone();
@@ -249,13 +270,16 @@ impl Render for Dialog {
                                                         .variant(ButtonVariant::Ghost)
                                                         .size(ButtonSize::Icon)
                                                         .on_click(move |_, window, cx| {
-                                                            cx.update_entity(&dialog_entity, |dialog, cx| {
-                                                                dialog.handle_close(window, cx);
-                                                            });
-                                                        })
+                                                            cx.update_entity(
+                                                                &dialog_entity,
+                                                                |dialog, cx| {
+                                                                    dialog.handle_close(window, cx);
+                                                                },
+                                                            );
+                                                        }),
                                                 )
-                                            })
-                                    )
+                                            }),
+                                    ),
                             )
                         }
                     })
@@ -269,7 +293,7 @@ impl Render for Dialog {
                                 .px(px(24.0))
                                 .py(px(16.0))
                                 .flex_1()
-                                .children(children)
+                                .children(children),
                         )
                     })
                     .map(|this| {
@@ -288,9 +312,9 @@ impl Render for Dialog {
                                 .py(px(16.0))
                                 .border_t_1()
                                 .border_color(theme.tokens.border)
-                                .child(footer)
+                                .child(footer),
                         )
-                    })
+                    }),
             )
     }
 }

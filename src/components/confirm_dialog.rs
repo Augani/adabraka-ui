@@ -1,8 +1,8 @@
 //! Dialog component - Modal dialog with backdrop and customizable content.
 
-use gpui::{prelude::FluentBuilder as _, *};
-use crate::theme::use_theme;
 use crate::layout::VStack;
+use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 #[derive(IntoElement)]
 pub struct Dialog {
     width: Option<Pixels>,
@@ -12,6 +12,12 @@ pub struct Dialog {
     footer: Option<AnyElement>,
     on_backdrop_click: Option<Box<dyn Fn(&mut Window, &mut App)>>,
     style: StyleRefinement,
+}
+
+impl Default for Dialog {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Dialog {
@@ -92,7 +98,7 @@ impl RenderOnce for Dialog {
                         this.on_mouse_down(MouseButton::Left, move |_event, window, cx| {
                             (handler)(window, cx);
                         })
-                    })
+                    }),
             )
             .child(
                 VStack::new()
@@ -117,7 +123,7 @@ impl RenderOnce for Dialog {
                         let mut div = this;
                         div.style().refine(&user_style);
                         div
-                    })
+                    }),
             )
     }
 }

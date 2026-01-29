@@ -1,25 +1,20 @@
 //! Navigation menu component - Hierarchical navigation with expand/collapse state.
 
 use gpui::{prelude::FluentBuilder as _, *};
-use std::sync::Arc;
-use std::hash::Hash;
 use std::collections::HashSet;
+use std::hash::Hash;
+use std::sync::Arc;
 
-use crate::theme::use_theme;
 use crate::components::icon::Icon;
 use crate::components::icon_source::IconSource;
 use crate::components::text::{Text, TextVariant};
+use crate::theme::use_theme;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum NavigationMenuOrientation {
+    #[default]
     Horizontal,
     Vertical,
-}
-
-impl Default for NavigationMenuOrientation {
-    fn default() -> Self {
-        Self::Horizontal
-    }
 }
 
 #[derive(Clone)]
@@ -161,26 +156,26 @@ impl<T: Clone + PartialEq + Eq + Hash + 'static> RenderOnce for NavigationMenu<T
 
         div()
             .flex()
-            .when(orientation == NavigationMenuOrientation::Horizontal, |this: Div| {
-                this.flex_row().items_center().gap(px(4.0))
-            })
-            .when(orientation == NavigationMenuOrientation::Vertical, |this: Div| {
-                this.flex_col().gap(px(2.0))
-            })
-            .children(
-                self.items.into_iter().map(move |item| {
-                    render_menu_item(
-                        item,
-                        orientation,
-                        &theme,
-                        0,
-                        &expanded_set,
-                        &selected_id,
-                        &on_select,
-                        &on_toggle,
-                    )
-                })
+            .when(
+                orientation == NavigationMenuOrientation::Horizontal,
+                |this: Div| this.flex_row().items_center().gap(px(4.0)),
             )
+            .when(
+                orientation == NavigationMenuOrientation::Vertical,
+                |this: Div| this.flex_col().gap(px(2.0)),
+            )
+            .children(self.items.into_iter().map(move |item| {
+                render_menu_item(
+                    item,
+                    orientation,
+                    &theme,
+                    0,
+                    &expanded_set,
+                    &selected_id,
+                    &on_select,
+                    &on_toggle,
+                )
+            }))
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);
@@ -216,18 +211,16 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                 .gap(px(4.0))
                 .px(px(8.0))
                 .py(px(8.0))
-                .pl(when(orientation == NavigationMenuOrientation::Vertical && depth > 0,
+                .pl(when(
+                    orientation == NavigationMenuOrientation::Vertical && depth > 0,
                     indent + px(8.0),
-                    px(8.0)))
+                    px(8.0),
+                ))
                 .rounded(theme.tokens.radius_sm)
                 .text_size(px(14.0))
-                .when(is_selected, |this: Div| {
-                    this.bg(theme.tokens.accent)
-                })
+                .when(is_selected, |this: Div| this.bg(theme.tokens.accent))
                 .when(!is_selected && !disabled, |this: Div| {
-                    this.hover(|style| {
-                        style.bg(theme.tokens.accent.opacity(0.1))
-                    })
+                    this.hover(|style| style.bg(theme.tokens.accent.opacity(0.1)))
                 })
                 .when(has_children, |this: Div| {
                     let item_id = item.id.clone();
@@ -248,9 +241,7 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                                 CursorStyle::PointingHand
                             })
                             .when(!disabled && !is_selected, |this: Div| {
-                                this.hover(|style| {
-                                    style.bg(theme.tokens.muted.opacity(0.3))
-                                })
+                                this.hover(|style| style.bg(theme.tokens.muted.opacity(0.3)))
                             })
                             .when(!disabled && on_toggle.is_some(), |this: Div| {
                                 let on_toggle = on_toggle.unwrap();
@@ -259,19 +250,21 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                                 })
                             })
                             .child(
-                                Icon::new(if is_expanded { "arrow-down" } else { "arrow-right" })
-                                    .size(px(12.0))
-                                    .color(if is_selected {
-                                        theme.tokens.accent_foreground
-                                    } else {
-                                        theme.tokens.muted_foreground
-                                    })
-                            )
+                                Icon::new(if is_expanded {
+                                    "arrow-down"
+                                } else {
+                                    "arrow-right"
+                                })
+                                .size(px(12.0))
+                                .color(if is_selected {
+                                    theme.tokens.accent_foreground
+                                } else {
+                                    theme.tokens.muted_foreground
+                                }),
+                            ),
                     )
                 })
-                .when(!has_children, |this: Div| {
-                    this.child(div().w(px(20.0)))
-                })
+                .when(!has_children, |this: Div| this.child(div().w(px(20.0))))
                 .child(
                     div()
                         .flex()
@@ -294,17 +287,13 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                             })
                         })
                         .when_some(item.icon.clone(), |this: Div, icon| {
-                            this.child(
-                                Icon::new(icon)
-                                    .size(px(16.0))
-                                    .color(if is_selected {
-                                        theme.tokens.accent_foreground
-                                    } else if disabled {
-                                        theme.tokens.muted_foreground
-                                    } else {
-                                        theme.tokens.foreground
-                                    })
-                            )
+                            this.child(Icon::new(icon).size(px(16.0)).color(if is_selected {
+                                theme.tokens.accent_foreground
+                            } else if disabled {
+                                theme.tokens.muted_foreground
+                            } else {
+                                theme.tokens.foreground
+                            }))
                         })
                         .child(
                             div()
@@ -324,10 +313,10 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                                             theme.tokens.muted_foreground
                                         } else {
                                             theme.tokens.foreground
-                                        })
-                                )
-                        )
-                )
+                                        }),
+                                ),
+                        ),
+                ),
         )
         .when(has_children && is_expanded, |this: Div| {
             this.child(
@@ -335,46 +324,52 @@ fn render_menu_item<T: Clone + PartialEq + Eq + Hash + 'static>(
                     .flex()
                     .flex_col()
                     .gap(px(2.0))
-                    .when(orientation == NavigationMenuOrientation::Horizontal, |this: Div| {
-                        this.absolute()
-                            .top_full()
-                            .left_0()
-                            .mt(px(4.0))
-                            .min_w(px(200.0))
-                            .bg(theme.tokens.popover)
-                            .border_1()
-                            .border_color(theme.tokens.border)
-                            .rounded(theme.tokens.radius_md)
-                            .shadow(vec![BoxShadow {
-                                color: hsla(0.0, 0.0, 0.0, 0.1),
-                                offset: point(px(0.0), px(2.0)),
-                                blur_radius: px(8.0),
-                                spread_radius: px(0.0),
-                            }])
-                            .p(px(4.0))
-                    })
-                    .when(orientation == NavigationMenuOrientation::Vertical, |this: Div| {
-                        this.mt(px(2.0))
-                    })
-                    .children(
-                        item.children.into_iter().map(|child| {
-                            render_menu_item(
-                                child,
-                                orientation,
-                                theme,
-                                depth + 1,
-                                expanded_set,
-                                selected_id,
-                                on_select,
-                                on_toggle,
-                            )
-                        })
+                    .when(
+                        orientation == NavigationMenuOrientation::Horizontal,
+                        |this: Div| {
+                            this.absolute()
+                                .top_full()
+                                .left_0()
+                                .mt(px(4.0))
+                                .min_w(px(200.0))
+                                .bg(theme.tokens.popover)
+                                .border_1()
+                                .border_color(theme.tokens.border)
+                                .rounded(theme.tokens.radius_md)
+                                .shadow(vec![BoxShadow {
+                                    color: hsla(0.0, 0.0, 0.0, 0.1),
+                                    offset: point(px(0.0), px(2.0)),
+                                    blur_radius: px(8.0),
+                                    spread_radius: px(0.0),
+                                }])
+                                .p(px(4.0))
+                        },
                     )
+                    .when(
+                        orientation == NavigationMenuOrientation::Vertical,
+                        |this: Div| this.mt(px(2.0)),
+                    )
+                    .children(item.children.into_iter().map(|child| {
+                        render_menu_item(
+                            child,
+                            orientation,
+                            theme,
+                            depth + 1,
+                            expanded_set,
+                            selected_id,
+                            on_select,
+                            on_toggle,
+                        )
+                    })),
             )
         })
 }
 
 /// Helper function for conditional values
 fn when<T>(condition: bool, true_value: T, false_value: T) -> T {
-    if condition { true_value } else { false_value }
+    if condition {
+        true_value
+    } else {
+        false_value
+    }
 }

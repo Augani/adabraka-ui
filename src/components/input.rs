@@ -1,15 +1,16 @@
 //! Input component - Advanced text input with validation, masking, and accessibility.
 
+use crate::components::icon::Icon;
+pub use crate::components::input_state::{
+    Backspace, Copy, Cut, Delete, End, Enter, Escape, Home, InputEvent, InputMask, InputState,
+    InputType, Left, Paste, Right, SelectAll, SelectLeft, SelectRight, ShiftTab, Tab,
+    ValidationError, ValidationRules,
+};
+use crate::layout::{HStack, VStack};
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use std::sync::Arc;
-use crate::theme::use_theme;
-use crate::layout::{HStack, VStack};
-use crate::components::icon::Icon;
-pub use crate::components::input_state::{
-    InputState, InputEvent, InputType, ValidationError, ValidationRules, InputMask,
-    Backspace, Delete, Left, Right, SelectLeft, SelectRight, SelectAll, Home, End, Copy, Cut, Paste, Enter, Tab, ShiftTab, Escape
-};
 
 pub fn init(cx: &mut App) {
     cx.bind_keys([
@@ -51,17 +52,12 @@ pub enum InputVariant {
     Ghost,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum InputSize {
     Sm,
+    #[default]
     Md,
     Lg,
-}
-
-impl Default for InputSize {
-    fn default() -> Self {
-        Self::Md
-    }
 }
 
 #[derive(IntoElement)]
@@ -163,7 +159,6 @@ impl Input {
         self.clearable = true;
         self
     }
-
 
     /// Set the input variant
     pub fn variant(mut self, variant: InputVariant) -> Self {
@@ -468,14 +463,12 @@ impl RenderOnce for Input {
             if let Some(mut rules) = self.validation_rules.clone() {
                 if let Some(ref custom_validator) = self.custom_validator {
                     let validator = custom_validator.clone();
-                    rules.custom_validator = Some(Arc::new(move |value| {
-                        match validator(value) {
-                            Ok(()) => Ok(()),
-                            Err(msg) => Err(ValidationError {
-                                message: msg.into(),
-                                field_name: None,
-                            }),
-                        }
+                    rules.custom_validator = Some(Arc::new(move |value| match validator(value) {
+                        Ok(()) => Ok(()),
+                        Err(msg) => Err(ValidationError {
+                            message: msg.into(),
+                            field_name: None,
+                        }),
                     }));
                 }
 
@@ -490,19 +483,20 @@ impl RenderOnce for Input {
                 }
 
                 state.validation_rules = rules;
-            } else if self.custom_validator.is_some() || self.custom_filter.is_some() || self.custom_formatter.is_some() {
+            } else if self.custom_validator.is_some()
+                || self.custom_filter.is_some()
+                || self.custom_formatter.is_some()
+            {
                 let mut rules = ValidationRules::default();
 
                 if let Some(ref custom_validator) = self.custom_validator {
                     let validator = custom_validator.clone();
-                    rules.custom_validator = Some(Arc::new(move |value| {
-                        match validator(value) {
-                            Ok(()) => Ok(()),
-                            Err(msg) => Err(ValidationError {
-                                message: msg.into(),
-                                field_name: None,
-                            }),
-                        }
+                    rules.custom_validator = Some(Arc::new(move |value| match validator(value) {
+                        Ok(()) => Ok(()),
+                        Err(msg) => Err(ValidationError {
+                            message: msg.into(),
+                            field_name: None,
+                        }),
                     }));
                 }
 
@@ -535,48 +529,56 @@ impl RenderOnce for Input {
         let on_blur_callback = self.on_blur.clone();
         let on_validate_callback = self.on_validate.clone();
 
-        if on_change_callback.is_some() || on_enter_callback.is_some() || on_focus_callback.is_some() || on_blur_callback.is_some() || on_validate_callback.is_some() {
+        if on_change_callback.is_some()
+            || on_enter_callback.is_some()
+            || on_focus_callback.is_some()
+            || on_blur_callback.is_some()
+            || on_validate_callback.is_some()
+        {
             let state_entity = self.state.clone();
             let state_for_callback = state_entity.clone();
-            cx.subscribe(&state_entity, move |_emitter: Entity<InputState>, event: &InputEvent, cx: &mut App| {
-                match event {
-                    InputEvent::Change => {
-                        if let Some(callback) = on_change_callback.as_ref() {
-                            let value = state_for_callback.read(cx).content.clone();
-                            callback(value, cx);
+            cx.subscribe(
+                &state_entity,
+                move |_emitter: Entity<InputState>, event: &InputEvent, cx: &mut App| {
+                    match event {
+                        InputEvent::Change => {
+                            if let Some(callback) = on_change_callback.as_ref() {
+                                let value = state_for_callback.read(cx).content.clone();
+                                callback(value, cx);
+                            }
+                        }
+                        InputEvent::Enter => {
+                            if let Some(callback) = on_enter_callback.as_ref() {
+                                let value = state_for_callback.read(cx).content.clone();
+                                callback(value, cx);
+                            }
+                        }
+                        InputEvent::Focus => {
+                            if let Some(callback) = on_focus_callback.as_ref() {
+                                let value = state_for_callback.read(cx).content.clone();
+                                callback(value, cx);
+                            }
+                        }
+                        InputEvent::Blur => {
+                            if let Some(callback) = on_blur_callback.as_ref() {
+                                let value = state_for_callback.read(cx).content.clone();
+                                callback(value, cx);
+                            }
+                        }
+                        InputEvent::Validate(result) => {
+                            if let Some(callback) = on_validate_callback.as_ref() {
+                                callback(result.clone(), cx);
+                            }
+                        }
+                        InputEvent::Tab => {
+                            // Focus navigation handled in InputState action handlers
+                        }
+                        InputEvent::ShiftTab => {
+                            // Focus navigation handled in InputState action handlers
                         }
                     }
-                    InputEvent::Enter => {
-                        if let Some(callback) = on_enter_callback.as_ref() {
-                            let value = state_for_callback.read(cx).content.clone();
-                            callback(value, cx);
-                        }
-                    }
-                    InputEvent::Focus => {
-                        if let Some(callback) = on_focus_callback.as_ref() {
-                            let value = state_for_callback.read(cx).content.clone();
-                            callback(value, cx);
-                        }
-                    }
-                    InputEvent::Blur => {
-                        if let Some(callback) = on_blur_callback.as_ref() {
-                            let value = state_for_callback.read(cx).content.clone();
-                            callback(value, cx);
-                        }
-                    }
-                    InputEvent::Validate(result) => {
-                        if let Some(callback) = on_validate_callback.as_ref() {
-                            callback(result.clone(), cx);
-                        }
-                    }
-                    InputEvent::Tab => {
-                        // Focus navigation handled in InputState action handlers
-                    }
-                    InputEvent::ShiftTab => {
-                        // Focus navigation handled in InputState action handlers
-                    }
-                }
-            })
+                },
+            )
             .detach();
         }
 
@@ -658,7 +660,14 @@ impl RenderOnce for Input {
                 div()
                     .id(("input", self.state.entity_id()))
                     .key_context("Input")
-                    .track_focus(&self.state.read(cx).focus_handle(cx).tab_index(0).tab_stop(true))
+                    .track_focus(
+                        &self
+                            .state
+                            .read(cx)
+                            .focus_handle(cx)
+                            .tab_index(0)
+                            .tab_stop(true),
+                    )
                     .when(!self.disabled, |this| {
                         this.on_action(window.listener_for(&self.state, InputState::backspace))
                             .on_action(window.listener_for(&self.state, InputState::delete))
@@ -679,94 +688,91 @@ impl RenderOnce for Input {
                     })
                     .child(
                         HStack::new()
-                    .h(height)
-                    .w_full()
-                    .px(padding_x)
-                    .gap(gap)
-                    .bg(bg_color)
-                    .border_1()
-                    .border_color(border_color)
-                    .rounded(theme.tokens.radius_md)
-                    .items_center()
-                    .text_size(font_size)
-                    .font_family(theme.tokens.font_mono.clone())
-                    .text_color(text_color)
-                    .shadow(vec![shadow_xs])
-                    .when(!self.disabled, |h| {
-                        h.hover(move |style| {
-                            style.border_color(if self.error {
-                                destructive_color
-                            } else {
-                                ring_color
-                            })
-                        })
-                    })
-                    .when(is_focused && !self.disabled, |h| {
-                        if self.error {
-                            h.border_color(destructive_color)
-                                .shadow(vec![error_ring_focused])
-                        } else {
-                            h.border_color(ring_color)
-                                .shadow(vec![focus_ring])
-                        }
-                    })
-                    .when(self.error && !is_focused, |h| {
-                        h.shadow(vec![error_ring_unfocused])
-                    })
-                    .children(self.prefix)
-                    .child(
-                        div()
-                            .flex_1()
-                            .overflow_hidden()
-                            .child(self.state.clone())
-                    )
-                    .when(show_clear, |h| {
-                        h.child(
-                            div()
-                                .px(px(4.0))
-                                .py(px(4.0))
-                                .rounded(px(4.0))
-                                .cursor_pointer()
-                                .hover(|style| style.bg(theme.tokens.muted))
-                                .on_mouse_down(MouseButton::Left, move |_, window, cx| {
-                                    state_for_clear.update(cx, |state, cx| {
-                                        state.set_value("", window, cx);
+                            .h(height)
+                            .w_full()
+                            .px(padding_x)
+                            .gap(gap)
+                            .bg(bg_color)
+                            .border_1()
+                            .border_color(border_color)
+                            .rounded(theme.tokens.radius_md)
+                            .items_center()
+                            .text_size(font_size)
+                            .font_family(theme.tokens.font_mono.clone())
+                            .text_color(text_color)
+                            .shadow(vec![shadow_xs])
+                            .when(!self.disabled, |h| {
+                                h.hover(move |style| {
+                                    style.border_color(if self.error {
+                                        destructive_color
+                                    } else {
+                                        ring_color
                                     })
                                 })
-                                .child("×")
-                                .text_color(theme.tokens.muted_foreground),
-                        )
-                    })
-                    .when(self.password, |h| {
-                        h.child(
-                            div()
-                                .px(px(4.0))
-                                .py(px(4.0))
-                                .rounded(px(4.0))
-                                .cursor_pointer()
-                                .hover(|style| style.bg(theme.tokens.muted))
-                                .on_mouse_down(MouseButton::Left, {
-                                    let state = state_for_password.clone();
-                                    move |_, window, cx| {
-                                        state.update(cx, |state, cx| {
-                                            state.masked = !state.masked;
-                                            cx.notify();
-                                        });
-                                        window.refresh();
-                                    }
-                                })
-                                .child(
-                                    Icon::new(if is_masked { "eye" } else { "eye-off" })
-                                        .size(px(16.0))
-                                        .color(theme.tokens.muted_foreground)
-                                ),
-                        )
-                    })
-                    .children(self.suffix)
-                )
+                            })
+                            .when(is_focused && !self.disabled, |h| {
+                                if self.error {
+                                    h.border_color(destructive_color)
+                                        .shadow(vec![error_ring_focused])
+                                } else {
+                                    h.border_color(ring_color).shadow(vec![focus_ring])
+                                }
+                            })
+                            .when(self.error && !is_focused, |h| {
+                                h.shadow(vec![error_ring_unfocused])
+                            })
+                            .children(self.prefix)
+                            .child(div().flex_1().overflow_hidden().child(self.state.clone()))
+                            .when(show_clear, |h| {
+                                h.child(
+                                    div()
+                                        .px(px(4.0))
+                                        .py(px(4.0))
+                                        .rounded(px(4.0))
+                                        .cursor_pointer()
+                                        .hover(|style| style.bg(theme.tokens.muted))
+                                        .on_mouse_down(MouseButton::Left, move |_, window, cx| {
+                                            state_for_clear.update(cx, |state, cx| {
+                                                state.set_value("", window, cx);
+                                            })
+                                        })
+                                        .child("×")
+                                        .text_color(theme.tokens.muted_foreground),
+                                )
+                            })
+                            .when(self.password, |h| {
+                                h.child(
+                                    div()
+                                        .px(px(4.0))
+                                        .py(px(4.0))
+                                        .rounded(px(4.0))
+                                        .cursor_pointer()
+                                        .hover(|style| style.bg(theme.tokens.muted))
+                                        .on_mouse_down(MouseButton::Left, {
+                                            let state = state_for_password.clone();
+                                            move |_, window, cx| {
+                                                state.update(cx, |state, cx| {
+                                                    state.masked = !state.masked;
+                                                    cx.notify();
+                                                });
+                                                window.refresh();
+                                            }
+                                        })
+                                        .child(
+                                            Icon::new(if is_masked { "eye" } else { "eye-off" })
+                                                .size(px(16.0))
+                                                .color(theme.tokens.muted_foreground),
+                                        ),
+                                )
+                            })
+                            .children(self.suffix),
+                    ),
             )
             .when(
-                self.helper_text.is_some() || validation_error.is_some() || success_message.is_some() || self.show_character_count,
+                self.helper_text.is_some()
+                    || validation_error.is_some()
+                    || success_message.is_some()
+                    || self.show_character_count,
                 |v| {
                     v.child(
                         HStack::new()
@@ -777,27 +783,23 @@ impl RenderOnce for Input {
                                     .flex_1()
                                     .text_size(px(12.0))
                                     .font_family(theme.tokens.font_family.clone())
-                                    .child(
-                                        if let Some(error) = validation_error {
-                                            div()
-                                                .text_color(theme.tokens.destructive)
-                                                .child(error.message)
-                                        } else if let Some(success) = success_message {
-                                            if has_value {
-                                                div()
-                                                    .text_color(theme.tokens.primary)
-                                                    .child(success)
-                                            } else {
-                                                div()
-                                            }
-                                        } else if let Some(helper) = self.helper_text {
-                                            div()
-                                                .text_color(theme.tokens.muted_foreground)
-                                                .child(helper)
+                                    .child(if let Some(error) = validation_error {
+                                        div()
+                                            .text_color(theme.tokens.destructive)
+                                            .child(error.message)
+                                    } else if let Some(success) = success_message {
+                                        if has_value {
+                                            div().text_color(theme.tokens.primary).child(success)
                                         } else {
                                             div()
                                         }
-                                    )
+                                    } else if let Some(helper) = self.helper_text {
+                                        div()
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child(helper)
+                                    } else {
+                                        div()
+                                    }),
                             )
                             .when(self.show_character_count, |h| {
                                 h.child(
@@ -805,23 +807,23 @@ impl RenderOnce for Input {
                                         .text_size(px(12.0))
                                         .font_family(theme.tokens.font_family.clone())
                                         .text_color(
-                                            if max_length.is_some() && content_length >= max_length.unwrap() {
+                                            if max_length.is_some()
+                                                && content_length >= max_length.unwrap()
+                                            {
                                                 theme.tokens.destructive
                                             } else {
                                                 theme.tokens.muted_foreground
-                                            }
+                                            },
                                         )
-                                        .child(
-                                            if let Some(max) = max_length {
-                                                format!("{}/{}", content_length, max)
-                                            } else {
-                                                format!("{}", content_length)
-                                            }
-                                        )
+                                        .child(if let Some(max) = max_length {
+                                            format!("{}/{}", content_length, max)
+                                        } else {
+                                            format!("{}", content_length)
+                                        }),
                                 )
-                            })
+                            }),
                     )
-                }
+                },
             )
             .map(|this| {
                 let mut vstack = this;

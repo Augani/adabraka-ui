@@ -3,16 +3,17 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 
-use crate::theme::use_theme;
-use crate::components::button::{Button, ButtonVariant, ButtonSize};
-use crate::components::calendar::{Calendar, CalendarLocale, DateValue, DateRange};
+use crate::components::button::{Button, ButtonSize, ButtonVariant};
+use crate::components::calendar::{Calendar, CalendarLocale, DateRange, DateValue};
 use crate::components::icon::Icon;
 use crate::overlays::popover::{Popover, PopoverContent};
+use crate::theme::use_theme;
 
 /// Date format options
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum DateFormat {
     /// YYYY-MM-DD (e.g., 2025-01-15)
+    #[default]
     IsoDate,
     /// MM/DD/YYYY (e.g., 01/15/2025)
     UsDate,
@@ -44,12 +45,6 @@ impl DateFormat {
                 format!("{} {:02}, {:04}", month_name, date.day, date.year)
             }
         }
-    }
-}
-
-impl Default for DateFormat {
-    fn default() -> Self {
-        DateFormat::IsoDate
     }
 }
 
@@ -123,7 +118,9 @@ impl DatePickerState {
                     // Second click - complete the range
                     let (range_start, range_end) = if date.year < start.year
                         || (date.year == start.year && date.month < start.month)
-                        || (date.year == start.year && date.month == start.month && date.day < start.day)
+                        || (date.year == start.year
+                            && date.month == start.month
+                            && date.day < start.day)
                     {
                         (date, start)
                     } else {
@@ -188,7 +185,10 @@ impl Focusable for DatePickerState {
 
 impl EventEmitter<DismissEvent> for DatePickerState {}
 
-actions!(date_picker, [ClosePicker, SelectToday, NextMonth, PrevMonth]);
+actions!(
+    date_picker,
+    [ClosePicker, SelectToday, NextMonth, PrevMonth]
+);
 
 /// Initialize DatePicker keybindings
 pub fn init(cx: &mut App) {
@@ -319,7 +319,6 @@ impl DatePicker {
         self.locale = locale;
         self
     }
-
 }
 
 impl Styled for DatePicker {
@@ -366,7 +365,9 @@ impl RenderOnce for DatePicker {
 
         let user_style = self.style;
 
-        let popover_id = ElementId::Name(format!("date-picker-popover-{}", state_entity.entity_id().as_u64()).into());
+        let popover_id = ElementId::Name(
+            format!("date-picker-popover-{}", state_entity.entity_id().as_u64()).into(),
+        );
 
         Popover::new(popover_id.clone())
             .trigger(
@@ -387,15 +388,14 @@ impl RenderOnce for DatePicker {
                             .hover(|style| style.border_color(theme.tokens.ring))
                     })
                     .when(disabled, |div| {
-                        div.cursor(CursorStyle::OperationNotAllowed)
-                            .opacity(0.5)
+                        div.cursor(CursorStyle::OperationNotAllowed).opacity(0.5)
                     })
                     .child(
                         div()
                             .flex_1()
                             .text_size(px(14.0))
                             .text_color(text_color)
-                            .child(display_text)
+                            .child(display_text),
                     )
                     .child(
                         div()
@@ -411,28 +411,27 @@ impl RenderOnce for DatePicker {
                                         .rounded(px(4.0))
                                         .cursor_pointer()
                                         .hover(move |style| style.bg(muted_bg))
-                                        .on_mouse_down(MouseButton::Left, move |_event: &MouseDownEvent, window, cx| {
-                                            cx.stop_propagation();
-                                            state_for_clear.update(cx, |state, cx| {
-                                                state.clear_date(cx);
-                                            });
-                                            if let Some(handler) = on_clear.as_ref() {
-                                                handler(window, cx);
-                                            }
-                                        })
-                                        .child(
-                                            Icon::new("x")
-                                                .size(px(16.0))
-                                                .color(muted_fg)
+                                        .on_mouse_down(
+                                            MouseButton::Left,
+                                            move |_event: &MouseDownEvent, window, cx| {
+                                                cx.stop_propagation();
+                                                state_for_clear.update(cx, |state, cx| {
+                                                    state.clear_date(cx);
+                                                });
+                                                if let Some(handler) = on_clear.as_ref() {
+                                                    handler(window, cx);
+                                                }
+                                            },
                                         )
+                                        .child(Icon::new("x").size(px(16.0)).color(muted_fg)),
                                 )
                             })
                             .child(
                                 Icon::new("calendar")
                                     .size(px(16.0))
-                                    .color(theme.tokens.muted_foreground)
-                            )
-                    )
+                                    .color(theme.tokens.muted_foreground),
+                            ),
+                    ),
             )
             .content(move |window: &mut Window, app_cx: &mut App| {
                 let state_ref = state_for_calendar.clone();
@@ -442,36 +441,40 @@ impl RenderOnce for DatePicker {
                 let state_today_ref = state_for_today.clone();
 
                 app_cx.new(move |cx| {
-                    PopoverContent::new(window, cx, move |_window, popover_cx: &mut Context<PopoverContent>| {
-                        let theme = use_theme();
-                        let state = state_ref.read(popover_cx);
-                        let viewing_month = state.viewing_month;
-                        let selected_date = state.selected_date;
-                        let selected_range = state.selected_range;
-                        let range_start_temp = state.range_start_temp;
+                    PopoverContent::new(
+                        window,
+                        cx,
+                        move |_window, popover_cx: &mut Context<PopoverContent>| {
+                            let theme = use_theme();
+                            let state = state_ref.read(popover_cx);
+                            let viewing_month = state.viewing_month;
+                            let selected_date = state.selected_date;
+                            let selected_range = state.selected_range;
+                            let range_start_temp = state.range_start_temp;
 
-                        let state_for_select = state_ref.clone();
-                        let state_for_month = state_ref.clone();
-                        let on_select = on_select_ref.clone();
-                        let locale_clone = locale_ref.clone();
-                        let min_date_clone = min_date;
-                        let max_date_clone = max_date;
-                        let disabled_dates_clone = disabled_dates_ref.clone();
-                        let state_today = state_today_ref.clone();
-                        let border_color = theme.tokens.border;
+                            let state_for_select = state_ref.clone();
+                            let state_for_month = state_ref.clone();
+                            let on_select = on_select_ref.clone();
+                            let locale_clone = locale_ref.clone();
+                            let min_date_clone = min_date;
+                            let max_date_clone = max_date;
+                            let disabled_dates_clone = disabled_dates_ref.clone();
+                            let state_today = state_today_ref.clone();
+                            let border_color = theme.tokens.border;
 
-                        // Get entity reference for closing popover
-                        let popover_entity = popover_cx.entity().clone();
+                            // Get entity reference for closing popover
+                            let popover_entity = popover_cx.entity().clone();
 
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap(px(8.0))
-                            .child(
-                                {
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(px(8.0))
+                                .child({
                                     Calendar::new()
                                         .current_month(viewing_month)
-                                        .when_some(selected_date, |cal, date| cal.selected_date(date))
+                                        .when_some(selected_date, |cal, date| {
+                                            cal.selected_date(date)
+                                        })
                                         .selected_range(selected_range)
                                         .range_start_temp(range_start_temp)
                                         .locale(locale_clone.clone())
@@ -482,21 +485,28 @@ impl RenderOnce for DatePicker {
                                             move |date: &DateValue| {
                                                 let is_before_min = if let Some(min) = min {
                                                     date.year < min.year
-                                                        || (date.year == min.year && date.month < min.month)
-                                                        || (date.year == min.year && date.month == min.month && date.day < min.day)
+                                                        || (date.year == min.year
+                                                            && date.month < min.month)
+                                                        || (date.year == min.year
+                                                            && date.month == min.month
+                                                            && date.day < min.day)
                                                 } else {
                                                     false
                                                 };
 
                                                 let is_after_max = if let Some(max) = max {
                                                     date.year > max.year
-                                                        || (date.year == max.year && date.month > max.month)
-                                                        || (date.year == max.year && date.month == max.month && date.day > max.day)
+                                                        || (date.year == max.year
+                                                            && date.month > max.month)
+                                                        || (date.year == max.year
+                                                            && date.month == max.month
+                                                            && date.day > max.day)
                                                 } else {
                                                     false
                                                 };
 
-                                                let is_in_disabled_list = disabled.iter().any(|d| d == date);
+                                                let is_in_disabled_list =
+                                                    disabled.iter().any(|d| d == date);
                                                 is_before_min || is_after_max || is_in_disabled_list
                                             }
                                         })
@@ -504,29 +514,46 @@ impl RenderOnce for DatePicker {
                                             let popover_for_dismiss = popover_entity.clone();
                                             let on_select_for_date = on_select.clone();
                                             move |date, window, app_cx| {
-                                                let is_before_min = if let Some(min) = min_date_clone {
-                                                    date.year < min.year
-                                                        || (date.year == min.year && date.month < min.month)
-                                                        || (date.year == min.year && date.month == min.month && date.day < min.day)
-                                                } else {
-                                                    false
-                                                };
+                                                let is_before_min =
+                                                    if let Some(min) = min_date_clone {
+                                                        date.year < min.year
+                                                            || (date.year == min.year
+                                                                && date.month < min.month)
+                                                            || (date.year == min.year
+                                                                && date.month == min.month
+                                                                && date.day < min.day)
+                                                    } else {
+                                                        false
+                                                    };
 
-                                                let is_after_max = if let Some(max) = max_date_clone {
+                                                let is_after_max = if let Some(max) = max_date_clone
+                                                {
                                                     date.year > max.year
-                                                        || (date.year == max.year && date.month > max.month)
-                                                        || (date.year == max.year && date.month == max.month && date.day > max.day)
+                                                        || (date.year == max.year
+                                                            && date.month > max.month)
+                                                        || (date.year == max.year
+                                                            && date.month == max.month
+                                                            && date.day > max.day)
                                                 } else {
                                                     false
                                                 };
 
-                                                let is_in_disabled_list = disabled_dates_clone.iter().any(|d| d == date);
-                                                let is_disabled = is_before_min || is_after_max || is_in_disabled_list;
+                                                let is_in_disabled_list =
+                                                    disabled_dates_clone.iter().any(|d| d == date);
+                                                let is_disabled = is_before_min
+                                                    || is_after_max
+                                                    || is_in_disabled_list;
 
                                                 if !is_disabled {
                                                     // Check if we should close (different logic for single vs range mode)
-                                                    let should_close = state_for_select.read(app_cx).selection_mode == DateSelectionMode::Single
-                                                        || state_for_select.read(app_cx).range_start_temp.is_some(); // In range mode, close on second click
+                                                    let should_close = state_for_select
+                                                        .read(app_cx)
+                                                        .selection_mode
+                                                        == DateSelectionMode::Single
+                                                        || state_for_select
+                                                            .read(app_cx)
+                                                            .range_start_temp
+                                                            .is_some(); // In range mode, close on second click
 
                                                     // Update the date picker state
                                                     state_for_select.update(app_cx, |state, cx| {
@@ -534,19 +561,24 @@ impl RenderOnce for DatePicker {
                                                         if should_close {
                                                             state.close(cx);
                                                         }
-                                                        cx.notify();  // Notify to trigger re-render
+                                                        cx.notify(); // Notify to trigger re-render
                                                     });
 
                                                     // Call the on_select callback (only when selection is complete)
                                                     if should_close {
-                                                        if let Some(handler) = on_select_for_date.as_ref() {
+                                                        if let Some(handler) =
+                                                            on_select_for_date.as_ref()
+                                                        {
                                                             handler(date, window, app_cx);
                                                         }
 
                                                         // Close the popover by emitting DismissEvent
-                                                        popover_for_dismiss.update(app_cx, |_, cx| {
-                                                            cx.emit(DismissEvent);
-                                                        });
+                                                        popover_for_dismiss.update(
+                                                            app_cx,
+                                                            |_, cx| {
+                                                                cx.emit(DismissEvent);
+                                                            },
+                                                        );
                                                     }
                                                 }
                                             }
@@ -554,48 +586,53 @@ impl RenderOnce for DatePicker {
                                         .on_month_change(move |date, _window, app_cx| {
                                             state_for_month.update(app_cx, |state, cx| {
                                                 state.set_viewing_month(*date, cx);
-                                                cx.notify();  // Notify to trigger re-render
+                                                cx.notify(); // Notify to trigger re-render
                                             });
                                         })
-                                }
-                            )
-                            .when(show_today_button, |parent_div| {
-                                let popover_for_today = popover_entity.clone();
-                                let on_select_for_today = on_select.clone();
-                                parent_div.child(
-                                    div()
-                                        .flex()
-                                        .justify_center()
-                                        .pt(px(8.0))
-                                        .border_t_1()
-                                        .border_color(border_color)
-                                        .child(
-                                            Button::new("today-btn", "Today")
-                                                .variant(ButtonVariant::Outline)
-                                                .size(ButtonSize::Sm)
-                                                .on_click(move |_, window, app_cx| {
-                                                    let today = DateValue::new(2025, 1, 23);
-                                                    state_today.update(app_cx, |state, cx| {
-                                                        state.select_date(today, cx);
-                                                        state.close(cx);
-                                                        cx.notify();  // Notify to trigger re-render
-                                                    });
+                                })
+                                .when(show_today_button, |parent_div| {
+                                    let popover_for_today = popover_entity.clone();
+                                    let on_select_for_today = on_select.clone();
+                                    parent_div.child(
+                                        div()
+                                            .flex()
+                                            .justify_center()
+                                            .pt(px(8.0))
+                                            .border_t_1()
+                                            .border_color(border_color)
+                                            .child(
+                                                Button::new("today-btn", "Today")
+                                                    .variant(ButtonVariant::Outline)
+                                                    .size(ButtonSize::Sm)
+                                                    .on_click(move |_, window, app_cx| {
+                                                        let today = DateValue::new(2025, 1, 23);
+                                                        state_today.update(app_cx, |state, cx| {
+                                                            state.select_date(today, cx);
+                                                            state.close(cx);
+                                                            cx.notify(); // Notify to trigger re-render
+                                                        });
 
-                                                    // Call the on_select callback
-                                                    if let Some(handler) = on_select_for_today.as_ref() {
-                                                        handler(&today, window, app_cx);
-                                                    }
+                                                        // Call the on_select callback
+                                                        if let Some(handler) =
+                                                            on_select_for_today.as_ref()
+                                                        {
+                                                            handler(&today, window, app_cx);
+                                                        }
 
-                                                    // Close the popover
-                                                    popover_for_today.update(app_cx, |_, cx| {
-                                                        cx.emit(DismissEvent);
-                                                    });
-                                                })
-                                        )
-                                )
-                            })
-                            .into_any_element()
-                    })
+                                                        // Close the popover
+                                                        popover_for_today.update(
+                                                            app_cx,
+                                                            |_, cx| {
+                                                                cx.emit(DismissEvent);
+                                                            },
+                                                        );
+                                                    }),
+                                            ),
+                                    )
+                                })
+                                .into_any_element()
+                        },
+                    )
                 })
             })
             .map(|this| {

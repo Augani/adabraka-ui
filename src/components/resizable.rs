@@ -417,9 +417,7 @@ impl Styled for ResizablePanel {
 impl RenderOnce for ResizablePanel {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         if !self.visible {
-            return div()
-                .id(("resizable-panel", self.index))
-                .into_any_element();
+            return div().id(("resizable-panel", self.index)).into_any_element();
         }
 
         let state = self
@@ -430,8 +428,8 @@ impl RenderOnce for ResizablePanel {
         let panel_state = state.read(cx).panels.get(self.index).cloned();
 
         let size_range = self.size_range.clone();
-        let has_custom_size = self.initial_size.is_some()
-            || panel_state.as_ref().and_then(|p| p.size).is_some();
+        let has_custom_size =
+            self.initial_size.is_some() || panel_state.as_ref().and_then(|p| p.size).is_some();
 
         let mut panel_div = div()
             .id(("resizable-panel", self.index))
@@ -609,9 +607,10 @@ impl<T: 'static, E: 'static + Render> Element for ResizeHandle<T, E> {
 
             let on_drag = self.on_drag.clone();
             let drag_value = self.drag_value.clone();
-            handle_element = handle_element.on_drag(drag_value.clone(), move |_, position, window, cx| {
-                (on_drag)(drag_value.clone(), &position, window, cx)
-            });
+            handle_element = handle_element
+                .on_drag(drag_value.clone(), move |_, position, window, cx| {
+                    (on_drag)(drag_value.clone(), &position, window, cx)
+                });
 
             handle_element = match axis {
                 Axis::Horizontal => handle_element

@@ -1,8 +1,8 @@
 // Testing to understand why raw GPUI works but our ScrollContainer doesn't
 
 use gpui::{
-    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    size,
+    div, prelude::*, px, size, App, Application, Bounds, Context, Window, WindowBounds,
+    WindowOptions,
 };
 
 struct TestScroll {}
@@ -16,10 +16,7 @@ impl Render for TestScroll {
             .gap_4()
             .p_4()
             .bg(gpui::white())
-            .child(
-                div()
-                    .child("Raw GPUI Pattern (WORKS):")
-            )
+            .child(div().child("Raw GPUI Pattern (WORKS):"))
             .child(
                 // RAW GPUI - This works
                 div()
@@ -35,19 +32,15 @@ impl Render for TestScroll {
                         div()
                             .h(px(800.))
                             .bg(gpui::rgb(0xdbeafe))
-                            .child("Tall content (800px)")
-                    )
+                            .child("Tall content (800px)"),
+                    ),
             )
-            .child(
-                div()
-                    .child("Test Pattern 1 - ID then overflow:")
-            )
+            .child(div().child("Test Pattern 1 - ID then overflow:"))
             .child(
                 // Test pattern 1: ID first, then overflow
                 {
                     let base = div().id("test-1");
-                    base
-                        .h(px(200.))
+                    base.h(px(200.))
                         .w_full()
                         .overflow_y_scroll()
                         .border_1()
@@ -58,9 +51,9 @@ impl Render for TestScroll {
                             div()
                                 .h(px(800.))
                                 .bg(gpui::rgb(0xd1fae5))
-                                .child("Tall content (800px)")
+                                .child("Tall content (800px)"),
                         )
-                }
+                },
             )
     }
 }
@@ -79,4 +72,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

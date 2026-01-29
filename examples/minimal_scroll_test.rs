@@ -1,8 +1,8 @@
 // Absolute minimal test to debug ScrollContainer
 
 use gpui::{
-    App, Application, Bounds, Context, Window, WindowBounds, WindowOptions, div, prelude::*, px,
-    rgb, size, SharedString, ElementId,
+    div, prelude::*, px, rgb, size, App, Application, Bounds, Context, ElementId, SharedString,
+    Window, WindowBounds, WindowOptions,
 };
 
 struct MinimalTest {}
@@ -23,18 +23,22 @@ impl Render for MinimalTest {
                 div()
                     .h(px(800.))
                     .bg(rgb(0xdbeafe))
-                    .child("Test 1: ID -> styles -> overflow")
+                    .child("Test 1: ID -> styles -> overflow"),
             );
 
         // Test 2: Create ID, apply styles, store in variable, then apply overflow
         let mut test2_base = div().id("test-stored-var");
         test2_base = test2_base.h(px(200.)).w_full();
-        test2_base = test2_base.border_1().border_color(rgb(0x00ff00)).bg(rgb(0xfafafa)).p_4();
+        test2_base = test2_base
+            .border_1()
+            .border_color(rgb(0x00ff00))
+            .bg(rgb(0xfafafa))
+            .p_4();
         test2_base = test2_base.child(
             div()
                 .h(px(800.))
                 .bg(rgb(0xd1fae5))
-                .child("Test 2: Stored in var, styles, then overflow")
+                .child("Test 2: Stored in var, styles, then overflow"),
         );
         test2_base = test2_base.overflow_y_scroll();
 
@@ -66,4 +70,3 @@ fn main() {
         cx.activate(true);
     });
 }
-

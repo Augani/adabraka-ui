@@ -98,9 +98,7 @@ impl Popover {
     where
         T: IntoElement + 'static,
     {
-        self.trigger = Some(Box::new(move |_is_open, _, _| {
-            trigger.into_any_element()
-        }));
+        self.trigger = Some(Box::new(move |_is_open, _, _| trigger.into_any_element()));
         self
     }
 
@@ -233,15 +231,19 @@ impl Element for Popover {
                                 div()
                                     .occlude()
                                     .map(|this| match anchor {
-                                        Corner::TopLeft | Corner::TopRight => this.mt(POPOVER_MARGIN),
-                                        Corner::BottomLeft | Corner::BottomRight => this.mb(POPOVER_MARGIN),
+                                        Corner::TopLeft | Corner::TopRight => {
+                                            this.mt(POPOVER_MARGIN)
+                                        }
+                                        Corner::BottomLeft | Corner::BottomRight => {
+                                            this.mb(POPOVER_MARGIN)
+                                        }
                                     })
                                     .child(content_view.clone())
                                     .on_mouse_down_out(move |_, window, _| {
                                         *content_view_mut.borrow_mut() = None;
                                         window.refresh();
-                                    })
-                            )
+                                    }),
+                            ),
                         )
                         .with_priority(1)
                         .into_any()
@@ -294,10 +296,8 @@ impl Element for Popover {
             .trigger_layout_id
             .map(|id| window.layout_bounds(id));
 
-        let hitbox = window.insert_hitbox(
-            trigger_bounds.unwrap_or_default(),
-            HitboxBehavior::Normal,
-        );
+        let hitbox =
+            window.insert_hitbox(trigger_bounds.unwrap_or_default(), HitboxBehavior::Normal);
 
         PrepaintState {
             trigger_bounds,

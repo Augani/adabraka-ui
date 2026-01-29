@@ -1,11 +1,8 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use adabraka_ui::{
-    theme::{install_theme, Theme, use_theme},
-    components::{
-        scrollable::scrollable_vertical,
-        text::*,
-    },
+    components::{scrollable::scrollable_vertical, text::*},
+    theme::{install_theme, use_theme, Theme},
 };
+use gpui::{prelude::FluentBuilder as _, *};
 
 struct TextDemo;
 

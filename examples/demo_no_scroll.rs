@@ -11,9 +11,7 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| DemoApp::new(window, cx))
-            },
+            |window, cx| cx.new(|cx| DemoApp::new(window, cx)),
         )
         .unwrap();
     });
@@ -35,7 +33,10 @@ impl Render for DemoApp {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
-        println!("[DemoApp::render] Rendering with click_count: {}", self.click_count);
+        println!(
+            "[DemoApp::render] Rendering with click_count: {}",
+            self.click_count
+        );
 
         div()
             .bg(theme.tokens.background)
@@ -56,8 +57,8 @@ impl Render for DemoApp {
                             .text_size(px(24.0))
                             .font_weight(FontWeight::BOLD)
                             .text_color(theme.tokens.foreground)
-                            .child("Demo - Button in ROOT view")
-                    )
+                            .child("Demo - Button in ROOT view"),
+                    ),
             )
             .child(
                 // Content DIRECTLY in root view - like minimal_button.rs
@@ -78,29 +79,28 @@ impl Render for DemoApp {
                                     .text_size(px(20.0))
                                     .font_weight(FontWeight::BOLD)
                                     .text_color(theme.tokens.foreground)
-                                    .child("Buttons (in ROOT view)")
+                                    .child("Buttons (in ROOT view)"),
                             )
-                            .child(
-                                div()
-                                    .flex()
-                                    .gap(px(12.0))
-                                    .child(
-                                        Button::new("click-btn", "Click Me!")
-                                            .on_click(cx.listener(|view, _event, _window, cx| {
-                                                println!("[DemoApp] BUTTON CLICKED! Count: {} -> {}",
-                                                         view.click_count, view.click_count + 1);
-                                                view.click_count += 1;
-                                                cx.notify();
-                                            }))
-                                    )
-                            )
+                            .child(div().flex().gap(px(12.0)).child(
+                                Button::new("click-btn", "Click Me!").on_click(cx.listener(
+                                    |view, _event, _window, cx| {
+                                        println!(
+                                            "[DemoApp] BUTTON CLICKED! Count: {} -> {}",
+                                            view.click_count,
+                                            view.click_count + 1
+                                        );
+                                        view.click_count += 1;
+                                        cx.notify();
+                                    },
+                                )),
+                            ))
                             .child(
                                 div()
                                     .text_size(px(14.0))
                                     .text_color(theme.tokens.muted_foreground)
-                                    .child(format!("Button clicked {} times", self.click_count))
-                            )
-                    )
+                                    .child(format!("Button clicked {} times", self.click_count)),
+                            ),
+                    ),
             )
     }
 }

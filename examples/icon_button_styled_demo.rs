@@ -1,7 +1,4 @@
-use adabraka_ui::{
-    prelude::*,
-    components::scrollable::scrollable_vertical,
-};
+use adabraka_ui::{components::scrollable::scrollable_vertical, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
 
@@ -66,9 +63,7 @@ struct IconButtonStyledDemo {
 
 impl IconButtonStyledDemo {
     fn new() -> Self {
-        Self {
-            click_count: 0,
-        }
+        Self { click_count: 0 }
     }
 }
 

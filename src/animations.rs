@@ -207,7 +207,8 @@ pub mod easings {
         let p = 0.3;
         let s = p / 4.0;
         let t_adj = t - 1.0;
-        let result = 1.0 + (2_f32.powf(10.0 * t_adj)) * ((t_adj - s) * (2.0 * std::f32::consts::PI) / p).sin();
+        let result = 1.0
+            + (2_f32.powf(10.0 * t_adj)) * ((t_adj - s) * (2.0 * std::f32::consts::PI) / p).sin();
         result.clamp(0.0, 1.0)
     }
 
@@ -475,20 +476,15 @@ pub mod presets {
 }
 
 /// Animation state management helper
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Default)]
 pub enum AnimationState {
     /// Animation hasn't started
+    #[default]
     Idle,
     /// Animation is running
     Running,
     /// Animation completed
     Complete,
-}
-
-impl Default for AnimationState {
-    fn default() -> Self {
-        Self::Idle
-    }
 }
 
 impl AnimationState {
@@ -507,8 +503,6 @@ impl AnimationState {
         matches!(self, Self::Complete)
     }
 }
-
-/// Helper functions for common animation patterns
 
 /// Calculate smooth pulse scale (sine wave based)
 ///

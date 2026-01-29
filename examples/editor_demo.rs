@@ -1,12 +1,12 @@
-use gpui::*;
 use adabraka_ui::{
-    theme::{install_theme, Theme, use_theme},
     components::{
-        text::{h1, h2, body, caption, code_small},
         button::{Button, ButtonVariant},
         editor::{Editor, EditorState},
+        text::{body, caption, code_small, h1, h2},
     },
+    theme::{install_theme, use_theme, Theme},
 };
+use gpui::*;
 
 struct EditorDemo {
     editor_state: Entity<EditorState>,

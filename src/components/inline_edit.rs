@@ -370,8 +370,7 @@ impl EntityInputHandler for InlineEditState {
             .unwrap_or(self.selected_range.clone());
 
         self.edit_value =
-            (self.edit_value[0..range.start].to_owned() + new_text + &self.edit_value[range.end..])
-                .into();
+            self.edit_value[0..range.start].to_owned() + new_text + &self.edit_value[range.end..];
         self.selected_range = range.start + new_text.len()..range.start + new_text.len();
         self.marked_range.take();
         cx.notify();
@@ -392,8 +391,7 @@ impl EntityInputHandler for InlineEditState {
             .unwrap_or(self.selected_range.clone());
 
         self.edit_value =
-            (self.edit_value[0..range.start].to_owned() + new_text + &self.edit_value[range.end..])
-                .into();
+            self.edit_value[0..range.start].to_owned() + new_text + &self.edit_value[range.end..];
         if !new_text.is_empty() {
             self.marked_range = Some(range.start..range.start + new_text.len());
         } else {

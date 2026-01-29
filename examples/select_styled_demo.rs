@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
-        select::{Select, SelectOption},
         scrollable::scrollable_vertical,
+        select::{Select, SelectOption},
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -93,7 +93,7 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Wide Option 3"),
                     ])
                     .placeholder("Full Width Select")
-                    .w_full()  // <- Styled trait
+                    .w_full() // <- Styled trait
             }),
             select_rounded: cx.new(|cx| {
                 Select::new(cx)
@@ -103,7 +103,7 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Rounded Option 3"),
                     ])
                     .placeholder("Custom Rounded")
-                    .rounded(px(16.0))  // <- Styled trait
+                    .rounded(px(16.0)) // <- Styled trait
             }),
             select_custom_bg: cx.new(|cx| {
                 Select::new(cx)
@@ -113,7 +113,7 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Styled Theme"),
                     ])
                     .placeholder("Custom Background")
-                    .bg(rgb(0x1e3a8a))  // <- Styled trait
+                    .bg(rgb(0x1e3a8a)) // <- Styled trait
                     .text_color(gpui::white())
             }),
             select_bordered: cx.new(|cx| {
@@ -124,7 +124,7 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Styled Border"),
                     ])
                     .placeholder("Custom Border")
-                    .border_2()  // <- Styled trait
+                    .border_2() // <- Styled trait
                     .border_color(rgb(0x8b5cf6))
             }),
             select_shadowed: cx.new(|cx| {
@@ -135,7 +135,7 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Shadow Option 3"),
                     ])
                     .placeholder("With Shadow")
-                    .shadow_lg()  // <- Styled trait
+                    .shadow_lg() // <- Styled trait
             }),
             select_combined: cx.new(|cx| {
                 Select::new(cx)
@@ -145,14 +145,14 @@ impl SelectStyledDemo {
                         SelectOption::new("option3".to_string(), "Combined Option 3"),
                     ])
                     .placeholder("Ultra Custom Select")
-                    .w_full()  // <- Styled trait
-                    .p(px(16.0))  // <- Styled trait
-                    .bg(rgb(0x059669))  // <- Styled trait
+                    .w_full() // <- Styled trait
+                    .p(px(16.0)) // <- Styled trait
+                    .bg(rgb(0x059669)) // <- Styled trait
                     .text_color(gpui::white())
-                    .rounded(px(12.0))  // <- Styled trait
-                    .border_2()  // <- Styled trait
+                    .rounded(px(12.0)) // <- Styled trait
+                    .border_2() // <- Styled trait
                     .border_color(rgb(0x10b981))
-                    .shadow_md()  // <- Styled trait
+                    .shadow_md() // <- Styled trait
             }),
         }
     }

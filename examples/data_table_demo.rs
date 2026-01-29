@@ -64,7 +64,10 @@ impl DataTableDemoApp {
             DataTable::new(small_data, small_columns, cx)
                 .show_selection(true)
                 .on_selection_change(|selected, _window, _cx| {
-                    println!("[DataTable Demo] Selection changed: {} rows selected", selected.len());
+                    println!(
+                        "[DataTable Demo] Selection changed: {} rows selected",
+                        selected.len()
+                    );
                     if !selected.is_empty() {
                         println!("  Selected indices: {:?}", selected);
                     }
@@ -76,7 +79,10 @@ impl DataTableDemoApp {
                     );
                 })
                 .on_row_click(|row_idx, row_data, _window, _cx| {
-                    println!("[DataTable Demo] Row {} clicked: {}", row_idx, row_data.name);
+                    println!(
+                        "[DataTable Demo] Row {} clicked: {}",
+                        row_idx, row_data.name
+                    );
                 })
                 .row_actions(vec![
                     RowAction::new("edit", "Edit", |row_idx, _window, _cx| {
@@ -107,10 +113,26 @@ impl DataTableDemoApp {
     /// Generate sample data
     fn generate_data(count: usize) -> Vec<User> {
         let names = vec![
-            "Ada Lovelace", "Grace Hopper", "Alan Turing", "John McCarthy", "Donald Knuth",
-            "Barbara Liskov", "Edsger Dijkstra", "Ken Thompson", "Dennis Ritchie", "Brian Kernighan",
-            "Guido van Rossum", "James Gosling", "Bjarne Stroustrup", "Brendan Eich", "Yukihiro Matsumoto",
-            "Linus Torvalds", "Richard Stallman", "Tim Berners-Lee", "Vint Cerf", "John von Neumann",
+            "Ada Lovelace",
+            "Grace Hopper",
+            "Alan Turing",
+            "John McCarthy",
+            "Donald Knuth",
+            "Barbara Liskov",
+            "Edsger Dijkstra",
+            "Ken Thompson",
+            "Dennis Ritchie",
+            "Brian Kernighan",
+            "Guido van Rossum",
+            "James Gosling",
+            "Bjarne Stroustrup",
+            "Brendan Eich",
+            "Yukihiro Matsumoto",
+            "Linus Torvalds",
+            "Richard Stallman",
+            "Tim Berners-Lee",
+            "Vint Cerf",
+            "John von Neumann",
         ];
 
         let roles = vec!["Engineer", "Senior Engineer", "Lead", "Manager", "Director"];
@@ -160,25 +182,19 @@ impl DataTableDemoApp {
             ColumnDef::new("status", "Status", |user: &User| user.status.clone().into())
                 .width(px(100.0))
                 .min_width(px(80.0)),
-            ColumnDef::new(
-                "department",
-                "Department",
-                |user: &User| user.department.clone().into()
-            )
+            ColumnDef::new("department", "Department", |user: &User| {
+                user.department.clone().into()
+            })
             .width(px(150.0))
             .min_width(px(120.0)),
-            ColumnDef::new(
-                "created_at",
-                "Created",
-                |user: &User| user.created_at.clone().into()
-            )
+            ColumnDef::new("created_at", "Created", |user: &User| {
+                user.created_at.clone().into()
+            })
             .width(px(120.0))
             .min_width(px(100.0)),
-            ColumnDef::new(
-                "last_active",
-                "Last Active",
-                |user: &User| user.last_active.clone().into()
-            )
+            ColumnDef::new("last_active", "Last Active", |user: &User| {
+                user.last_active.clone().into()
+            })
             .width(px(120.0))
             .min_width(px(100.0)),
         ]
@@ -203,25 +219,19 @@ impl DataTableDemoApp {
             ColumnDef::new("status", "Status", |user: &User| user.status.clone().into())
                 .width(px(100.0))
                 .min_width(px(80.0)),
-            ColumnDef::new(
-                "department",
-                "Department",
-                |user: &User| user.department.clone().into()
-            )
+            ColumnDef::new("department", "Department", |user: &User| {
+                user.department.clone().into()
+            })
             .width(px(150.0))
             .min_width(px(120.0)),
-            ColumnDef::new(
-                "created_at",
-                "Created",
-                |user: &User| user.created_at.clone().into()
-            )
+            ColumnDef::new("created_at", "Created", |user: &User| {
+                user.created_at.clone().into()
+            })
             .width(px(120.0))
             .min_width(px(100.0)),
-            ColumnDef::new(
-                "last_active",
-                "Last Active",
-                |user: &User| user.last_active.clone().into()
-            )
+            ColumnDef::new("last_active", "Last Active", |user: &User| {
+                user.last_active.clone().into()
+            })
             .width(px(120.0))
             .min_width(px(100.0)),
         ]
@@ -513,7 +523,11 @@ impl Render for DataTableDemoApp {
 }
 
 // Helper functions
-fn feature_badge(title: impl Into<SharedString>, description: impl Into<SharedString>, color: Hsla) -> impl IntoElement {
+fn feature_badge(
+    title: impl Into<SharedString>,
+    description: impl Into<SharedString>,
+    color: Hsla,
+) -> impl IntoElement {
     let theme = use_theme();
     let title: SharedString = title.into();
     let description: SharedString = description.into();
@@ -532,18 +546,22 @@ fn feature_badge(title: impl Into<SharedString>, description: impl Into<SharedSt
                         .text_size(px(14.0))
                         .font_weight(FontWeight::SEMIBOLD)
                         .text_color(color)
-                        .child(title)
+                        .child(title),
                 )
                 .child(
                     div()
                         .text_size(px(12.0))
                         .text_color(theme.tokens.muted_foreground)
-                        .child(description)
-                )
+                        .child(description),
+                ),
         )
 }
 
-fn perf_stat(label: impl Into<SharedString>, value: impl Into<SharedString>, description: impl Into<SharedString>) -> impl IntoElement {
+fn perf_stat(
+    label: impl Into<SharedString>,
+    value: impl Into<SharedString>,
+    description: impl Into<SharedString>,
+) -> impl IntoElement {
     let theme = use_theme();
     let label: SharedString = label.into();
     let value: SharedString = value.into();
@@ -558,7 +576,7 @@ fn perf_stat(label: impl Into<SharedString>, value: impl Into<SharedString>, des
                 .text_size(px(13.0))
                 .font_weight(FontWeight::MEDIUM)
                 .text_color(theme.tokens.foreground)
-                .child(label)
+                .child(label),
         )
         .child(
             div()
@@ -566,12 +584,12 @@ fn perf_stat(label: impl Into<SharedString>, value: impl Into<SharedString>, des
                 .text_size(px(13.0))
                 .font_weight(FontWeight::BOLD)
                 .text_color(theme.tokens.primary)
-                .child(value)
+                .child(value),
         )
         .child(
             div()
                 .text_size(px(12.0))
                 .text_color(theme.tokens.muted_foreground)
-                .child(description)
+                .child(description),
         )
 }

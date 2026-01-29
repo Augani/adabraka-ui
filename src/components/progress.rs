@@ -1,5 +1,5 @@
-use gpui::{prelude::FluentBuilder as _, *};
 use crate::theme::use_theme;
+use gpui::{prelude::FluentBuilder as _, *};
 
 /// Progress bar variants
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -139,31 +139,34 @@ impl RenderOnce for ProgressBar {
             .flex_col()
             .gap(px(8.0))
             .w_full()
-            .when(self.label.is_some() || (self.show_percentage && percentage_text.is_some()), |this| {
-                this.child(
-                    div()
-                        .flex()
-                        .justify_between()
-                        .items_center()
-                        .when_some(self.label, |this, label| {
-                            this.child(
-                                div()
-                                    .text_sm()
-                                    .font_weight(FontWeight::MEDIUM)
-                                    .text_color(theme.tokens.foreground)
-                                    .child(label)
-                            )
-                        })
-                        .when(self.show_percentage && percentage_text.is_some(), |this| {
-                            this.child(
-                                div()
-                                    .text_sm()
-                                    .text_color(theme.tokens.muted_foreground)
-                                    .child(percentage_text.unwrap_or_default())
-                            )
-                        })
-                )
-            })
+            .when(
+                self.label.is_some() || (self.show_percentage && percentage_text.is_some()),
+                |this| {
+                    this.child(
+                        div()
+                            .flex()
+                            .justify_between()
+                            .items_center()
+                            .when_some(self.label, |this, label| {
+                                this.child(
+                                    div()
+                                        .text_sm()
+                                        .font_weight(FontWeight::MEDIUM)
+                                        .text_color(theme.tokens.foreground)
+                                        .child(label),
+                                )
+                            })
+                            .when(self.show_percentage && percentage_text.is_some(), |this| {
+                                this.child(
+                                    div()
+                                        .text_sm()
+                                        .text_color(theme.tokens.muted_foreground)
+                                        .child(percentage_text.unwrap_or_default()),
+                                )
+                            }),
+                    )
+                },
+            )
             .child(
                 div()
                     .relative()
@@ -191,14 +194,14 @@ impl RenderOnce for ProgressBar {
                                         |div, delta| {
                                             let offset = (delta - 0.5) * 2.0;
                                             div.left(relative(offset))
-                                        }
+                                        },
                                     )
                                     .into_any_element()
                                 } else {
                                     this.into_any_element()
                                 }
-                            })
-                    )
+                            }),
+                    ),
             )
             .map(|this| {
                 let mut div = this;
@@ -314,7 +317,8 @@ impl RenderOnce for CircularProgress {
 
                                 container
                                     .children((0..num_segments).map(move |i| {
-                                        let segment_angle = (i as f32 / num_segments as f32) * std::f32::consts::TAU;
+                                        let segment_angle = (i as f32 / num_segments as f32)
+                                            * std::f32::consts::TAU;
                                         let progress_threshold = i as f32 / num_segments as f32;
 
                                         div()
@@ -322,25 +326,33 @@ impl RenderOnce for CircularProgress {
                                             .size(stroke_w * 1.2)
                                             .rounded(px(9999.0))
                                             .bg(stroke_color)
-                                            .left(center + path_radius * segment_angle.cos() - stroke_w * 0.6)
-                                            .top(center + path_radius * segment_angle.sin() - stroke_w * 0.6)
-                                            .opacity(if value >= progress_threshold { 1.0 } else { 0.0 })
+                                            .left(
+                                                center + path_radius * segment_angle.cos()
+                                                    - stroke_w * 0.6,
+                                            )
+                                            .top(
+                                                center + path_radius * segment_angle.sin()
+                                                    - stroke_w * 0.6,
+                                            )
+                                            .opacity(if value >= progress_threshold {
+                                                1.0
+                                            } else {
+                                                0.0
+                                            })
                                     }))
                                     .into_any_element()
                             }
-                            (Some(value), _) => {
-                                container
-                                    .child(
-                                        div()
-                                            .absolute()
-                                            .inset_0()
-                                            .border(stroke_w)
-                                            .border_color(stroke_color)
-                                            .rounded(px(9999.0))
-                                            .opacity((value * 0.7 + 0.3) as f32),
-                                    )
-                                    .into_any_element()
-                            }
+                            (Some(value), _) => container
+                                .child(
+                                    div()
+                                        .absolute()
+                                        .inset_0()
+                                        .border(stroke_w)
+                                        .border_color(stroke_color)
+                                        .rounded(px(9999.0))
+                                        .opacity((value * 0.7 + 0.3) as f32),
+                                )
+                                .into_any_element(),
                             (None, SpinnerType::Dot) => {
                                 let size_px = self.size;
                                 let dot_diameter = stroke_w * 1.5;
@@ -357,13 +369,17 @@ impl RenderOnce for CircularProgress {
                                             .bg(stroke_color)
                                             .with_animation(
                                                 "spinner-orbit",
-                                                Animation::new(std::time::Duration::from_millis(800))
-                                                    .repeat()
-                                                    .with_easing(crate::animations::easings::linear),
+                                                Animation::new(std::time::Duration::from_millis(
+                                                    800,
+                                                ))
+                                                .repeat()
+                                                .with_easing(crate::animations::easings::linear),
                                                 move |dot, delta| {
                                                     let angle = delta * std::f32::consts::TAU;
-                                                    let x = center + path_radius * angle.cos() - dot_radius;
-                                                    let y = center + path_radius * angle.sin() - dot_radius;
+                                                    let x = center + path_radius * angle.cos()
+                                                        - dot_radius;
+                                                    let y = center + path_radius * angle.sin()
+                                                        - dot_radius;
                                                     dot.left(x).top(y)
                                                 },
                                             ),
@@ -378,21 +394,34 @@ impl RenderOnce for CircularProgress {
 
                                 container
                                     .children((0..num_dots).map(move |i| {
-                                        let dot_angle = (i as f32 / num_dots as f32) * std::f32::consts::PI * 0.75; // Arc of about 135 degrees
+                                        let dot_angle = (i as f32 / num_dots as f32)
+                                            * std::f32::consts::PI
+                                            * 0.75; // Arc of about 135 degrees
                                         div()
                                             .absolute()
                                             .size(stroke_w * 1.2)
                                             .rounded(px(9999.0))
                                             .bg(stroke_color)
-                                            .left(center + path_radius * dot_angle.cos() - stroke_w * 0.6)
-                                            .top(center + path_radius * dot_angle.sin() - stroke_w * 0.6)
+                                            .left(
+                                                center + path_radius * dot_angle.cos()
+                                                    - stroke_w * 0.6,
+                                            )
+                                            .top(
+                                                center + path_radius * dot_angle.sin()
+                                                    - stroke_w * 0.6,
+                                            )
                                             .with_animation(
                                                 ("spinner-arc", i as u32),
-                                                Animation::new(std::time::Duration::from_millis(1000))
-                                                    .repeat()
-                                                    .with_easing(crate::animations::easings::linear),
+                                                Animation::new(std::time::Duration::from_millis(
+                                                    1000,
+                                                ))
+                                                .repeat()
+                                                .with_easing(crate::animations::easings::linear),
                                                 move |dot, delta| {
-                                                    let visibility = ((delta + i as f32 / num_dots as f32) % 1.0) < 0.6;
+                                                    let visibility = ((delta
+                                                        + i as f32 / num_dots as f32)
+                                                        % 1.0)
+                                                        < 0.6;
                                                     dot.opacity(if visibility { 1.0 } else { 0.0 })
                                                 },
                                             )
@@ -416,13 +445,20 @@ impl RenderOnce for CircularProgress {
                                             .bg(stroke_color)
                                             .with_animation(
                                                 ("spinner-arc-no-track", i as u32),
-                                                Animation::new(std::time::Duration::from_millis(1000))
-                                                    .repeat()
-                                                    .with_easing(crate::animations::easings::linear),
+                                                Animation::new(std::time::Duration::from_millis(
+                                                    1000,
+                                                ))
+                                                .repeat()
+                                                .with_easing(crate::animations::easings::linear),
                                                 move |dot, delta| {
-                                                    let angle = delta * std::f32::consts::TAU + (i as f32 / num_dots as f32) * std::f32::consts::PI * 0.75;
-                                                    let x = center + path_radius * angle.cos() - stroke_w * 0.6;
-                                                    let y = center + path_radius * angle.sin() - stroke_w * 0.6;
+                                                    let angle = delta * std::f32::consts::TAU
+                                                        + (i as f32 / num_dots as f32)
+                                                            * std::f32::consts::PI
+                                                            * 0.75;
+                                                    let x = center + path_radius * angle.cos()
+                                                        - stroke_w * 0.6;
+                                                    let y = center + path_radius * angle.sin()
+                                                        - stroke_w * 0.6;
                                                     dot.left(x).top(y)
                                                 },
                                             )
@@ -444,23 +480,38 @@ impl RenderOnce for CircularProgress {
                                             .bg(stroke_color)
                                             .with_animation(
                                                 ("growing-circle", i as u32),
-                                                Animation::new(std::time::Duration::from_millis(2000))
-                                                    .repeat()
-                                                    .with_easing(crate::animations::easings::linear),
+                                                Animation::new(std::time::Duration::from_millis(
+                                                    2000,
+                                                ))
+                                                .repeat()
+                                                .with_easing(crate::animations::easings::linear),
                                                 move |dot, delta| {
-                                                    let segment_angle = (i as f32 / num_segments as f32) * std::f32::consts::TAU;
-                                                    let x = center + path_radius * segment_angle.cos() - stroke_w * 0.6;
-                                                    let y = center + path_radius * segment_angle.sin() - stroke_w * 0.6;
-                                                    let segment_progress = i as f32 / num_segments as f32;
-                                                    let visibility = (delta - segment_progress + 1.0) % 1.0 < 0.3;
-                                                    dot.left(x).top(y).opacity(if visibility { 1.0 } else { 0.0 })
+                                                    let segment_angle = (i as f32
+                                                        / num_segments as f32)
+                                                        * std::f32::consts::TAU;
+                                                    let x = center
+                                                        + path_radius * segment_angle.cos()
+                                                        - stroke_w * 0.6;
+                                                    let y = center
+                                                        + path_radius * segment_angle.sin()
+                                                        - stroke_w * 0.6;
+                                                    let segment_progress =
+                                                        i as f32 / num_segments as f32;
+                                                    let visibility =
+                                                        (delta - segment_progress + 1.0) % 1.0
+                                                            < 0.3;
+                                                    dot.left(x).top(y).opacity(if visibility {
+                                                        1.0
+                                                    } else {
+                                                        0.0
+                                                    })
                                                 },
                                             )
                                     }))
                                     .into_any_element()
                             }
                         }
-                    })
+                    }),
             )
             .map(|this| {
                 let mut div = this;

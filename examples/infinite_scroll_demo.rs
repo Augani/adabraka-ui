@@ -65,8 +65,16 @@ impl InfiniteScrollApp {
 
     fn generate_batch(start_id: u32, count: usize) -> Vec<User> {
         let names = vec![
-            "Ada Lovelace", "Grace Hopper", "Alan Turing", "John McCarthy", "Donald Knuth",
-            "Barbara Liskov", "Edsger Dijkstra", "Ken Thompson", "Dennis Ritchie", "Brian Kernighan",
+            "Ada Lovelace",
+            "Grace Hopper",
+            "Alan Turing",
+            "John McCarthy",
+            "Donald Knuth",
+            "Barbara Liskov",
+            "Edsger Dijkstra",
+            "Ken Thompson",
+            "Dennis Ritchie",
+            "Brian Kernighan",
         ];
 
         let roles = vec!["Engineer", "Senior Engineer", "Lead", "Manager", "Director"];
@@ -111,7 +119,10 @@ impl InfiniteScrollApp {
     }
 
     fn load_more_data(&mut self, cx: &mut Context<Self>) {
-        println!("[Infinite Scroll] Loading more data... Currently loaded: {}", self.total_loaded);
+        println!(
+            "[Infinite Scroll] Loading more data... Currently loaded: {}",
+            self.total_loaded
+        );
 
         // In a real app, this would be an async API call
         // For demo, we'll just generate 50 more rows immediately
@@ -125,7 +136,10 @@ impl InfiniteScrollApp {
         self.next_id += batch_size as u32;
         self.total_loaded += batch_size;
 
-        println!("[Infinite Scroll] Loaded {} more rows. Total: {}", batch_size, self.total_loaded);
+        println!(
+            "[Infinite Scroll] Loaded {} more rows. Total: {}",
+            batch_size, self.total_loaded
+        );
         cx.notify();
     }
 }

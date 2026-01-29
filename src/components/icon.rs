@@ -1,43 +1,33 @@
 //! Icon component - SVG icon rendering with named icon support.
 
-use gpui::{prelude::*, *};
-use crate::theme::use_theme;
-use crate::icon_config::resolve_icon_path;
 use crate::components::icon_source::IconSource;
+use crate::icon_config::resolve_icon_path;
+use crate::theme::use_theme;
+use gpui::{prelude::*, *};
 
 /// Icon variant - currently for API compatibility, not yet affecting rendering
 /// TODO: Implement different icon styles or remove if not needed
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum IconVariant {
+    #[default]
     Regular,
     Solid,
 }
 
-impl Default for IconVariant {
-    fn default() -> Self {
-        Self::Regular
-    }
-}
-
 /// Icon size variants - supports named sizes and custom pixel values
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum IconSize {
     /// Extra small: 12px (size_3 in GPUI)
     XSmall,
     /// Small: 14px (size_3p5 in GPUI)
     Small,
     /// Medium: 16px (size_4 in GPUI) - Default
+    #[default]
     Medium,
     /// Large: 24px (size_6 in GPUI)
     Large,
     /// Custom pixel size
     Custom(Pixels),
-}
-
-impl Default for IconSize {
-    fn default() -> Self {
-        Self::Medium
-    }
 }
 
 impl From<Pixels> for IconSize {
@@ -141,9 +131,7 @@ impl Icon {
     fn get_svg_path(&self) -> Option<SharedString> {
         match &self.source {
             IconSource::FilePath(path) => Some(path.clone()),
-            IconSource::Named(name) => {
-                Some(SharedString::from(icon_path_from_name(name)))
-            }
+            IconSource::Named(name) => Some(SharedString::from(icon_path_from_name(name))),
         }
     }
 }
@@ -169,9 +157,7 @@ impl IntoElement for Icon {
 
             return base
                 .flex_shrink_0()
-                .when_some(svg_content, |this, svg_string| {
-                    this.path(svg_string)
-                })
+                .when_some(svg_content, |this, svg_string| this.path(svg_string))
                 .size(self.size.to_pixels())
                 .text_color(if self.disabled {
                     theme.tokens.muted_foreground
@@ -198,9 +184,7 @@ impl IntoElement for Icon {
             } else {
                 CursorStyle::PointingHand
             })
-            .when_some(self.focus_handle, |div, handle| {
-                div.track_focus(&handle)
-            })
+            .when_some(self.focus_handle, |div, handle| div.track_focus(&handle))
             .when(!disabled && on_click.is_some(), |div| {
                 div.on_mouse_down(MouseButton::Left, move |_, window, cx| {
                     if let Some(ref cb) = on_click {
@@ -229,7 +213,7 @@ impl IntoElement for Icon {
                         })
                         .when_some(self.rotation, |this, rotation| {
                             this.with_transformation(Transformation::rotate(rotation))
-                        })
+                        }),
                 )
             })
             .into_any_element()

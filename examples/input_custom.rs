@@ -1,13 +1,13 @@
 use adabraka_ui::{
     components::{
-        input::{Input, InputType, InputVariant, InputSize},
+        input::{Input, InputSize, InputType, InputVariant},
         input_state::InputState,
         scrollable::scrollable_vertical,
     },
     layout::VStack,
     theme::{install_theme, Theme},
 };
-use gpui::{*, prelude::FluentBuilder};
+use gpui::{prelude::FluentBuilder, *};
 
 struct CustomInputApp {
     // Simple usage - just a basic input

@@ -12,8 +12,8 @@
 //! - Card-style panels
 //! - Programmatic scroll control
 
-use gpui::*;
 use adabraka_ui::layout::*;
+use gpui::*;
 
 fn main() {
     Application::new().run(|cx: &mut App| {
@@ -106,26 +106,21 @@ impl ComplexLayoutDemo {
                     .fill()
                     .child(
                         // Sidebar header
-                        Panel::new()
-                            .section()
-                            .child(
-                                div()
-                                    .text_lg()
-                                    .font_weight(FontWeight::BOLD)
-                                    .child("Navigation")
-                            )
+                        Panel::new().section().child(
+                            div()
+                                .text_lg()
+                                .font_weight(FontWeight::BOLD)
+                                .child("Navigation"),
+                        ),
                     )
                     .child(
                         // Sidebar items (scrollable) - auto-sizes to fill remaining space!
-                        ScrollList::new()
-                            .spacing(4.0)
-                            .px(px(12.0))
-                            .children(
-                                self.sidebar_items.iter().map(|item| {
-                                    self.render_sidebar_item(item)
-                                })
-                            )
-                    )
+                        ScrollList::new().spacing(4.0).px(px(12.0)).children(
+                            self.sidebar_items
+                                .iter()
+                                .map(|item| self.render_sidebar_item(item)),
+                        ),
+                    ),
             )
     }
 
@@ -145,9 +140,9 @@ impl ComplexLayoutDemo {
                     .spacing(8.0)
                     .items_center()
                     .child(div().text_lg().child(item.icon.clone()))
-                    .child(div().child(item.label.clone()))
+                    .child(div().child(item.label.clone())),
             );
-        
+
         if let Some(count) = item.count {
             base.child(
                 div()
@@ -157,7 +152,7 @@ impl ComplexLayoutDemo {
                     .bg(rgb(0x3b82f6))
                     .text_color(rgb(0xffffff))
                     .text_sm()
-                    .child(format!("{}", count))
+                    .child(format!("{}", count)),
             )
         } else {
             base
@@ -165,27 +160,24 @@ impl ComplexLayoutDemo {
     }
 
     fn render_toolbar(&self, _cx: &mut Context<Self>) -> impl IntoElement {
-        Panel::new()
-            .section()
-            .bg(rgb(0xffffff))
-            .child(
-                HStack::new()
-                    .fill_width()
-                    .items_center()
-                    .space_between()
-                    .child(
-                        div()
-                            .text_xl()
-                            .font_weight(FontWeight::BOLD)
-                            .child("Messages")
-                    )
-                    .child(
-                        HStack::new()
-                            .spacing(8.0)
-                            .child(self.render_button("Compose", rgb(0x3b82f6).into()))
-                            .child(self.render_button("Refresh", rgb(0x6b7280).into()))
-                    )
-            )
+        Panel::new().section().bg(rgb(0xffffff)).child(
+            HStack::new()
+                .fill_width()
+                .items_center()
+                .space_between()
+                .child(
+                    div()
+                        .text_xl()
+                        .font_weight(FontWeight::BOLD)
+                        .child("Messages"),
+                )
+                .child(
+                    HStack::new()
+                        .spacing(8.0)
+                        .child(self.render_button("Compose", rgb(0x3b82f6).into()))
+                        .child(self.render_button("Refresh", rgb(0x6b7280).into())),
+                ),
+        )
     }
 
     fn render_button(&self, label: &str, bg_color: Hsla) -> impl IntoElement {
@@ -210,9 +202,9 @@ impl ComplexLayoutDemo {
             .px(px(16.0))
             .py(px(16.0))
             .children(
-                self.messages.iter().map(|msg| {
-                    self.render_message_card(msg)
-                })
+                self.messages
+                    .iter()
+                    .map(|msg| self.render_message_card(msg)),
             )
     }
 
@@ -233,21 +225,21 @@ impl ComplexLayoutDemo {
                                 div()
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(rgb(0x111827))
-                                    .child(message.author.clone())
+                                    .child(message.author.clone()),
                             )
                             .child(
                                 div()
                                     .text_sm()
                                     .text_color(rgb(0x6b7280))
-                                    .child(message.timestamp.clone())
-                            )
+                                    .child(message.timestamp.clone()),
+                            ),
                     )
                     .child(
                         // Message content
                         div()
                             .text_color(rgb(0x374151))
-                            .child(message.content.clone())
-                    )
+                            .child(message.content.clone()),
+                    ),
             )
     }
 
@@ -265,7 +257,7 @@ impl ComplexLayoutDemo {
                 div()
                     .text_sm()
                     .text_color(rgb(0x6b7280))
-                    .child(format!("{} messages", self.messages.len()))
+                    .child(format!("{} messages", self.messages.len())),
             )
             .child(
                 HStack::new()
@@ -279,7 +271,7 @@ impl ComplexLayoutDemo {
                             .child("Scroll to Top")
                             .on_click(cx.listener(|this, _, _, _| {
                                 this.scroll_handle.set_offset(point(px(0.0), px(0.0)));
-                            }))
+                            })),
                     )
                     .child(
                         div()
@@ -290,35 +282,28 @@ impl ComplexLayoutDemo {
                             .child("Scroll to Bottom")
                             .on_click(cx.listener(|this, _, _, _| {
                                 this.scroll_handle.scroll_to_bottom();
-                            }))
-                    )
+                            })),
+                    ),
             )
     }
 }
 
 impl Render for ComplexLayoutDemo {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .size_full()
-            .bg(rgb(0xfafafa))
-            .child(
-                // Main app layout: Sidebar + Content
-                HStack::new()
+        div().size_full().bg(rgb(0xfafafa)).child(
+            // Main app layout: Sidebar + Content
+            HStack::new().fill().child(self.render_sidebar(cx)).child(
+                // Main content area
+                VStack::new()
                     .fill()
-                    .child(self.render_sidebar(cx))
+                    .child(self.render_toolbar(cx))
                     .child(
-                        // Main content area
-                        VStack::new()
-                            .fill()
-                            .child(self.render_toolbar(cx))
-                            .child(
-                                // Message list area (scrollable)
-                                // ScrollList auto-fills remaining space in VStack!
-                                self.render_message_list(cx)
-                            )
-                            .child(self.render_status_bar(cx))
+                        // Message list area (scrollable)
+                        // ScrollList auto-fills remaining space in VStack!
+                        self.render_message_list(cx),
                     )
-            )
+                    .child(self.render_status_bar(cx)),
+            ),
+        )
     }
 }
-

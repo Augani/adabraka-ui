@@ -1,9 +1,6 @@
 use adabraka_ui::{
+    components::{collapsible::Collapsible, scrollable::scrollable_vertical},
     prelude::*,
-    components::{
-        scrollable::scrollable_vertical,
-        collapsible::Collapsible,
-    },
 };
 use gpui::*;
 use std::path::PathBuf;

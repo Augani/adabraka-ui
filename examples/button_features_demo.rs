@@ -90,14 +90,14 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(24.0))
                             .font_weight(FontWeight::BOLD)
-                            .child("Button Features Demo")
+                            .child("Button Features Demo"),
                     )
                     .child(
                         div()
                             .text_size(px(14.0))
                             .text_color(theme.tokens.muted_foreground)
-                            .child(format!("Click count: {}", self.click_count))
-                    )
+                            .child(format!("Click count: {}", self.click_count)),
+                    ),
             )
             // Basic Variants
             .child(
@@ -107,7 +107,7 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("1. Button Variants")
+                            .child("1. Button Variants"),
                     )
                     .child(
                         HStack::new()
@@ -118,7 +118,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("secondary-btn", "Secondary")
@@ -126,7 +126,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("destructive-btn", "Destructive")
@@ -134,7 +134,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("outline-btn", "Outline")
@@ -142,7 +142,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("ghost-btn", "Ghost")
@@ -150,7 +150,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("link-btn", "Link")
@@ -158,9 +158,9 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             )
             // Sizes
             .child(
@@ -170,7 +170,7 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("2. Button Sizes")
+                            .child("2. Button Sizes"),
                     )
                     .child(
                         HStack::new()
@@ -182,7 +182,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("medium-btn", "Medium")
@@ -190,7 +190,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("large-btn", "Large")
@@ -198,9 +198,9 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             )
             // Icons
             .child(
@@ -210,7 +210,7 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("3. Buttons with Icons")
+                            .child("3. Buttons with Icons"),
                     )
                     .child(
                         HStack::new()
@@ -222,7 +222,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("next-btn", "Next")
@@ -232,7 +232,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("delete-btn", "Delete")
@@ -241,9 +241,9 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             )
             // Loading State
             .child(
@@ -253,18 +253,27 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("4. Loading State")
+                            .child("4. Loading State"),
                     )
                     .child(
                         HStack::new()
                             .gap(px(12.0))
                             .child(
-                                Button::new("toggle-loading-btn", if self.is_loading { "Stop Loading" } else { "Start Loading" })
-                                    .variant(ButtonVariant::Secondary)
-                                    .on_click(cx.listener(|view, _, _, cx| {
+                                Button::new(
+                                    "toggle-loading-btn",
+                                    if self.is_loading {
+                                        "Stop Loading"
+                                    } else {
+                                        "Start Loading"
+                                    },
+                                )
+                                .variant(ButtonVariant::Secondary)
+                                .on_click(cx.listener(
+                                    |view, _, _, cx| {
                                         view.is_loading = !view.is_loading;
                                         cx.notify();
-                                    }))
+                                    },
+                                )),
                             )
                             .child(
                                 Button::new("loading-btn", "Processing...")
@@ -273,9 +282,9 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.click_count += 1;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             )
             // Selected State
             .child(
@@ -285,7 +294,7 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("5. Selected State (Toggle Buttons)")
+                            .child("5. Selected State (Toggle Buttons)"),
                     )
                     .child(
                         HStack::new()
@@ -297,7 +306,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.selected_variant = 0;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("variant-1", "Option 2")
@@ -306,7 +315,7 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.selected_variant = 1;
                                         cx.notify();
-                                    }))
+                                    })),
                             )
                             .child(
                                 Button::new("variant-2", "Option 3")
@@ -315,9 +324,9 @@ impl Render for ButtonFeaturesDemo {
                                     .on_click(cx.listener(|view, _, _, cx| {
                                         view.selected_variant = 2;
                                         cx.notify();
-                                    }))
-                            )
-                    )
+                                    })),
+                            ),
+                    ),
             )
             // Disabled State
             .child(
@@ -327,26 +336,23 @@ impl Render for ButtonFeaturesDemo {
                         div()
                             .text_size(px(18.0))
                             .font_weight(FontWeight::SEMIBOLD)
-                            .child("6. Disabled State")
+                            .child("6. Disabled State"),
                     )
                     .child(
                         HStack::new()
                             .gap(px(12.0))
-                            .child(
-                                Button::new("disabled-default", "Disabled")
-                                    .disabled(true)
-                            )
+                            .child(Button::new("disabled-default", "Disabled").disabled(true))
                             .child(
                                 Button::new("disabled-secondary", "Disabled")
                                     .variant(ButtonVariant::Secondary)
-                                    .disabled(true)
+                                    .disabled(true),
                             )
                             .child(
                                 Button::new("disabled-destructive", "Disabled")
                                     .variant(ButtonVariant::Destructive)
-                                    .disabled(true)
-                            )
-                    )
+                                    .disabled(true),
+                            ),
+                    ),
             )
     }
 }

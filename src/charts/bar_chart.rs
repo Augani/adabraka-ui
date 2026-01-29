@@ -10,8 +10,7 @@ fn get_chart_color(index: usize) -> Hsla {
 }
 
 fn pixels_to_f32(p: Pixels) -> f32 {
-    let scaled = p * (1.0 / 1.0);
-    scaled / px(1.0)
+    p / px(1.0)
 }
 
 #[derive(Clone)]

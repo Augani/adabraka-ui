@@ -25,23 +25,18 @@
 //! - RadioGroup automatically manages checked state
 //!
 
+use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::theme::use_theme;
 
 /// Layout direction for RadioGroup
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RadioLayout {
     /// Vertical stack (default)
+    #[default]
     Vertical,
     /// Horizontal row
     Horizontal,
-}
-
-impl Default for RadioLayout {
-    fn default() -> Self {
-        Self::Vertical
-    }
 }
 
 /// Individual radio button component
@@ -181,11 +176,7 @@ impl RenderOnce for Radio {
                     ),
             )
             .when_some(self.label, |this, label| {
-                this.child(
-                    div()
-                        .line_height(relative(1.0))
-                        .child(label),
-                )
+                this.child(div().line_height(relative(1.0)).child(label))
             })
             .when(!self.disabled, |this| {
                 this.cursor(CursorStyle::PointingHand)
@@ -301,29 +292,22 @@ impl RenderOnce for RadioGroup {
         div()
             .id(self.id)
             .flex()
-            .when(self.layout == RadioLayout::Vertical, |this| {
-                this.flex_col()
-            })
+            .when(self.layout == RadioLayout::Vertical, |this| this.flex_col())
             .when(self.layout == RadioLayout::Horizontal, |this| {
                 this.flex_row().flex_wrap()
             })
             .gap(px(12.0))
-            .children(
-                self.radios
-                    .into_iter()
-                    .enumerate()
-                    .map(|(ix, radio)| {
-                        let checked = selected_ix == Some(ix);
-                        radio
-                            .checked(checked)
-                            .disabled(disabled)
-                            .when_some(on_change.clone(), |this, on_change| {
-                                this.on_click(move |window, cx| {
-                                    on_change(&ix, window, cx);
-                                })
-                            })
-                    }),
-            )
+            .children(self.radios.into_iter().enumerate().map(|(ix, radio)| {
+                let checked = selected_ix == Some(ix);
+                radio.checked(checked).disabled(disabled).when_some(
+                    on_change.clone(),
+                    |this, on_change| {
+                        this.on_click(move |window, cx| {
+                            on_change(&ix, window, cx);
+                        })
+                    },
+                )
+            }))
     }
 }
 

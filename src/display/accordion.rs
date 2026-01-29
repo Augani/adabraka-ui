@@ -1,12 +1,8 @@
 //! Accordion - Collapsible content sections with smooth animations.
 
+use crate::{components::icon::Icon, components::icon_source::IconSource, theme::use_theme};
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
-use crate::{
-    theme::use_theme,
-    components::icon::Icon,
-    components::icon_source::IconSource,
-};
 
 #[derive(IntoElement)]
 pub struct Accordion {
@@ -229,11 +225,14 @@ impl RenderOnce for AccordionItem {
                     .when(self.is_open && self.bordered, |div| {
                         div.border_b_1().border_color(theme.tokens.border)
                     })
-                    .when_some(self.on_toggle.filter(|_| !self.disabled), |div, callback| {
-                        div.on_mouse_down(MouseButton::Left, move |_event, window, cx| {
-                            callback(!is_open, window, cx);
-                        })
-                    })
+                    .when_some(
+                        self.on_toggle.filter(|_| !self.disabled),
+                        |div, callback| {
+                            div.on_mouse_down(MouseButton::Left, move |_event, window, cx| {
+                                callback(!is_open, window, cx);
+                            })
+                        },
+                    )
                     .child(
                         div()
                             .flex()
@@ -243,7 +242,7 @@ impl RenderOnce for AccordionItem {
                                 div.child(
                                     Icon::new(icon)
                                         .size(px(18.0))
-                                        .color(theme.tokens.muted_foreground)
+                                        .color(theme.tokens.muted_foreground),
                                 )
                             })
                             .child(
@@ -251,14 +250,18 @@ impl RenderOnce for AccordionItem {
                                     .text_size(px(15.0))
                                     .font_weight(FontWeight::MEDIUM)
                                     .text_color(theme.tokens.foreground)
-                                    .child(self.title)
-                            )
+                                    .child(self.title),
+                            ),
                     )
                     .child(
-                        Icon::new(if is_open { "chevron-up" } else { "chevron-down" })
-                            .size(px(16.0))
-                            .color(theme.tokens.muted_foreground)
-                    )
+                        Icon::new(if is_open {
+                            "chevron-up"
+                        } else {
+                            "chevron-down"
+                        })
+                        .size(px(16.0))
+                        .color(theme.tokens.muted_foreground),
+                    ),
             )
             .when(is_open, |parent| {
                 parent.child(
@@ -269,7 +272,7 @@ impl RenderOnce for AccordionItem {
                         .text_color(theme.tokens.muted_foreground)
                         .when_some(self.content, |content_div, content| {
                             content_div.child(content)
-                        })
+                        }),
                 )
             })
     }

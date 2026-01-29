@@ -1,13 +1,13 @@
-use gpui::*;
-use gpui::prelude::FluentBuilder;
 use adabraka_ui::{
-    prelude::*,
     components::{
         navigation_menu::{NavigationMenu, NavigationMenuItem, NavigationMenuOrientation},
         scrollable::scrollable_vertical,
     },
-    layout::{VStack, HStack},
+    layout::{HStack, VStack},
+    prelude::*,
 };
+use gpui::prelude::FluentBuilder;
+use gpui::*;
 use std::path::PathBuf;
 
 struct Assets {
@@ -448,28 +448,30 @@ impl Render for NavigationMenuDemo {
 
 fn main() {
     Application::new()
-        .with_assets(Assets { base: PathBuf::from(env!("CARGO_MANIFEST_DIR")) })
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
         .run(move |cx: &mut App| {
-        adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
-        adabraka_ui::init(cx);
-        adabraka_ui::set_icon_base_path("assets/icons");
+            adabraka_ui::theme::install_theme(cx, adabraka_ui::theme::Theme::dark());
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
 
-        cx.open_window(
-            WindowOptions {
-                window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
-                    None,
-                    size(px(1200.0), px(900.0)),
-                    cx,
-                ))),
-                titlebar: Some(TitlebarOptions {
-                    title: Some("NavigationMenu Demo".into()),
-                    appears_transparent: false,
+            cx.open_window(
+                WindowOptions {
+                    window_bounds: Some(WindowBounds::Windowed(Bounds::centered(
+                        None,
+                        size(px(1200.0), px(900.0)),
+                        cx,
+                    ))),
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("NavigationMenu Demo".into()),
+                        appears_transparent: false,
+                        ..Default::default()
+                    }),
                     ..Default::default()
-                }),
-                ..Default::default()
-            },
-            |_window, cx| cx.new(|cx| NavigationMenuDemo::new(cx)),
-        )
-        .unwrap();
-    });
+                },
+                |_window, cx| cx.new(|cx| NavigationMenuDemo::new(cx)),
+            )
+            .unwrap();
+        });
 }

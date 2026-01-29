@@ -14,6 +14,10 @@ fn main() {
     for path in test_paths {
         let full_path = Path::new(path);
         let exists = full_path.exists();
-        println!("  Path: {} → {}", path, if exists { "✓ EXISTS" } else { "✗ MISSING" });
+        println!(
+            "  Path: {} → {}",
+            path,
+            if exists { "✓ EXISTS" } else { "✗ MISSING" }
+        );
     }
 }

@@ -11,9 +11,7 @@ fn main() {
                 }),
                 ..Default::default()
             },
-            |window, cx| {
-                cx.new(|cx| DemoApp::new(window, cx))
-            },
+            |window, cx| cx.new(|cx| DemoApp::new(window, cx)),
         )
         .unwrap();
     });
@@ -513,15 +511,15 @@ impl Render for DemoApp {
                             .text_size(px(24.0))
                             .font_weight(FontWeight::BOLD)
                             .text_color(theme.tokens.foreground)
-                            .child("adabraka-ui Components Demo")
+                            .child("adabraka-ui Components Demo"),
                     )
                     .child(
                         div()
                             .ml_auto()
                             .text_size(px(14.0))
                             .text_color(theme.tokens.muted_foreground)
-                            .child("Scrollable showcase - Try clicking!")
-                    )
+                            .child("Scrollable showcase - Try clicking!"),
+                    ),
             )
             .child(
                 // Main scrollable content area - rendered directly in root view
@@ -529,13 +527,9 @@ impl Render for DemoApp {
                     .flex_1()
                     .w_full()
                     .overflow_hidden()
-                    .child(
-                        scrollable_vertical(
-                            div()
-                                .p(px(24.0))
-                                .child(self.render_content(cx))
-                        )
-                    )
+                    .child(scrollable_vertical(
+                        div().p(px(24.0)).child(self.render_content(cx)),
+                    )),
             )
     }
 }

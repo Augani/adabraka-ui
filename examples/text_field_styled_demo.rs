@@ -1,9 +1,9 @@
 use adabraka_ui::{
-    prelude::*,
     components::{
-        scrollable::scrollable_vertical,
         input::{Input, InputState},
+        scrollable::scrollable_vertical,
     },
+    prelude::*,
 };
 use gpui::*;
 use std::path::PathBuf;
@@ -58,11 +58,10 @@ fn main() {
                     ..Default::default()
                 },
                 |_, cx| {
-                    // Create Input states 
-                    let states: Vec<Entity<InputState>> = (0..10)
-                        .map(|_| cx.new(|cx| InputState::new(cx)))
-                        .collect();
-                    
+                    // Create Input states
+                    let states: Vec<Entity<InputState>> =
+                        (0..10).map(|_| cx.new(|cx| InputState::new(cx))).collect();
+
                     cx.new(|_| InputStyledDemo::new(states))
                 },
             )

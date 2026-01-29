@@ -40,6 +40,36 @@ pub enum TimelineSize {
     Lg,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+pub enum TimelineLayout {
+    #[default]
+    Left,
+    Right,
+    Center,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+pub enum TimelineConnectorStyle {
+    #[default]
+    Solid,
+    Dashed,
+    None,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+pub enum TimelineIndicatorStyle {
+    #[default]
+    Dot,
+    Icon,
+    Number,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum TimelineItemPosition {
+    Left,
+    Right,
+}
+
 impl TimelineSize {
     fn icon_size(&self) -> Pixels {
         match self {
@@ -51,15 +81,23 @@ impl TimelineSize {
 
     fn dot_size(&self) -> Pixels {
         match self {
-            TimelineSize::Sm => px(8.0),
-            TimelineSize::Md => px(12.0),
-            TimelineSize::Lg => px(16.0),
+            TimelineSize::Sm => px(10.0),
+            TimelineSize::Md => px(14.0),
+            TimelineSize::Lg => px(18.0),
+        }
+    }
+
+    fn number_size(&self) -> Pixels {
+        match self {
+            TimelineSize::Sm => px(20.0),
+            TimelineSize::Md => px(26.0),
+            TimelineSize::Lg => px(32.0),
         }
     }
 
     fn connector_width(&self) -> Pixels {
         match self {
-            TimelineSize::Sm => px(1.0),
+            TimelineSize::Sm => px(2.0),
             TimelineSize::Md => px(2.0),
             TimelineSize::Lg => px(3.0),
         }
@@ -91,9 +129,9 @@ impl TimelineSize {
 
     fn item_gap(&self) -> Pixels {
         match self {
-            TimelineSize::Sm => px(16.0),
-            TimelineSize::Md => px(24.0),
-            TimelineSize::Lg => px(32.0),
+            TimelineSize::Sm => px(20.0),
+            TimelineSize::Md => px(28.0),
+            TimelineSize::Lg => px(36.0),
         }
     }
 }
@@ -105,8 +143,7 @@ pub struct TimelineItem {
     pub timestamp: Option<SharedString>,
     pub icon: Option<IconSource>,
     pub variant: TimelineItemVariant,
-    pub collapsible: bool,
-    pub collapsed: bool,
+    pub position: Option<TimelineItemPosition>,
 }
 
 impl TimelineItem {
@@ -117,8 +154,7 @@ impl TimelineItem {
             timestamp: None,
             icon: None,
             variant: TimelineItemVariant::default(),
-            collapsible: false,
-            collapsed: false,
+            position: None,
         }
     }
 
@@ -162,14 +198,18 @@ impl TimelineItem {
         self
     }
 
-    pub fn collapsible(mut self, collapsible: bool) -> Self {
-        self.collapsible = collapsible;
+    pub fn position(mut self, position: TimelineItemPosition) -> Self {
+        self.position = Some(position);
         self
     }
 
-    pub fn collapsed(mut self, collapsed: bool) -> Self {
-        self.collapsed = collapsed;
-        self.collapsible = true;
+    pub fn left(mut self) -> Self {
+        self.position = Some(TimelineItemPosition::Left);
+        self
+    }
+
+    pub fn right(mut self) -> Self {
+        self.position = Some(TimelineItemPosition::Right);
         self
     }
 
@@ -189,8 +229,12 @@ pub struct Timeline {
     items: Vec<TimelineItem>,
     orientation: TimelineOrientation,
     size: TimelineSize,
+    layout: TimelineLayout,
     alternating: bool,
-    show_icons: bool,
+    indicator_style: TimelineIndicatorStyle,
+    connector_style: TimelineConnectorStyle,
+    connector_color: Option<Hsla>,
+    content_width: Option<Pixels>,
     style: StyleRefinement,
 }
 
@@ -200,8 +244,12 @@ impl Timeline {
             items,
             orientation: TimelineOrientation::default(),
             size: TimelineSize::default(),
+            layout: TimelineLayout::default(),
             alternating: false,
-            show_icons: false,
+            indicator_style: TimelineIndicatorStyle::default(),
+            connector_style: TimelineConnectorStyle::default(),
+            connector_color: None,
+            content_width: None,
             style: StyleRefinement::default(),
         }
     }
@@ -239,228 +287,435 @@ impl Timeline {
         self
     }
 
-    pub fn alternating(mut self, alternating: bool) -> Self {
-        self.alternating = alternating;
+    pub fn layout(mut self, layout: TimelineLayout) -> Self {
+        self.layout = layout;
         self
     }
 
+    pub fn left_layout(mut self) -> Self {
+        self.layout = TimelineLayout::Left;
+        self
+    }
+
+    pub fn right_layout(mut self) -> Self {
+        self.layout = TimelineLayout::Right;
+        self
+    }
+
+    pub fn center_layout(mut self) -> Self {
+        self.layout = TimelineLayout::Center;
+        self
+    }
+
+    pub fn alternating(mut self, alternating: bool) -> Self {
+        self.alternating = alternating;
+        if alternating {
+            self.layout = TimelineLayout::Center;
+        }
+        self
+    }
+
+    pub fn indicator_style(mut self, style: TimelineIndicatorStyle) -> Self {
+        self.indicator_style = style;
+        self
+    }
+
+    pub fn dot_indicators(mut self) -> Self {
+        self.indicator_style = TimelineIndicatorStyle::Dot;
+        self
+    }
+
+    pub fn icon_indicators(mut self) -> Self {
+        self.indicator_style = TimelineIndicatorStyle::Icon;
+        self
+    }
+
+    pub fn number_indicators(mut self) -> Self {
+        self.indicator_style = TimelineIndicatorStyle::Number;
+        self
+    }
+
+    pub fn connector_style(mut self, style: TimelineConnectorStyle) -> Self {
+        self.connector_style = style;
+        self
+    }
+
+    pub fn solid_connector(mut self) -> Self {
+        self.connector_style = TimelineConnectorStyle::Solid;
+        self
+    }
+
+    pub fn dashed_connector(mut self) -> Self {
+        self.connector_style = TimelineConnectorStyle::Dashed;
+        self
+    }
+
+    pub fn no_connector(mut self) -> Self {
+        self.connector_style = TimelineConnectorStyle::None;
+        self
+    }
+
+    pub fn connector_color(mut self, color: Hsla) -> Self {
+        self.connector_color = Some(color);
+        self
+    }
+
+    pub fn content_width(mut self, width: Pixels) -> Self {
+        self.content_width = Some(width);
+        self
+    }
+
+    #[deprecated(note = "Use indicator_style(TimelineIndicatorStyle::Icon) instead")]
     pub fn show_icons(mut self, show: bool) -> Self {
-        self.show_icons = show;
+        if show {
+            self.indicator_style = TimelineIndicatorStyle::Icon;
+        }
         self
     }
 }
 
-fn render_vertical_item(
-    item: &TimelineItem,
-    index: usize,
-    is_last: bool,
-    theme: &crate::theme::Theme,
-    size: TimelineSize,
-    alternating: bool,
-    global_show_icons: bool,
-) -> impl IntoElement {
-    let item_color = item.get_color(theme);
-    let is_right = alternating && index % 2 == 1;
-    let show_icons = global_show_icons || item.icon.is_some();
+impl Timeline {
+    fn render_indicator(
+        &self,
+        item: &TimelineItem,
+        index: usize,
+        theme: &crate::theme::Theme,
+    ) -> AnyElement {
+        let item_color = item.get_color(theme);
+        let size = self.size;
 
-    let indicator = if show_icons {
-        let icon_source = item
-            .icon
-            .clone()
-            .unwrap_or_else(|| IconSource::Named(item.variant.default_icon().into()));
-        div()
-            .flex()
-            .items_center()
-            .justify_center()
-            .size(size.icon_size() + px(8.0))
-            .rounded(px(9999.0))
-            .bg(item_color.opacity(0.15))
-            .border_2()
-            .border_color(item_color)
-            .child(
-                Icon::new(icon_source)
-                    .size(size.icon_size())
-                    .color(item_color),
-            )
-            .into_any_element()
-    } else {
-        div()
-            .size(size.dot_size())
-            .rounded(px(9999.0))
-            .bg(item_color)
-            .border_2()
-            .border_color(theme.tokens.background)
-            .into_any_element()
-    };
+        match self.indicator_style {
+            TimelineIndicatorStyle::Dot => div()
+                .size(size.dot_size())
+                .rounded_full()
+                .bg(item_color)
+                .flex_shrink_0()
+                .into_any_element(),
 
-    let connector_height = size.item_gap();
+            TimelineIndicatorStyle::Icon => {
+                let icon_source = item
+                    .icon
+                    .clone()
+                    .unwrap_or_else(|| IconSource::Named(item.variant.default_icon().into()));
+                div()
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .size(size.icon_size() + px(10.0))
+                    .rounded_full()
+                    .bg(item_color.opacity(0.15))
+                    .border_2()
+                    .border_color(item_color)
+                    .flex_shrink_0()
+                    .child(
+                        Icon::new(icon_source)
+                            .size(size.icon_size())
+                            .color(item_color),
+                    )
+                    .into_any_element()
+            }
 
-    let content = div()
-        .flex()
-        .flex_col()
-        .gap(px(4.0))
-        .child(
-            div()
+            TimelineIndicatorStyle::Number => div()
                 .flex()
                 .items_center()
-                .gap(px(8.0))
-                .when(is_right, |this| this.flex_row_reverse())
-                .child(
-                    div()
-                        .text_size(px(size.title_size()))
-                        .font_weight(FontWeight::MEDIUM)
-                        .text_color(theme.tokens.foreground)
-                        .child(item.title.clone()),
-                )
-                .when_some(item.timestamp.clone(), |this, ts| {
-                    this.child(
-                        div()
-                            .text_size(px(size.description_size() - 1.0))
-                            .text_color(theme.tokens.muted_foreground)
-                            .child(ts),
+                .justify_center()
+                .size(size.number_size())
+                .rounded_full()
+                .bg(item_color)
+                .flex_shrink_0()
+                .text_size(px(size.title_size() - 2.0))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(theme.tokens.background)
+                .child(format!("{}", index + 1))
+                .into_any_element(),
+        }
+    }
+
+    fn render_connector(&self, theme: &crate::theme::Theme, length: Pixels) -> Option<AnyElement> {
+        if self.connector_style == TimelineConnectorStyle::None {
+            return None;
+        }
+
+        let color = self.connector_color.unwrap_or(theme.tokens.border);
+        let width = self.size.connector_width();
+
+        let connector = match self.connector_style {
+            TimelineConnectorStyle::Solid => div().w(width).h(length).bg(color).into_any_element(),
+            TimelineConnectorStyle::Dashed => {
+                let num_dashes = ((length / px(8.0)) as usize).max(1);
+                div()
+                    .w(width)
+                    .h(length)
+                    .flex()
+                    .flex_col()
+                    .gap(px(4.0))
+                    .overflow_hidden()
+                    .children(
+                        (0..num_dashes)
+                            .map(|_| div().w(width).h(px(4.0)).bg(color).into_any_element()),
                     )
-                }),
-        )
-        .when_some(item.description.clone(), |this, desc| {
-            this.when(!item.collapsed, |this| {
-                this.child(
+                    .into_any_element()
+            }
+            TimelineConnectorStyle::None => return None,
+        };
+
+        Some(connector)
+    }
+
+    fn render_content(
+        &self,
+        item: &TimelineItem,
+        theme: &crate::theme::Theme,
+        align_right: bool,
+    ) -> AnyElement {
+        let size = self.size;
+
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(4.0))
+            .when(align_right, |d| d.items_end())
+            .when_some(self.content_width, |d, w| d.w(w))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(2.0))
+                    .when(align_right, |d| d.items_end())
+                    .child(
+                        div()
+                            .text_size(px(size.title_size()))
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(theme.tokens.foreground)
+                            .when(align_right, |d| d.text_align(TextAlign::Right))
+                            .child(item.title.clone()),
+                    )
+                    .when_some(item.timestamp.clone(), |d, ts| {
+                        d.child(
+                            div()
+                                .text_size(px(size.description_size() - 1.0))
+                                .text_color(theme.tokens.muted_foreground)
+                                .when(align_right, |d| d.text_align(TextAlign::Right))
+                                .child(ts),
+                        )
+                    }),
+            )
+            .when_some(item.description.clone(), |d, desc| {
+                d.child(
                     div()
                         .text_size(px(size.description_size()))
                         .text_color(theme.tokens.muted_foreground)
+                        .when(align_right, |d| d.text_align(TextAlign::Right))
                         .child(desc),
                 )
             })
-        });
+            .into_any_element()
+    }
 
-    div()
-        .flex()
-        .when(is_right, |this| this.flex_row_reverse())
-        .gap(size.spacing())
-        .child(
-            div()
-                .flex()
-                .flex_col()
-                .items_center()
-                .child(indicator)
-                .when(!is_last, |this| {
-                    this.child(
-                        div()
-                            .w(size.connector_width())
-                            .h(connector_height)
-                            .bg(theme.tokens.border),
-                    )
-                }),
-        )
-        .child(
-            div()
-                .flex_1()
-                .pb(if is_last { px(0.0) } else { size.item_gap() })
-                .pt(if show_icons { px(4.0) } else { px(0.0) })
-                .when(is_right, |this| this.items_end())
-                .child(content),
-        )
-}
+    fn render_vertical_left_item(
+        &self,
+        item: &TimelineItem,
+        index: usize,
+        is_last: bool,
+        theme: &crate::theme::Theme,
+    ) -> AnyElement {
+        let indicator = self.render_indicator(item, index, theme);
+        let connector = if !is_last {
+            self.render_connector(theme, self.size.item_gap())
+        } else {
+            None
+        };
+        let content = self.render_content(item, theme, false);
 
-fn render_horizontal_item(
-    item: &TimelineItem,
-    index: usize,
-    is_last: bool,
-    theme: &crate::theme::Theme,
-    size: TimelineSize,
-    alternating: bool,
-    global_show_icons: bool,
-) -> impl IntoElement {
-    let item_color = item.get_color(theme);
-    let is_bottom = alternating && index % 2 == 1;
-    let show_icons = global_show_icons || item.icon.is_some();
-
-    let indicator = if show_icons {
-        let icon_source = item
-            .icon
-            .clone()
-            .unwrap_or_else(|| IconSource::Named(item.variant.default_icon().into()));
         div()
             .flex()
-            .items_center()
-            .justify_center()
-            .size(size.icon_size() + px(8.0))
-            .rounded(px(9999.0))
-            .bg(item_color.opacity(0.15))
-            .border_2()
-            .border_color(item_color)
+            .gap(self.size.spacing())
             .child(
-                Icon::new(icon_source)
-                    .size(size.icon_size())
-                    .color(item_color),
-            )
-            .into_any_element()
-    } else {
-        div()
-            .size(size.dot_size())
-            .rounded(px(9999.0))
-            .bg(item_color)
-            .border_2()
-            .border_color(theme.tokens.background)
-            .into_any_element()
-    };
-
-    let connector_width = size.item_gap();
-
-    let content = div()
-        .flex()
-        .flex_col()
-        .items_center()
-        .gap(px(4.0))
-        .max_w(px(120.0))
-        .child(
-            div()
-                .text_size(px(size.title_size()))
-                .font_weight(FontWeight::MEDIUM)
-                .text_color(theme.tokens.foreground)
-                .text_center()
-                .child(item.title.clone()),
-        )
-        .when_some(item.timestamp.clone(), |this, ts| {
-            this.child(
                 div()
-                    .text_size(px(size.description_size() - 1.0))
-                    .text_color(theme.tokens.muted_foreground)
-                    .text_center()
-                    .child(ts),
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .child(indicator)
+                    .when_some(connector, |d, c| d.child(c)),
             )
-        })
-        .when_some(item.description.clone(), |this, desc| {
-            this.when(!item.collapsed, |this| {
-                this.child(
+            .child(
+                div()
+                    .flex_1()
+                    .pb(if is_last {
+                        px(0.0)
+                    } else {
+                        self.size.item_gap()
+                    })
+                    .child(content),
+            )
+            .into_any_element()
+    }
+
+    fn render_vertical_right_item(
+        &self,
+        item: &TimelineItem,
+        index: usize,
+        is_last: bool,
+        theme: &crate::theme::Theme,
+    ) -> AnyElement {
+        let indicator = self.render_indicator(item, index, theme);
+        let connector = if !is_last {
+            self.render_connector(theme, self.size.item_gap())
+        } else {
+            None
+        };
+        let content = self.render_content(item, theme, true);
+
+        div()
+            .flex()
+            .flex_row_reverse()
+            .gap(self.size.spacing())
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .child(indicator)
+                    .when_some(connector, |d, c| d.child(c)),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .pb(if is_last {
+                        px(0.0)
+                    } else {
+                        self.size.item_gap()
+                    })
+                    .child(content),
+            )
+            .into_any_element()
+    }
+
+    fn render_vertical_center_item(
+        &self,
+        item: &TimelineItem,
+        index: usize,
+        is_last: bool,
+        theme: &crate::theme::Theme,
+        on_left: bool,
+    ) -> AnyElement {
+        let indicator = self.render_indicator(item, index, theme);
+        let connector = if !is_last {
+            self.render_connector(theme, self.size.item_gap())
+        } else {
+            None
+        };
+        let content = self.render_content(item, theme, on_left);
+
+        let left_content = if on_left { Some(content) } else { None };
+
+        let right_content = if !on_left {
+            Some(self.render_content(item, theme, false))
+        } else {
+            None
+        };
+
+        div()
+            .flex()
+            .w_full()
+            .child(
+                div()
+                    .flex_1()
+                    .flex()
+                    .justify_end()
+                    .pr(self.size.spacing())
+                    .when_some(left_content, |d, c| d.child(c)),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .child(indicator)
+                    .when_some(connector, |d, c| d.child(c)),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .pl(self.size.spacing())
+                    .pb(if is_last {
+                        px(0.0)
+                    } else {
+                        self.size.item_gap()
+                    })
+                    .when_some(right_content, |d, c| d.child(c)),
+            )
+            .into_any_element()
+    }
+
+    fn render_horizontal_item(
+        &self,
+        item: &TimelineItem,
+        index: usize,
+        is_last: bool,
+        theme: &crate::theme::Theme,
+    ) -> AnyElement {
+        let indicator = self.render_indicator(item, index, theme);
+        let content = div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .gap(px(4.0))
+            .max_w(px(120.0))
+            .child(
+                div()
+                    .text_size(px(self.size.title_size()))
+                    .font_weight(FontWeight::MEDIUM)
+                    .text_color(theme.tokens.foreground)
+                    .text_center()
+                    .child(item.title.clone()),
+            )
+            .when_some(item.timestamp.clone(), |d, ts| {
+                d.child(
                     div()
-                        .text_size(px(size.description_size()))
+                        .text_size(px(self.size.description_size() - 1.0))
+                        .text_color(theme.tokens.muted_foreground)
+                        .text_center()
+                        .child(ts),
+                )
+            })
+            .when_some(item.description.clone(), |d, desc| {
+                d.child(
+                    div()
+                        .text_size(px(self.size.description_size()))
                         .text_color(theme.tokens.muted_foreground)
                         .text_center()
                         .child(desc),
                 )
-            })
-        });
+            });
 
-    div()
-        .flex()
-        .flex_col()
-        .when(is_bottom, |this| this.flex_col_reverse())
-        .gap(size.spacing())
-        .child(content)
-        .child(
-            div()
-                .flex()
-                .items_center()
-                .child(indicator)
-                .when(!is_last, |this| {
-                    this.child(
-                        div()
-                            .h(size.connector_width())
-                            .w(connector_width)
-                            .bg(theme.tokens.border),
-                    )
-                }),
-        )
+        let connector = if !is_last {
+            self.render_connector(theme, self.size.item_gap()).map(|_| {
+                div()
+                    .h(self.size.connector_width())
+                    .w(self.size.item_gap())
+                    .bg(self.connector_color.unwrap_or(theme.tokens.border))
+                    .into_any_element()
+            })
+        } else {
+            None
+        };
+
+        div()
+            .flex()
+            .flex_col()
+            .items_center()
+            .gap(self.size.spacing())
+            .child(content)
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .child(indicator)
+                    .when_some(connector, |d, c| d.child(c)),
+            )
+            .into_any_element()
+    }
 }
 
 impl Styled for Timeline {
@@ -472,15 +727,11 @@ impl Styled for Timeline {
 impl RenderOnce for Timeline {
     fn render(self, _window: &mut Window, _cx: &mut App) -> impl IntoElement {
         let theme = use_theme();
-        let items = self.items;
-        let orientation = self.orientation;
-        let size = self.size;
-        let alternating = self.alternating;
-        let show_icons = self.show_icons;
-        let user_style = self.style;
+        let items = self.items.clone();
         let items_len = items.len();
+        let user_style = self.style.clone();
 
-        let container = match orientation {
+        let container = match self.orientation {
             TimelineOrientation::Vertical => div().flex().flex_col().w_full(),
             TimelineOrientation::Horizontal => div().flex().flex_row().items_start(),
         };
@@ -488,27 +739,37 @@ impl RenderOnce for Timeline {
         container
             .children(items.iter().enumerate().map(|(i, item)| {
                 let is_last = i == items_len - 1;
-                match orientation {
-                    TimelineOrientation::Vertical => render_vertical_item(
-                        item,
-                        i,
-                        is_last,
-                        &theme,
-                        size,
-                        alternating,
-                        show_icons,
-                    )
-                    .into_any_element(),
-                    TimelineOrientation::Horizontal => render_horizontal_item(
-                        item,
-                        i,
-                        is_last,
-                        &theme,
-                        size,
-                        alternating,
-                        show_icons,
-                    )
-                    .into_any_element(),
+
+                match self.orientation {
+                    TimelineOrientation::Vertical => {
+                        let item_position = item.position.unwrap_or_else(|| {
+                            if self.alternating {
+                                if i % 2 == 0 {
+                                    TimelineItemPosition::Left
+                                } else {
+                                    TimelineItemPosition::Right
+                                }
+                            } else {
+                                TimelineItemPosition::Left
+                            }
+                        });
+
+                        match self.layout {
+                            TimelineLayout::Left => {
+                                self.render_vertical_left_item(item, i, is_last, &theme)
+                            }
+                            TimelineLayout::Right => {
+                                self.render_vertical_right_item(item, i, is_last, &theme)
+                            }
+                            TimelineLayout::Center => {
+                                let on_left = item_position == TimelineItemPosition::Left;
+                                self.render_vertical_center_item(item, i, is_last, &theme, on_left)
+                            }
+                        }
+                    }
+                    TimelineOrientation::Horizontal => {
+                        self.render_horizontal_item(item, i, is_last, &theme)
+                    }
                 }
             }))
             .map(|this| {

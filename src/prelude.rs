@@ -53,7 +53,8 @@ pub use crate::components::time_picker::{
     TimeFormat, TimePeriod, TimePicker, TimePickerState, TimeValue,
 };
 pub use crate::components::timeline::{
-    timeline, Timeline, TimelineItem, TimelineItemVariant, TimelineOrientation, TimelineSize,
+    timeline, Timeline, TimelineConnectorStyle, TimelineIndicatorStyle, TimelineItem,
+    TimelineItemPosition, TimelineItemVariant, TimelineLayout, TimelineOrientation, TimelineSize,
 };
 pub use crate::components::toggle::{LabelSide, Toggle, ToggleSize};
 pub use crate::components::tooltip::tooltip;

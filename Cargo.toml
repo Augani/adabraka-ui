@@ -36,9 +36,13 @@ bytes = "1.0"
 tree-sitter = "0.25.10"
 tree-sitter-sequel = "0.3.11"
 
+# Audio playback (optional)
+rodio = { version = "0.19", optional = true }
+
 [features]
 default = ["http"]
 http = ["isahc"]
+audio = ["rodio"]
 
 [[example]]
 name = "scroll_test"

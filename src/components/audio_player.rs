@@ -2,6 +2,13 @@ use crate::icon_config::resolve_icon_path;
 use crate::theme::use_theme;
 use gpui::{prelude::*, *};
 use std::rc::Rc;
+use std::sync::Arc;
+use std::time::Duration;
+
+#[cfg(feature = "audio")]
+use rodio::Source;
+#[cfg(feature = "audio")]
+use std::sync::Mutex;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub enum AudioPlayerSize {
@@ -16,6 +23,12 @@ pub enum PlaybackSpeed {
     Normal,
     OneAndHalf,
     Double,
+}
+
+impl Default for PlaybackSpeed {
+    fn default() -> Self {
+        Self::Normal
+    }
 }
 
 impl PlaybackSpeed {
@@ -47,6 +60,29 @@ impl PlaybackSpeed {
     }
 }
 
+#[cfg(feature = "audio")]
+pub struct AudioBackend {
+    sink: rodio::Sink,
+    _stream: rodio::OutputStream,
+    stream_handle: rodio::OutputStreamHandle,
+    source_duration: Option<Duration>,
+}
+
+#[cfg(feature = "audio")]
+impl AudioBackend {
+    pub fn new() -> Option<Self> {
+        let (stream, stream_handle) = rodio::OutputStream::try_default().ok()?;
+        let sink = rodio::Sink::try_new(&stream_handle).ok()?;
+        sink.pause();
+        Some(Self {
+            sink,
+            _stream: stream,
+            stream_handle,
+            source_duration: None,
+        })
+    }
+}
+
 pub struct AudioPlayerState {
     is_playing: bool,
     is_muted: bool,
@@ -59,6 +95,9 @@ pub struct AudioPlayerState {
     volume_dragging: bool,
     progress_bounds: Bounds<Pixels>,
     volume_bounds: Bounds<Pixels>,
+    source_path: Option<String>,
+    #[cfg(feature = "audio")]
+    backend: Option<Arc<Mutex<AudioBackend>>>,
 }
 
 impl AudioPlayerState {
@@ -75,7 +114,54 @@ impl AudioPlayerState {
             volume_dragging: false,
             progress_bounds: Bounds::default(),
             volume_bounds: Bounds::default(),
+            source_path: None,
+            #[cfg(feature = "audio")]
+            backend: AudioBackend::new().map(|b| Arc::new(Mutex::new(b))),
         }
+    }
+
+    #[cfg(feature = "audio")]
+    pub fn load_file(&mut self, path: impl Into<String>, cx: &mut Context<Self>) -> bool {
+        let path_str = path.into();
+        self.source_path = Some(path_str.clone());
+
+        if let Some(ref backend) = self.backend {
+            if let Ok(mut backend) = backend.lock() {
+                let file = match std::fs::File::open(&path_str) {
+                    Ok(f) => f,
+                    Err(_) => return false,
+                };
+                let reader = std::io::BufReader::new(file);
+                let source = match rodio::Decoder::new(reader) {
+                    Ok(s) => s,
+                    Err(_) => return false,
+                };
+
+                if let Some(duration) = source.total_duration() {
+                    self.duration = duration.as_secs_f32();
+                    backend.source_duration = Some(duration);
+                }
+
+                backend.sink.stop();
+                backend.sink = rodio::Sink::try_new(&backend.stream_handle).unwrap();
+                backend.sink.append(source);
+                backend.sink.pause();
+                backend.sink.set_volume(self.volume);
+
+                self.current_time = 0.0;
+                self.is_playing = false;
+                cx.notify();
+                return true;
+            }
+        }
+        false
+    }
+
+    #[cfg(not(feature = "audio"))]
+    pub fn load_file(&mut self, path: impl Into<String>, cx: &mut Context<Self>) -> bool {
+        self.source_path = Some(path.into());
+        cx.notify();
+        false
     }
 
     pub fn is_playing(&self) -> bool {
@@ -84,11 +170,31 @@ impl AudioPlayerState {
 
     pub fn set_playing(&mut self, playing: bool, cx: &mut Context<Self>) {
         self.is_playing = playing;
+        #[cfg(feature = "audio")]
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                if playing {
+                    backend.sink.play();
+                } else {
+                    backend.sink.pause();
+                }
+            }
+        }
         cx.notify();
     }
 
     pub fn toggle_playing(&mut self, cx: &mut Context<Self>) {
         self.is_playing = !self.is_playing;
+        #[cfg(feature = "audio")]
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                if self.is_playing {
+                    backend.sink.play();
+                } else {
+                    backend.sink.pause();
+                }
+            }
+        }
         cx.notify();
     }
 
@@ -98,11 +204,15 @@ impl AudioPlayerState {
 
     pub fn set_muted(&mut self, muted: bool, cx: &mut Context<Self>) {
         self.is_muted = muted;
+        #[cfg(feature = "audio")]
+        self.apply_volume();
         cx.notify();
     }
 
     pub fn toggle_muted(&mut self, cx: &mut Context<Self>) {
         self.is_muted = !self.is_muted;
+        #[cfg(feature = "audio")]
+        self.apply_volume();
         cx.notify();
     }
 
@@ -137,7 +247,19 @@ impl AudioPlayerState {
         if self.volume > 0.0 {
             self.is_muted = false;
         }
+        #[cfg(feature = "audio")]
+        self.apply_volume();
         cx.notify();
+    }
+
+    #[cfg(feature = "audio")]
+    fn apply_volume(&self) {
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                let effective_vol = if self.is_muted { 0.0 } else { self.volume };
+                backend.sink.set_volume(effective_vol);
+            }
+        }
     }
 
     pub fn effective_volume(&self) -> f32 {
@@ -154,11 +276,35 @@ impl AudioPlayerState {
 
     pub fn set_playback_speed(&mut self, speed: PlaybackSpeed, cx: &mut Context<Self>) {
         self.playback_speed = speed;
+        #[cfg(feature = "audio")]
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                backend.sink.set_speed(speed.value());
+            }
+        }
         cx.notify();
     }
 
     pub fn cycle_playback_speed(&mut self, cx: &mut Context<Self>) {
         self.playback_speed = self.playback_speed.next();
+        #[cfg(feature = "audio")]
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                backend.sink.set_speed(self.playback_speed.value());
+            }
+        }
+        cx.notify();
+    }
+
+    pub fn stop(&mut self, cx: &mut Context<Self>) {
+        self.is_playing = false;
+        self.current_time = 0.0;
+        #[cfg(feature = "audio")]
+        if let Some(ref backend) = self.backend {
+            if let Ok(backend) = backend.lock() {
+                backend.sink.stop();
+            }
+        }
         cx.notify();
     }
 
@@ -188,6 +334,16 @@ impl AudioPlayerState {
         let relative_x = (position.x - self.volume_bounds.left()).clamp(px(0.0), track_width);
         let volume = (relative_x / track_width).clamp(0.0, 1.0);
         self.set_volume(volume, cx);
+    }
+
+    #[cfg(feature = "audio")]
+    pub fn is_audio_loaded(&self) -> bool {
+        self.backend.is_some() && self.source_path.is_some()
+    }
+
+    #[cfg(not(feature = "audio"))]
+    pub fn is_audio_loaded(&self) -> bool {
+        false
     }
 }
 

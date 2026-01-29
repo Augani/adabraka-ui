@@ -67,17 +67,21 @@ struct AudioPlayerDemo {
 
 impl AudioPlayerDemo {
     fn new(cx: &mut Context<Self>) -> Self {
+        let audio_path = format!("{}/assets/audio/sample.mp3", env!("CARGO_MANIFEST_DIR"));
+
         let full_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
-            state.set_duration(245.0, cx);
-            state.set_current_time(0.0, cx);
+            if !state.load_file(&audio_path, cx) {
+                state.set_duration(245.0, cx);
+            }
             state
         });
 
         let compact_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
-            state.set_duration(180.0, cx);
-            state.set_current_time(0.0, cx);
+            if !state.load_file(&audio_path, cx) {
+                state.set_duration(180.0, cx);
+            }
             state
         });
 
@@ -90,8 +94,9 @@ impl AudioPlayerDemo {
 
         let custom_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
-            state.set_duration(360.0, cx);
-            state.set_current_time(0.0, cx);
+            if !state.load_file(&audio_path, cx) {
+                state.set_duration(360.0, cx);
+            }
             state.set_volume(0.6, cx);
             state
         });
@@ -175,8 +180,8 @@ impl Render for AudioPlayerDemo {
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.muted_foreground)
                                         .child(
-                                            "A versatile audio player component with playback controls, \
-                                            progress bar, volume control, and playback speed options.",
+                                            "A versatile audio player component with real audio playback. \
+                                            Enable the 'audio' feature for actual audio output.",
                                         ),
                                 ),
                         )
@@ -202,7 +207,7 @@ impl Render for AudioPlayerDemo {
                                     div().max_w(px(500.0)).child(
                                         AudioPlayer::new(self.full_player.clone())
                                             .full()
-                                            .title("Track Title - Artist Name")
+                                            .title("SoundHelix Song 1")
                                             .on_play(|_, _| {
                                                 println!("Play pressed");
                                             })
@@ -306,38 +311,6 @@ impl Render for AudioPlayerDemo {
                                 ),
                         )
                         .child(
-                            VStack::new()
-                                .gap(px(16.0))
-                                .child(
-                                    div()
-                                        .text_size(px(18.0))
-                                        .font_weight(FontWeight::SEMIBOLD)
-                                        .child("Multiple Compact Players"),
-                                )
-                                .child(
-                                    div()
-                                        .text_size(px(14.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("Compact players work well in lists or playlists."),
-                                )
-                                .child(
-                                    div()
-                                        .flex()
-                                        .flex_col()
-                                        .gap(px(8.0))
-                                        .max_w(px(350.0))
-                                        .child(
-                                            AudioPlayer::new(self.compact_player.clone()).compact(),
-                                        )
-                                        .child(
-                                            AudioPlayer::new(self.full_player.clone()).compact(),
-                                        )
-                                        .child(
-                                            AudioPlayer::new(self.custom_player.clone()).compact(),
-                                        ),
-                                ),
-                        )
-                        .child(
                             div()
                                 .mt(px(16.0))
                                 .p(px(16.0))
@@ -348,8 +321,7 @@ impl Render for AudioPlayerDemo {
                                         .text_size(px(14.0))
                                         .text_color(theme.tokens.accent_foreground)
                                         .child(
-                                            "Note: This component provides UI controls for audio playback. \
-                                            Actual audio playback requires integration with a system audio backend.",
+                                            "To enable real audio playback, run with: cargo run --example audio_player_demo --features audio",
                                         ),
                                 )
                                 .child(

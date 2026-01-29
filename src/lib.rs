@@ -63,6 +63,7 @@ pub mod overlays;
 pub mod animations;
 pub mod transitions;
 pub mod virtual_list;
+pub mod charts;
 
 /// Extension traits for common types
 pub mod util;

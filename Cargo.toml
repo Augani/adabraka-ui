@@ -195,3 +195,7 @@ path = "examples/color_picker_demo.rs"
 [[example]]
 name = "combobox_demo"
 path = "examples/combobox_demo.rs"
+
+[[example]]
+name = "pie_chart_demo"
+path = "examples/pie_chart_demo.rs"

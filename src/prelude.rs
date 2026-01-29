@@ -1,5 +1,12 @@
 //! Convenient re-exports for end users
 
+pub use crate::charts::bar_chart::{
+    BarChart, BarChartData, BarChartMode, BarChartOrientation, BarChartSeries,
+};
+pub use crate::charts::line_chart::{LineChart, LineChartPoint, LineChartSeries};
+pub use crate::charts::pie_chart::{
+    PieChart, PieChartLabelPosition, PieChartSegment, PieChartSize, PieChartVariant,
+};
 pub use crate::components::alert::{alert, Alert, AlertVariant};
 pub use crate::components::button::{Button, ButtonSize, ButtonVariant, IconPosition};
 pub use crate::components::calendar::{Calendar, CalendarLocale, DateValue};

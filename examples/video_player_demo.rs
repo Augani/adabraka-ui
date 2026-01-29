@@ -30,6 +30,35 @@ impl gpui::AssetSource for Assets {
     }
 }
 
+fn main() {
+    Application::new()
+        .with_assets(Assets {
+            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
+        })
+        .run(|cx| {
+            adabraka_ui::init(cx);
+            adabraka_ui::set_icon_base_path("assets/icons");
+            init_video_player(cx);
+            install_theme(cx, Theme::dark());
+
+            cx.open_window(
+                WindowOptions {
+                    titlebar: Some(TitlebarOptions {
+                        title: Some("VideoPlayer Demo".into()),
+                        ..Default::default()
+                    }),
+                    window_bounds: Some(WindowBounds::Windowed(Bounds {
+                        origin: Point::default(),
+                        size: size(px(900.0), px(700.0)),
+                    })),
+                    ..Default::default()
+                },
+                |_, cx| cx.new(|cx| VideoPlayerDemoApp::new(cx)),
+            )
+            .unwrap();
+        });
+}
+
 struct VideoPlayerDemoApp {
     player_state: Entity<VideoPlayerState>,
 }
@@ -42,37 +71,31 @@ impl VideoPlayerDemoApp {
             state
         });
 
+        let state_for_timer = player_state.clone();
         cx.spawn(
-            async | this,
-            cx | {
+            async move |_this, cx| {
                 loop {
-                    cx.background_executor()
-                        .timer(Duration::from_millis(100))
-                        .await;
+                    cx.background_executor().timer(Duration::from_millis(100)).await;
 
-                    let should_continue = this
-                        .update(cx, |demo, cx| {
-                            demo.player_state.update(cx, |state, cx| {
-                                if state.is_playing() {
-                                    let speed = state.playback_speed().multiplier() as f64;
-                                    let new_time = state.current_time() + 0.1 * speed;
-                                    if new_time >= state.duration() {
-                                        state.set_current_time(0.0, cx);
-                                        state.pause(cx);
-                                    } else {
-                                        state.set_current_time(new_time, cx);
-                                    }
-                                }
-                                state.check_auto_hide(cx);
-                            });
-                        })
-                        .is_ok();
+                    let should_continue = state_for_timer.update(cx, |state, cx| {
+                        if state.is_playing() {
+                            let speed = state.playback_speed().multiplier() as f64;
+                            let new_time = state.current_time() + 0.1 * speed;
+                            if new_time >= state.duration() {
+                                state.set_current_time(0.0, cx);
+                                state.pause(cx);
+                            } else {
+                                state.set_current_time(new_time, cx);
+                            }
+                        }
+                        state.check_auto_hide(cx);
+                    }).is_ok();
 
                     if !should_continue {
                         break;
                     }
                 }
-            },
+            }
         )
         .detach();
 
@@ -87,148 +110,102 @@ impl Render for VideoPlayerDemoApp {
         div()
             .size_full()
             .bg(theme.tokens.background)
-            .p(px(40.0))
             .flex()
             .flex_col()
-            .gap(px(32.0))
+            .p(px(32.0))
+            .gap(px(24.0))
             .child(
                 div()
                     .flex()
                     .flex_col()
                     .gap(px(8.0))
-                    .child(h1("Video Player Component"))
-                    .child(muted(
-                        "A full-featured video player UI with controls overlay, progress bar, volume, and playback speed.",
-                    )),
+                    .child(
+                        div()
+                            .text_size(px(28.0))
+                            .font_weight(FontWeight::BOLD)
+                            .text_color(theme.tokens.foreground)
+                            .child("VideoPlayer Component"),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(14.0))
+                            .text_color(theme.tokens.muted_foreground)
+                            .child("A video player control overlay with full playback controls."),
+                    ),
             )
             .child(
                 div()
                     .flex()
                     .flex_col()
-                    .gap(px(24.0))
+                    .gap(px(16.0))
+                    .child(
+                        VideoPlayer::new(self.player_state.clone())
+                            .size(VideoPlayerSize::Md)
+                            .on_play(|_, _| println!("Video: Play"))
+                            .on_pause(|_, _| println!("Video: Pause"))
+                            .on_seek(|time, _, _| println!("Video: Seek to {:.1}s", time))
+                            .on_volume_change(|vol, _, _| println!("Video: Volume {:.0}%", vol * 100.0))
+                            .on_fullscreen(|fs, _, _| println!("Video: Fullscreen {}", fs))
+                            .on_playback_speed_change(|speed, _, _| {
+                                println!("Video: Speed {}", speed.label())
+                            }),
+                    ),
+            )
+            .child(
+                div()
+                    .mt(px(16.0))
+                    .p(px(16.0))
+                    .bg(theme.tokens.accent)
+                    .rounded(px(8.0))
+                    .flex()
+                    .flex_col()
+                    .gap(px(12.0))
                     .child(
                         div()
-                            .flex()
-                            .flex_col()
-                            .gap(px(12.0))
-                            .child(h3("Default Size with Poster"))
+                            .text_size(px(16.0))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .text_color(theme.tokens.accent_foreground)
+                            .child("Integration Guide"),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(13.0))
+                            .text_color(theme.tokens.accent_foreground)
+                            .child("The VideoPlayer provides UI controls. To play actual video:"),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(12.0))
+                            .font_family(theme.tokens.font_mono.clone())
+                            .text_color(theme.tokens.accent_foreground)
+                            .p(px(12.0))
+                            .bg(theme.tokens.background.opacity(0.3))
+                            .rounded(px(6.0))
                             .child(
-                                VideoPlayer::new(self.player_state.clone())
-                                    .size(VideoPlayerSize::Md)
-                                    .poster("assets/images/carousel_1.jpg")
-                                    .on_play(|_, _| {
-                                        println!("Video started playing");
-                                    })
-                                    .on_pause(|_, _| {
-                                        println!("Video paused");
-                                    })
-                                    .on_seek(|time, _, _| {
-                                        println!("Seeked to: {:.1}s", time);
-                                    })
-                                    .on_volume_change(|vol, _, _| {
-                                        println!("Volume changed to: {:.0}%", vol * 100.0);
-                                    })
-                                    .on_fullscreen(|is_fs, _, _| {
-                                        println!("Fullscreen: {}", is_fs);
-                                    })
-                                    .on_playback_speed_change(|speed, _, _| {
-                                        println!("Speed changed to: {}", speed.label());
-                                    }),
+r#"// 1. Create state
+let video_state = cx.new(|cx| VideoPlayerState::new(cx));
+
+// 2. Your video decoder updates our state
+decoder.on_frame(|frame_path, time| {
+    video_state.update(cx, |s, cx| {
+        s.set_frame(frame_path, cx);  // We render the frame
+        s.set_current_time(time, cx);
+    });
+});
+
+// 3. Handle playback events
+VideoPlayer::new(video_state)
+    .on_play(|_, _| decoder.play())
+    .on_pause(|_, _| decoder.pause())
+    .on_seek(|time, _, _| decoder.seek(time))"#
                             ),
                     )
                     .child(
                         div()
-                            .flex()
-                            .gap(px(16.0))
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_col()
-                                    .gap(px(8.0))
-                                    .child(label("Small Player"))
-                                    .child(
-                                        VideoPlayer::new(self.player_state.clone())
-                                            .size(VideoPlayerSize::Sm)
-                                            .poster("assets/images/carousel_2.jpg"),
-                                    ),
-                            ),
-                    )
-                    .child(
-                        div()
-                            .flex()
-                            .flex_col()
-                            .gap(px(12.0))
-                            .child(h3("Keyboard Shortcuts"))
-                            .child(
-                                div()
-                                    .flex()
-                                    .flex_wrap()
-                                    .gap(px(12.0))
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(Badge::new("Space").variant(BadgeVariant::Secondary))
-                                            .child(muted("Play/Pause")),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(Badge::new("M").variant(BadgeVariant::Secondary))
-                                            .child(muted("Mute")),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(Badge::new("F").variant(BadgeVariant::Secondary))
-                                            .child(muted("Fullscreen")),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(Badge::new("Left/Right").variant(BadgeVariant::Secondary))
-                                            .child(muted("Seek 10s")),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
-                                            .child(Badge::new("Up/Down").variant(BadgeVariant::Secondary))
-                                            .child(muted("Volume")),
-                                    ),
-                            ),
+                            .text_size(px(13.0))
+                            .text_color(theme.tokens.accent_foreground)
+                            .child("Or use .overlay_only() for just controls over your own video rendering."),
                     ),
             )
     }
-}
-
-fn main() {
-    Application::new()
-        .with_assets(Assets {
-            base: PathBuf::from(env!("CARGO_MANIFEST_DIR")),
-        })
-        .run(|cx| {
-            adabraka_ui::init(cx);
-            adabraka_ui::set_icon_base_path("assets/icons");
-            install_theme(cx, Theme::dark());
-            init_video_player(cx);
-
-            let bounds = Bounds::centered(None, size(px(900.0), px(800.0)), cx);
-            cx.open_window(
-                WindowOptions {
-                    window_bounds: Some(WindowBounds::Windowed(bounds)),
-                    ..Default::default()
-                },
-                |_, cx| cx.new(VideoPlayerDemoApp::new),
-            )
-            .unwrap();
-        });
 }

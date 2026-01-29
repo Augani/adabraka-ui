@@ -145,6 +145,8 @@ pub struct VideoPlayerState {
     is_volume_dragging: bool,
     show_speed_menu: bool,
     focus_handle: FocusHandle,
+    current_frame: Option<SharedString>,
+    video_title: Option<SharedString>,
 }
 
 impl VideoPlayerState {
@@ -167,7 +169,32 @@ impl VideoPlayerState {
             is_volume_dragging: false,
             show_speed_menu: false,
             focus_handle: cx.focus_handle(),
+            current_frame: None,
+            video_title: None,
         }
+    }
+
+    pub fn set_frame(&mut self, frame_path: impl Into<SharedString>, cx: &mut Context<Self>) {
+        self.current_frame = Some(frame_path.into());
+        cx.notify();
+    }
+
+    pub fn clear_frame(&mut self, cx: &mut Context<Self>) {
+        self.current_frame = None;
+        cx.notify();
+    }
+
+    pub fn current_frame(&self) -> Option<&SharedString> {
+        self.current_frame.as_ref()
+    }
+
+    pub fn set_title(&mut self, title: impl Into<SharedString>, cx: &mut Context<Self>) {
+        self.video_title = Some(title.into());
+        cx.notify();
+    }
+
+    pub fn title(&self) -> Option<&SharedString> {
+        self.video_title.as_ref()
     }
 
     pub fn playback_state(&self) -> VideoPlaybackState {
@@ -421,6 +448,7 @@ pub struct VideoPlayer {
     size: VideoPlayerSize,
     poster: Option<SharedString>,
     show_poster: bool,
+    overlay_only: bool,
     on_play: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     on_pause: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     on_seek: Option<Rc<dyn Fn(f64, &mut Window, &mut App)>>,
@@ -437,6 +465,7 @@ impl VideoPlayer {
             size: VideoPlayerSize::default(),
             poster: None,
             show_poster: true,
+            overlay_only: false,
             on_play: None,
             on_pause: None,
             on_seek: None,
@@ -459,6 +488,11 @@ impl VideoPlayer {
 
     pub fn show_poster(mut self, show: bool) -> Self {
         self.show_poster = show;
+        self
+    }
+
+    pub fn overlay_only(mut self) -> Self {
+        self.overlay_only = true;
         self
     }
 
@@ -533,6 +567,9 @@ impl RenderOnce for VideoPlayer {
         let show_poster = self.show_poster
             && self.poster.is_some()
             && playback_state == VideoPlaybackState::Stopped;
+
+        let current_frame = state.current_frame().cloned();
+        let overlay_only = self.overlay_only;
 
         let user_style = self.style;
 
@@ -676,20 +713,33 @@ impl RenderOnce for VideoPlayer {
                     )
                 }
             })
-            .when(!show_poster, |this| {
-                this.child(
-                    div()
-                        .absolute()
-                        .inset_0()
-                        .bg(gpui::black())
-                        .flex()
-                        .items_center()
-                        .justify_center()
-                        .text_color(gpui::white().opacity(0.5))
-                        .text_sm()
-                        .font_family(theme.tokens.font_family.clone())
-                        .child("Video content area")
-                )
+            .when(!show_poster && !overlay_only, |this| {
+                if let Some(ref frame) = current_frame {
+                    this.child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .child(
+                                img(frame.clone())
+                                    .size_full()
+                                    .object_fit(ObjectFit::Contain)
+                            )
+                    )
+                } else {
+                    this.child(
+                        div()
+                            .absolute()
+                            .inset_0()
+                            .bg(gpui::black())
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .text_color(gpui::white().opacity(0.5))
+                            .text_sm()
+                            .font_family(theme.tokens.font_family.clone())
+                            .child("Video content area")
+                    )
+                }
             })
             .child({
                 let state_play = state_entity.clone();

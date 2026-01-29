@@ -92,48 +92,41 @@ impl AudioPlayerDemo {
         let main_player_for_timer = main_player.clone();
         let compact_for_timer = compact_player.clone();
         cx.spawn(
-            async | this,
-            cx | {
+            async move |_this, cx| {
                 loop {
-                    cx.background_executor()
-                        .timer(Duration::from_millis(100))
-                        .await;
+                    cx.background_executor().timer(Duration::from_millis(100)).await;
 
-                    let should_continue = this
-                        .update(cx, |_demo, cx| {
-                            main_player_for_timer.update(cx, |state, cx| {
-                                if state.is_playing() {
-                                    let speed = state.playback_speed().value();
-                                    let new_time = state.current_time() + 0.1 * speed;
-                                    if new_time >= state.duration() {
-                                        state.set_current_time(0.0, cx);
-                                        state.set_playing(false, cx);
-                                    } else {
-                                        state.set_current_time(new_time, cx);
-                                    }
-                                }
-                            });
+                    let main_ok = main_player_for_timer.update(cx, |state, cx| {
+                        if state.is_playing() {
+                            let speed = state.playback_speed().value();
+                            let new_time = state.current_time() + 0.1 * speed;
+                            if new_time >= state.duration() {
+                                state.set_current_time(0.0, cx);
+                                state.set_playing(false, cx);
+                            } else {
+                                state.set_current_time(new_time, cx);
+                            }
+                        }
+                    }).is_ok();
 
-                            compact_for_timer.update(cx, |state, cx| {
-                                if state.is_playing() {
-                                    let speed = state.playback_speed().value();
-                                    let new_time = state.current_time() + 0.1 * speed;
-                                    if new_time >= state.duration() {
-                                        state.set_current_time(0.0, cx);
-                                        state.set_playing(false, cx);
-                                    } else {
-                                        state.set_current_time(new_time, cx);
-                                    }
-                                }
-                            });
-                        })
-                        .is_ok();
+                    let compact_ok = compact_for_timer.update(cx, |state, cx| {
+                        if state.is_playing() {
+                            let speed = state.playback_speed().value();
+                            let new_time = state.current_time() + 0.1 * speed;
+                            if new_time >= state.duration() {
+                                state.set_current_time(0.0, cx);
+                                state.set_playing(false, cx);
+                            } else {
+                                state.set_current_time(new_time, cx);
+                            }
+                        }
+                    }).is_ok();
 
-                    if !should_continue {
+                    if !main_ok && !compact_ok {
                         break;
                     }
                 }
-            },
+            }
         )
         .detach();
 

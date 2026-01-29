@@ -1,6 +1,7 @@
 use adabraka_ui::prelude::*;
 use gpui::*;
 use std::path::PathBuf;
+use std::time::Duration;
 
 struct Assets {
     base: PathBuf,
@@ -40,6 +41,40 @@ impl VideoPlayerDemoApp {
             state.set_duration(180.0, cx);
             state
         });
+
+        cx.spawn(
+            async | this,
+            cx | {
+                loop {
+                    cx.background_executor()
+                        .timer(Duration::from_millis(100))
+                        .await;
+
+                    let should_continue = this
+                        .update(cx, |demo, cx| {
+                            demo.player_state.update(cx, |state, cx| {
+                                if state.is_playing() {
+                                    let speed = state.playback_speed().multiplier() as f64;
+                                    let new_time = state.current_time() + 0.1 * speed;
+                                    if new_time >= state.duration() {
+                                        state.set_current_time(0.0, cx);
+                                        state.pause(cx);
+                                    } else {
+                                        state.set_current_time(new_time, cx);
+                                    }
+                                }
+                                state.check_auto_hide(cx);
+                            });
+                        })
+                        .is_ok();
+
+                    if !should_continue {
+                        break;
+                    }
+                }
+            },
+        )
+        .detach();
 
         Self { player_state }
     }

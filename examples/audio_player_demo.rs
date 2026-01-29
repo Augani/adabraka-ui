@@ -1,6 +1,7 @@
 use adabraka_ui::{components::scrollable::scrollable_vertical, prelude::*};
 use gpui::*;
 use std::path::PathBuf;
+use std::time::Duration;
 
 struct Assets {
     base: PathBuf,
@@ -69,14 +70,14 @@ impl AudioPlayerDemo {
         let full_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
             state.set_duration(245.0, cx);
-            state.set_current_time(73.0, cx);
+            state.set_current_time(0.0, cx);
             state
         });
 
         let compact_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
             state.set_duration(180.0, cx);
-            state.set_current_time(45.0, cx);
+            state.set_current_time(0.0, cx);
             state
         });
 
@@ -90,10 +91,50 @@ impl AudioPlayerDemo {
         let custom_player = cx.new(|cx| {
             let mut state = AudioPlayerState::new(cx);
             state.set_duration(360.0, cx);
-            state.set_current_time(120.0, cx);
+            state.set_current_time(0.0, cx);
             state.set_volume(0.6, cx);
             state
         });
+
+        cx.spawn(
+            async | this,
+            cx | {
+                loop {
+                    cx.background_executor()
+                        .timer(Duration::from_millis(100))
+                        .await;
+
+                    let should_continue = this
+                        .update(cx, |demo, cx| {
+                            let players = [
+                                demo.full_player.clone(),
+                                demo.compact_player.clone(),
+                                demo.custom_player.clone(),
+                            ];
+                            for player in &players {
+                                player.update(cx, |state, cx| {
+                                    if state.is_playing() {
+                                        let speed = state.playback_speed().value();
+                                        let new_time = state.current_time() + 0.1 * speed;
+                                        if new_time >= state.duration() {
+                                            state.set_current_time(0.0, cx);
+                                            state.set_playing(false, cx);
+                                        } else {
+                                            state.set_current_time(new_time, cx);
+                                        }
+                                    }
+                                });
+                            }
+                        })
+                        .is_ok();
+
+                    if !should_continue {
+                        break;
+                    }
+                }
+            },
+        )
+        .detach();
 
         Self {
             full_player,

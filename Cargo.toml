@@ -228,3 +228,31 @@ path = "examples/file_upload_demo.rs"
 [[example]]
 name = "image_viewer_demo"
 path = "examples/image_viewer_demo.rs"
+
+[[example]]
+name = "countdown_demo"
+path = "examples/countdown_demo.rs"
+
+[[example]]
+name = "masonry_grid_demo"
+path = "examples/masonry_grid_demo.rs"
+
+[[example]]
+name = "rating_demo"
+path = "examples/rating_demo.rs"
+
+[[example]]
+name = "audio_player_demo"
+path = "examples/audio_player_demo.rs"
+
+[[example]]
+name = "sparkline_demo"
+path = "examples/sparkline_demo.rs"
+
+[[example]]
+name = "mention_input_demo"
+path = "examples/mention_input_demo.rs"
+
+[[example]]
+name = "video_player_demo"
+path = "examples/video_player_demo.rs"

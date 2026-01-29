@@ -1,6 +1,7 @@
 //! UI components module.
 
 pub mod alert;
+pub mod audio_player;
 pub mod button;
 pub mod icon;
 pub mod icon_button;
@@ -20,6 +21,7 @@ pub mod keyboard_shortcuts;
 pub mod label;
 pub mod progress;
 pub mod radio;
+pub mod rating;
 pub mod resizable;
 pub mod scrollable;
 pub mod scrollbar;
@@ -60,5 +62,9 @@ pub mod stepper;
 pub mod tag_input;
 pub mod time_picker;
 pub mod timeline;
+pub mod countdown;
+pub mod mention_input;
+pub mod sparkline;
+pub mod video_player;
 
 pub use crate::display::badge;

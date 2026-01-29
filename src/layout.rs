@@ -901,6 +901,149 @@ impl IntoElement for Container {
     }
 }
 
+pub struct MasonryItem {
+    element: AnyElement,
+    estimated_height: f32,
+}
+
+impl MasonryItem {
+    pub fn new(element: impl IntoElement, estimated_height: f32) -> Self {
+        Self {
+            element: element.into_any_element(),
+            estimated_height,
+        }
+    }
+}
+
+pub struct MasonryGrid {
+    base: Div,
+    columns: usize,
+    gap: Option<Pixels>,
+    items: Vec<MasonryItem>,
+}
+
+impl Default for MasonryGrid {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MasonryGrid {
+    pub fn new() -> Self {
+        Self {
+            base: div().flex().flex_row(),
+            columns: 3,
+            gap: None,
+            items: vec![],
+        }
+    }
+
+    pub fn columns(mut self, columns: usize) -> Self {
+        self.columns = columns.max(1);
+        self
+    }
+
+    pub fn gap(mut self, gap: impl Into<Pixels>) -> Self {
+        self.gap = Some(gap.into());
+        self
+    }
+
+    pub fn fill(mut self) -> Self {
+        self.base = self.base.size_full();
+        self
+    }
+
+    pub fn fill_width(mut self) -> Self {
+        self.base = self.base.w_full();
+        self
+    }
+
+    pub fn item(mut self, element: impl IntoElement, estimated_height: f32) -> Self {
+        self.items.push(MasonryItem::new(element, estimated_height));
+        self
+    }
+
+    pub fn items<I, E>(mut self, items: I) -> Self
+    where
+        I: IntoIterator<Item = (E, f32)>,
+        E: IntoElement,
+    {
+        for (element, height) in items {
+            self.items.push(MasonryItem::new(element, height));
+        }
+        self
+    }
+}
+
+impl ParentElement for MasonryGrid {
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        for element in elements {
+            self.items.push(MasonryItem {
+                element,
+                estimated_height: 100.0,
+            });
+        }
+    }
+}
+
+impl Styled for MasonryGrid {
+    fn style(&mut self) -> &mut StyleRefinement {
+        self.base.style()
+    }
+}
+
+impl InteractiveElement for MasonryGrid {
+    fn interactivity(&mut self) -> &mut Interactivity {
+        self.base.interactivity()
+    }
+}
+
+impl StatefulInteractiveElement for MasonryGrid {}
+
+impl IntoElement for MasonryGrid {
+    type Element = Div;
+
+    fn into_element(mut self) -> Self::Element {
+        if let Some(gap) = self.gap {
+            self.base = self.base.gap(gap);
+        }
+
+        let mut column_heights: Vec<f32> = vec![0.0; self.columns];
+        let mut column_items: Vec<Vec<AnyElement>> =
+            (0..self.columns).map(|_| Vec::new()).collect();
+
+        let gap_value: f32 = self.gap.map(|g| f32::from(g)).unwrap_or(0.0);
+
+        for item in self.items {
+            let min_column = column_heights
+                .iter()
+                .enumerate()
+                .min_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal))
+                .map(|(idx, _)| idx)
+                .unwrap_or(0);
+
+            column_heights[min_column] += item.estimated_height + gap_value;
+            column_items[min_column].push(item.element);
+        }
+
+        for column_children in column_items {
+            let mut column = div().flex().flex_col().flex_1();
+
+            if let Some(gap) = self.gap {
+                column = column.gap(gap);
+            }
+
+            for child in column_children {
+                column = column.child(child);
+            }
+
+            self.base = self.base.child(column);
+        }
+
+        self.base
+    }
+}
+
 pub struct ScrollList {
     scroll_container: ScrollContainer,
     stack: VStack,

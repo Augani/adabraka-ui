@@ -12,6 +12,9 @@ pub use crate::charts::pie_chart::{
     PieChart, PieChartLabelPosition, PieChartSegment, PieChartSize, PieChartVariant,
 };
 pub use crate::components::alert::{alert, Alert, AlertVariant};
+pub use crate::components::audio_player::{
+    AudioPlayer, AudioPlayerSize, AudioPlayerState, PlaybackSpeed,
+};
 pub use crate::components::avatar::{Avatar, AvatarSize};
 pub use crate::components::avatar_group::{AvatarGroup, AvatarItem};
 pub use crate::components::button::{Button, ButtonSize, ButtonVariant, IconPosition};
@@ -23,6 +26,9 @@ pub use crate::components::carousel::{
 pub use crate::components::checkbox::{Checkbox, CheckboxSize};
 pub use crate::components::color_picker::{ColorMode, ColorPicker, ColorPickerState};
 pub use crate::components::combobox::{Combobox, ComboboxEvent, ComboboxState};
+pub use crate::components::countdown::{
+    Countdown, CountdownFormat, CountdownSeparator, CountdownSize, CountdownState, TimeUnits,
+};
 pub use crate::components::date_picker::{DateFormat, DatePicker, DatePickerState};
 pub use crate::components::dropdown::{Dropdown, DropdownAlign, DropdownItem, DropdownState};
 pub use crate::components::editor::{Editor, EditorState};
@@ -42,6 +48,9 @@ pub use crate::components::keyboard_shortcuts::{
     KeyboardShortcuts, ShortcutCategory, ShortcutItem,
 };
 pub use crate::components::label::Label;
+pub use crate::components::mention_input::{
+    init_mention_input, Mention, MentionInput, MentionInputEvent, MentionInputState, MentionItem,
+};
 pub use crate::components::notification_center::{
     NotificationBell, NotificationCenter, NotificationCenterState, NotificationItem,
     NotificationVariant,
@@ -55,6 +64,7 @@ pub use crate::components::progress::{
 };
 pub use crate::components::radio::{Radio, RadioGroup, RadioLayout};
 pub use crate::components::range_slider::{RangeSlider, RangeSliderState};
+pub use crate::components::rating::{Rating, RatingSize, RatingState};
 pub use crate::components::scrollable::{
     scrollable_both, scrollable_horizontal, scrollable_vertical,
 };
@@ -62,6 +72,9 @@ pub use crate::components::search_input::{SearchFilter, SearchInput, SearchInput
 pub use crate::components::select::{Select, SelectOption};
 pub use crate::components::separator::{Separator, SeparatorOrientation};
 pub use crate::components::slider::{Slider, SliderAxis, SliderSize, SliderState};
+pub use crate::components::sparkline::{
+    Sparkline, SparklineSize, SparklineTrend, SparklineVariant,
+};
 pub use crate::components::spinner::{Spinner, SpinnerSize, SpinnerVariant};
 pub use crate::components::split_pane::{
     CollapsiblePane, SplitDirection, SplitPane, SplitPaneEvent, SplitPaneState,
@@ -84,13 +97,17 @@ pub use crate::components::timeline::{
 };
 pub use crate::components::toggle::{LabelSide, Toggle, ToggleSize};
 pub use crate::components::tooltip::tooltip;
+pub use crate::components::video_player::{
+    init_video_player, VideoPlaybackSpeed, VideoPlaybackState, VideoPlayer, VideoPlayerSize,
+    VideoPlayerState,
+};
 pub use crate::display::badge::{Badge, BadgeVariant};
 pub use crate::display::card::Card;
 pub use crate::display::data_table::{ColumnDef, DataTable, SortDirection};
 pub use crate::display::table::{Table, TableColumn, TableRow};
 pub use crate::layout::{
-    Align, Cluster, Container, Flow, FlowDirection, Grid, HStack, Justify, Panel, ScrollContainer,
-    ScrollDirection, ScrollList, Spacer, VStack,
+    Align, Cluster, Container, Flow, FlowDirection, Grid, HStack, Justify, MasonryGrid,
+    MasonryItem, Panel, ScrollContainer, ScrollDirection, ScrollList, Spacer, VStack,
 };
 pub use crate::navigation::app_menu::{
     edit_menu, file_menu, help_menu, view_menu, window_menu, AppMenu, AppMenuBar,

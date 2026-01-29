@@ -7,14 +7,14 @@
 [![Rust](https://img.shields.io/badge/rust-nightly-orange.svg)](https://www.rust-lang.org/)
 [![GitHub Stars](https://img.shields.io/github/stars/Augani/adabraka-ui?style=social)](https://github.com/Augani/adabraka-ui)
 
-A comprehensive, professional UI component library for [GPUI](https://github.com/zed-industries/zed), the GPU-accelerated UI framework powering the Zed editor. Inspired by [shadcn/ui](https://ui.shadcn.com/), adabraka-ui provides 73+ polished, accessible components for building beautiful desktop applications in Rust.
+A comprehensive, professional UI component library for [GPUI](https://github.com/zed-industries/zed), the GPU-accelerated UI framework powering the Zed editor. Inspired by [shadcn/ui](https://ui.shadcn.com/), adabraka-ui provides 80+ polished, accessible components for building beautiful desktop applications in Rust.
 
 **[📖 Documentation](https://augani.github.io/adabraka-ui/)** · **[🚀 Getting Started](#installation)** · **[📦 Components](#components)** · **[💡 Examples](#examples)**
 
 ## ✨ Features
 
 - 🎨 **Complete Theme System** - Built-in light/dark themes with semantic color tokens
-- 🧩 **73+ Components** - Comprehensive library covering all UI needs from buttons to data tables
+- 🧩 **80+ Components** - Comprehensive library covering all UI needs from buttons to data tables
 - 📱 **Responsive Layout** - Flexible layout utilities (VStack, HStack, Grid)
 - 🎭 **Professional Animations** - Smooth transitions with cubic-bezier easing and spring physics
 - ✍️ **Typography System** - Built-in Text component with semantic variants
@@ -46,7 +46,7 @@ Add adabraka-ui to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-adabraka-ui = "0.2.3"
+adabraka-ui = "0.2.4"
 gpui = "0.2.0"
 ```
 
@@ -55,38 +55,92 @@ Build your project with nightly:
 cargo +nightly build
 ```
 
-## ✨ What's New in v0.2.3
+## ✨ What's New in v0.2.4
 
-**Latest Release (November 13, 2025)** - Enhanced slider component with vertical orientation support!
+**Latest Release (January 2026)** - 7 new components including media players, data visualization, and enhanced input controls!
 
-### 📊 Vertical Slider Support
-The Slider component now supports both horizontal and vertical orientations. Perfect for volume controls, brightness adjustments, and other vertical UI patterns.
+### 🎵 AudioPlayer Component
+Real audio playback with rodio integration. Full-featured player with play/pause, seek, volume control, mute toggle, and playback speed adjustment.
 
 ```rust
-// Horizontal slider (default)
-Slider::new(slider_state.clone())
-    .show_value(true)
+let audio_state = cx.new(|cx| {
+    let mut state = AudioPlayerState::new(cx);
+    state.load_file("path/to/audio.mp3", cx);
+    state
+});
 
-// Vertical slider
-Slider::new(slider_state.clone())
-    .vertical()
-    .size(SliderSize::Lg)
-    .show_value(true)
-    .on_change(|value, _, _| {
-        println!("Value: {}", value);
-    })
+AudioPlayer::new(audio_state)
+    .full()  // or .compact()
+    .title("Track Name")
+    .on_play(|_, _| println!("Playing"))
+    .on_seek(|time, _, _| println!("Seek to: {:.1}s", time))
 ```
 
-### 🐛 Slider Thumb Centering Fixed
-The slider thumb is now perfectly centered on the track line, providing a more polished and professional appearance across all size variants (Sm, Md, Lg).
+### 🎬 VideoPlayer Component
+Video player UI controls with flexible integration for custom video backends. Supports frame-by-frame rendering and overlay mode.
 
-### 🎨 Improved Component Architecture
-- Separate `render_horizontal()` and `render_vertical()` methods for cleaner code
-- Adaptive thumb shape: horizontal oval for horizontal sliders, vertical oval for vertical sliders
-- Better positioning logic using container dimensions matching thumb dimensions
+```rust
+let video_state = cx.new(|cx| VideoPlayerState::new(cx));
 
-### 📚 Enhanced Examples
-Updated `slider_styled_demo.rs` with 10 comprehensive examples showcasing horizontal and vertical sliders with various styling options.
+VideoPlayer::new(video_state)
+    .on_play(|_, _| decoder.play())
+    .on_pause(|_, _| decoder.pause())
+    .on_seek(|time, _, _| decoder.seek(time))
+```
+
+### ⭐ Rating Component
+Interactive star rating with half-star support, customizable max stars, and read-only mode.
+
+```rust
+Rating::new(rating_state)
+    .max_stars(5)
+    .allow_half(true)
+    .on_change(|value, _, _| println!("Rating: {}", value))
+```
+
+### 📊 Sparkline Component
+Lightweight inline charts in three variants: Line, Bar, and Area.
+
+```rust
+Sparkline::new(data_points)
+    .variant(SparklineVariant::Area)
+    .color(theme.tokens.primary)
+    .height(px(40.0))
+```
+
+### 💬 MentionInput Component
+Text input with @mention support and user dropdown suggestions.
+
+```rust
+MentionInput::new(input_state)
+    .users(user_list)
+    .on_mention(|user, _, _| println!("Mentioned: {}", user.name))
+```
+
+### 🧱 MasonryGrid Component
+Pinterest-style masonry layout for dynamic content grids.
+
+```rust
+MasonryGrid::new()
+    .columns(3)
+    .gap(px(16.0))
+    .children(cards)
+```
+
+### ⏱️ Countdown Component
+Countdown timer with customizable format and completion callback.
+
+```rust
+Countdown::new(countdown_state)
+    .format(CountdownFormat::HoursMinutesSeconds)
+    .on_complete(|_, _| println!("Timer finished!"))
+```
+
+### 🔊 Optional Audio Feature
+Enable real audio playback with the `audio` feature flag:
+```toml
+adabraka-ui = { version = "0.2.4", features = ["audio"] }
+```
 
 ---
 

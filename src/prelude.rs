@@ -3,6 +3,10 @@
 pub use crate::charts::bar_chart::{
     BarChart, BarChartData, BarChartMode, BarChartOrientation, BarChartSeries,
 };
+pub use crate::charts::chart::{
+    Axis, AxisPosition, Chart, ChartArea, ChartPadding, DataPoint, DataRange, Legend,
+    LegendPosition, Series, SeriesType, TooltipConfig,
+};
 pub use crate::charts::line_chart::{LineChart, LineChartPoint, LineChartSeries};
 pub use crate::charts::pie_chart::{
     PieChart, PieChartLabelPosition, PieChartSegment, PieChartSize, PieChartVariant,

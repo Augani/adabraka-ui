@@ -334,7 +334,7 @@ impl Input {
     /// Set a custom validation function
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// Input::new(&state)
     ///     .custom_validator(|value| {
     ///         if value.contains("@company.com") {
@@ -355,7 +355,7 @@ impl Input {
     /// Set a custom filter function to control which characters are allowed
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// Input::new(&state)
     ///     .custom_filter(|input| {
     ///         // Only allow alphanumeric and underscores
@@ -375,7 +375,7 @@ impl Input {
     /// Set a custom formatter function to format the input value
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// Input::new(&state)
     ///     .custom_formatter(|input| {
     ///         // Format as currency
@@ -654,6 +654,7 @@ impl RenderOnce for Input {
             offset: theme.tokens.shadow_xs.offset,
             blur_radius: theme.tokens.shadow_xs.blur_radius,
             spread_radius: theme.tokens.shadow_xs.spread_radius,
+            inset: false,
             color: theme.tokens.shadow_xs.color,
         };
         let focus_ring = theme.tokens.focus_ring_light();

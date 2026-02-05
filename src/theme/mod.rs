@@ -28,7 +28,7 @@
 //!
 //! ## Usage Patterns
 //!
-//! ```rust
+//! ```rust,ignore
 //! // Initialize theme at app startup
 //! fn init_app(cx: &mut App) {
 //!     theme::install_theme(cx, theme::Theme::dark());

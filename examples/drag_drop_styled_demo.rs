@@ -282,6 +282,7 @@ impl DragDropStyledDemo {
                         offset: point(px(0.0), px(2.0)),
                         blur_radius: px(8.0),
                         spread_radius: px(0.0),
+                    inset: false,
                     }])
                     .on_drop(cx.listener(move |this, data: &DragData<Task>, _, cx| {
                         match zone_id {
@@ -328,6 +329,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(1.0)),
                                         blur_radius: px(3.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .hover_bg(theme.tokens.muted.opacity(0.2))
                                     .child(
@@ -401,6 +403,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .child(
                                         div()
@@ -420,6 +423,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .child(
                                         div()
@@ -439,6 +443,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .child(
                                         div()
@@ -474,6 +479,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(8.0)),
                                         blur_radius: px(24.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .child(
                                         div()
@@ -492,6 +498,7 @@ impl DragDropStyledDemo {
                                         offset: point(px(0.0), px(8.0)),
                                         blur_radius: px(24.0),
                                         spread_radius: px(0.0),
+                                    inset: false,
                                     }])
                                     .child(
                                         div()

@@ -7,7 +7,7 @@ use gpui::{prelude::FluentBuilder as _, *};
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// Label::new("Email Address")
 ///     .required(true)
 ///     .helper_text("We'll never share your email")

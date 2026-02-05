@@ -20,7 +20,7 @@
 //! ## Usage Examples
 //!
 //! ### Basic Transitions
-//! ```rust
+//! ```rust,ignore
 //! // Fade in component on mount
 //! Transition::fade_normal().child(my_component)
 //!
@@ -29,7 +29,7 @@
 //! ```
 //!
 //! ### Conditional Rendering
-//! ```rust
+//! ```rust,ignore
 //! .when(show_modal, |parent| {
 //!     parent.child(
 //!         Transition::scale_up()
@@ -40,7 +40,7 @@
 //! ```
 //!
 //! ### Complex Transitions
-//! ```rust
+//! ```rust,ignore
 //! Transition::combined()
 //!     .fade_in()
 //!     .slide_from(Direction::Bottom)

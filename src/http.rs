@@ -3,7 +3,6 @@ use futures::FutureExt;
 use gpui::http_client::{AsyncBody, HttpClient, Request, Response};
 use std::sync::Arc;
 
-
 #[cfg(feature = "http")]
 pub struct SimpleHttpClient {
     client: isahc::HttpClient,
@@ -17,10 +16,8 @@ impl SimpleHttpClient {
             .default_header("User-Agent", user_agent)
             .build()?;
 
-        let user_agent_header =
-            gpui::http_client::http::HeaderValue::from_str(user_agent).unwrap_or_else(|_| {
-                gpui::http_client::http::HeaderValue::from_static("adabraka-ui")
-            });
+        let user_agent_header = gpui::http_client::http::HeaderValue::from_str(user_agent)
+            .unwrap_or_else(|_| gpui::http_client::http::HeaderValue::from_static("adabraka-ui"));
 
         Ok(Arc::new(Self {
             client,
@@ -58,9 +55,7 @@ impl HttpClient for SimpleHttpClient {
             let method_str = parts.method.as_str();
             let uri_str = parts.uri.to_string();
 
-            let mut request_builder = isahc::Request::builder()
-                .method(method_str)
-                .uri(&uri_str);
+            let mut request_builder = isahc::Request::builder().method(method_str).uri(&uri_str);
 
             for (key, value) in parts.headers.iter() {
                 if let Ok(value_str) = value.to_str() {

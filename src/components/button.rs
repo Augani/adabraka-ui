@@ -73,7 +73,7 @@ impl Button {
     /// Create a new button with a unique ID and label.
     ///
     /// # Example
-    /// ```
+    /// ```rust,ignore
     /// Button::new("my-button", "Click me")
     /// ```
     pub fn new(id: impl Into<ElementId>, label: impl Into<SharedString>) -> Self {

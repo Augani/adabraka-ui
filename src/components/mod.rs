@@ -48,6 +48,7 @@ pub mod date_picker;
 pub mod dropdown;
 pub mod empty_state;
 pub mod file_upload;
+pub mod form;
 pub mod hotkey_input;
 pub mod image_viewer;
 pub mod inline_edit;
@@ -67,5 +68,8 @@ pub mod tag_input;
 pub mod time_picker;
 pub mod timeline;
 pub mod video_player;
+
+pub mod infinite_scroll;
+pub mod sortable_list;
 
 pub use crate::display::badge;

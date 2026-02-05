@@ -405,6 +405,7 @@ impl RenderOnce for TimePicker {
                             offset: point(px(0.0), px(4.0)),
                             blur_radius: px(12.0),
                             spread_radius: px(0.0),
+                        inset: false,
                         }])
                         .p(px(16.0))
                         .child({

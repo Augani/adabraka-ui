@@ -367,8 +367,9 @@ impl RenderOnce for Carousel {
                 let infinite = self.infinite;
                 let on_change_key = self.on_change.clone();
 
-                this.on_key_down(
-                    window.listener_for(&state_key, move |state, event: &KeyDownEvent, window, cx| {
+                this.on_key_down(window.listener_for(
+                    &state_key,
+                    move |state, event: &KeyDownEvent, window, cx| {
                         match event.keystroke.key.as_str() {
                             "left" | "ArrowLeft" => {
                                 state.prev(infinite, cx);
@@ -401,8 +402,8 @@ impl RenderOnce for Carousel {
                             }
                             _ => {}
                         }
-                    }),
-                )
+                    },
+                ))
             })
             .child(
                 div()
@@ -412,21 +413,23 @@ impl RenderOnce for Carousel {
                     .child(match self.transition {
                         CarouselTransition::Slide => {
                             let track_width_pct = slide_count as f32 * 100.0;
-                            let slide_width_pct = if slide_count > 0 { 100.0 / slide_count as f32 } else { 100.0 };
+                            let slide_width_pct = if slide_count > 0 {
+                                100.0 / slide_count as f32
+                            } else {
+                                100.0
+                            };
                             let offset = -(current_index as f32);
 
                             div()
                                 .flex()
                                 .w(relative(track_width_pct / 100.0))
                                 .left(relative(offset))
-                                .children(
-                                    self.slides.into_iter().map(move |slide| {
-                                        div()
-                                            .flex_shrink_0()
-                                            .w(relative(slide_width_pct / 100.0))
-                                            .child(slide.content)
-                                    })
-                                )
+                                .children(self.slides.into_iter().map(move |slide| {
+                                    div()
+                                        .flex_shrink_0()
+                                        .w(relative(slide_width_pct / 100.0))
+                                        .child(slide.content)
+                                }))
                         }
                         CarouselTransition::Fade => {
                             let tid = transition_id as u64;
@@ -434,11 +437,11 @@ impl RenderOnce for Carousel {
                             let easing = self.easing.clone();
                             let easing2 = self.easing.clone();
 
-                            div()
-                                .relative()
-                                .w_full()
-                                .children(
-                                    self.slides.into_iter().enumerate().map(move |(idx, slide)| {
+                            div().relative().w_full().children(
+                                self.slides
+                                    .into_iter()
+                                    .enumerate()
+                                    .map(move |(idx, slide)| {
                                         let is_current = idx == current_index;
                                         let is_previous = previous_index == Some(idx);
                                         let easing_fn = easing.clone();
@@ -480,10 +483,10 @@ impl RenderOnce for Carousel {
                                                 .child(slide.content)
                                                 .into_any_element()
                                         }
-                                    })
-                                )
+                                    }),
+                            )
                         }
-                    })
+                    }),
             )
             .when(self.show_arrows && slide_count > 1, |this| {
                 let state_prev = self.state.clone();
@@ -514,14 +517,15 @@ impl RenderOnce for Carousel {
                                 .on_mouse_down(MouseButton::Left, |_, window, _| {
                                     window.prevent_default();
                                 })
-                                .on_click(
-                                    window.listener_for(&state_prev, move |state, _, window, cx| {
+                                .on_click(window.listener_for(
+                                    &state_prev,
+                                    move |state, _, window, cx| {
                                         state.prev(infinite, cx);
                                         if let Some(ref handler) = on_change_prev {
                                             handler(state.current_index, window, cx);
                                         }
-                                    }),
-                                )
+                                    },
+                                ))
                         })
                         .when(!can_prev || disabled, |this| {
                             this.opacity(0.5).cursor(CursorStyle::Arrow)
@@ -534,8 +538,8 @@ impl RenderOnce for Carousel {
                                     theme.tokens.foreground
                                 } else {
                                     theme.tokens.muted_foreground
-                                })
-                        )
+                                }),
+                        ),
                 )
                 .child(
                     div()
@@ -558,14 +562,15 @@ impl RenderOnce for Carousel {
                                 .on_mouse_down(MouseButton::Left, |_, window, _| {
                                     window.prevent_default();
                                 })
-                                .on_click(
-                                    window.listener_for(&state_next, move |state, _, window, cx| {
+                                .on_click(window.listener_for(
+                                    &state_next,
+                                    move |state, _, window, cx| {
                                         state.next(infinite, cx);
                                         if let Some(ref handler) = on_change_next {
                                             handler(state.current_index, window, cx);
                                         }
-                                    }),
-                                )
+                                    },
+                                ))
                         })
                         .when(!can_next || disabled, |this| {
                             this.opacity(0.5).cursor(CursorStyle::Arrow)
@@ -578,8 +583,8 @@ impl RenderOnce for Carousel {
                                     theme.tokens.foreground
                                 } else {
                                     theme.tokens.muted_foreground
-                                })
-                        )
+                                }),
+                        ),
                 )
             })
             .when(self.show_dots && slide_count > 1, |this| {
@@ -618,16 +623,17 @@ impl RenderOnce for Carousel {
                                         .on_mouse_down(MouseButton::Left, |_, window, _| {
                                             window.prevent_default();
                                         })
-                                        .on_click(
-                                            window.listener_for(&state_dot, move |state, _, window, cx| {
+                                        .on_click(window.listener_for(
+                                            &state_dot,
+                                            move |state, _, window, cx| {
                                                 state.go_to(idx, infinite, cx);
                                                 if let Some(ref handler) = on_change_dot {
                                                     handler(state.current_index, window, cx);
                                                 }
-                                            }),
-                                        )
+                                            },
+                                        ))
                                 })
-                        }))
+                        })),
                 )
             })
     }

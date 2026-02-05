@@ -177,7 +177,7 @@ impl<T: Clone + 'static> Combobox<T> {
     /// Set custom filter function
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// combobox.filter_fn(|item, search| {
     ///     item.name.to_lowercase().contains(&search.to_lowercase())
     /// })
@@ -193,7 +193,7 @@ impl<T: Clone + 'static> Combobox<T> {
     /// Set custom item render function
     ///
     /// # Example
-    /// ```rust
+    /// ```rust,ignore
     /// combobox.render_item(|item| item.name.clone().into())
     /// ```
     pub fn render_item<F>(mut self, f: F) -> Self

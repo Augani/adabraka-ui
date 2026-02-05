@@ -59,6 +59,7 @@ impl IntoElement for Card {
             offset: theme.tokens.shadow_sm.offset,
             blur_radius: theme.tokens.shadow_sm.blur_radius,
             spread_radius: theme.tokens.shadow_sm.spread_radius,
+            inset: false,
             color: theme.tokens.shadow_sm.color,
         };
 

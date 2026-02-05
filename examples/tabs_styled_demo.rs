@@ -179,6 +179,7 @@ impl Render for TabsStyledDemo {
                                     offset: point(px(0.0), px(4.0)),
                                     blur_radius: px(12.0),
                                     spread_radius: px(0.0),
+                                    inset: false,
                                     color: hsla(0.0, 0.0, 0.0, 0.1),
                                 }])
                                 .rounded(px(16.0)),
@@ -307,6 +308,7 @@ impl Render for TabsStyledDemo {
                                     offset: point(px(0.0), px(2.0)),
                                     blur_radius: px(8.0),
                                     spread_radius: px(0.0),
+                                    inset: false,
                                     color: hsla(0.0, 0.0, 0.0, 0.05),
                                 }]),
                             &theme,

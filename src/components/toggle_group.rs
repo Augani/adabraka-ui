@@ -230,6 +230,7 @@ impl RenderOnce for ToggleGroup {
                                 offset: point(px(0.0), px(1.0)),
                                 blur_radius: px(2.0),
                                 spread_radius: px(0.0),
+                            inset: false,
                             }])
                     })
                     .when(!is_selected, |this: Div| {

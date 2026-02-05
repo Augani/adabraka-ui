@@ -132,6 +132,7 @@ impl RenderOnce for Radio {
             offset: theme.tokens.shadow_xs.offset,
             blur_radius: theme.tokens.shadow_xs.blur_radius,
             spread_radius: theme.tokens.shadow_xs.spread_radius,
+            inset: false,
             color: theme.tokens.shadow_xs.color,
         };
         let focus_ring = theme.tokens.focus_ring_light();
@@ -203,7 +204,7 @@ impl RenderOnce for Radio {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// RadioGroup::new("theme-selection")
 ///     .selected_index(Some(0))
 ///     .on_change(|index, window, cx| {

@@ -45,9 +45,134 @@ pub struct ThemeTokens {
 
     pub font_family: SharedString,
     pub font_mono: SharedString,
+
+    pub spacing_1: Pixels,
+    pub spacing_2: Pixels,
+    pub spacing_3: Pixels,
+    pub spacing_4: Pixels,
+    pub spacing_5: Pixels,
+    pub spacing_6: Pixels,
+    pub spacing_8: Pixels,
+    pub spacing_10: Pixels,
+    pub spacing_12: Pixels,
+    pub spacing_16: Pixels,
+
+    pub duration_fastest: Duration,
+    pub duration_faster: Duration,
+    pub duration_fast: Duration,
+    pub duration_normal: Duration,
+    pub duration_slow: Duration,
+    pub duration_slower: Duration,
+    pub duration_slowest: Duration,
+
+    pub z_dropdown: u32,
+    pub z_sticky: u32,
+    pub z_modal: u32,
+    pub z_popover: u32,
+    pub z_tooltip: u32,
 }
 
 impl ThemeTokens {
+    fn standard_spacing_duration_z() -> (
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Pixels,
+        Duration,
+        Duration,
+        Duration,
+        Duration,
+        Duration,
+        Duration,
+        Duration,
+        u32,
+        u32,
+        u32,
+        u32,
+        u32,
+    ) {
+        (
+            px(4.0),
+            px(8.0),
+            px(12.0),
+            px(16.0),
+            px(20.0),
+            px(24.0),
+            px(32.0),
+            px(40.0),
+            px(48.0),
+            px(64.0),
+            Duration::from_millis(50),
+            Duration::from_millis(100),
+            Duration::from_millis(150),
+            Duration::from_millis(200),
+            Duration::from_millis(300),
+            Duration::from_millis(400),
+            Duration::from_millis(500),
+            1000,
+            1100,
+            1300,
+            1400,
+            1500,
+        )
+    }
+
+    fn apply_standard(mut self) -> Self {
+        let (
+            s1,
+            s2,
+            s3,
+            s4,
+            s5,
+            s6,
+            s8,
+            s10,
+            s12,
+            s16,
+            df,
+            dfr,
+            dfa,
+            dn,
+            ds,
+            dsr,
+            dst,
+            zd,
+            zs,
+            zm,
+            zp,
+            zt,
+        ) = Self::standard_spacing_duration_z();
+        self.spacing_1 = s1;
+        self.spacing_2 = s2;
+        self.spacing_3 = s3;
+        self.spacing_4 = s4;
+        self.spacing_5 = s5;
+        self.spacing_6 = s6;
+        self.spacing_8 = s8;
+        self.spacing_10 = s10;
+        self.spacing_12 = s12;
+        self.spacing_16 = s16;
+        self.duration_fastest = df;
+        self.duration_faster = dfr;
+        self.duration_fast = dfa;
+        self.duration_normal = dn;
+        self.duration_slow = ds;
+        self.duration_slower = dsr;
+        self.duration_slowest = dst;
+        self.z_dropdown = zd;
+        self.z_sticky = zs;
+        self.z_modal = zm;
+        self.z_popover = zp;
+        self.z_tooltip = zt;
+        self
+    }
+
     pub fn light() -> Self {
         Self {
             background: rgb(0xffffff).into(),
@@ -79,30 +204,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.05),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.1),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.1),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.1),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.1),
             },
 
@@ -114,7 +244,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn dark() -> Self {
@@ -148,30 +302,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.5),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.6),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.7),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.8),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.9),
             },
 
@@ -183,7 +342,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn midnight_blue() -> Self {
@@ -217,30 +400,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -252,7 +440,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn forest_grove() -> Self {
@@ -286,30 +498,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -321,7 +538,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn sunset_amber() -> Self {
@@ -355,30 +596,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -390,7 +636,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn ocean_breeze() -> Self {
@@ -424,30 +694,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -459,7 +734,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn dracula() -> Self {
@@ -493,30 +792,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -528,7 +832,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn nord() -> Self {
@@ -562,30 +890,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -597,7 +930,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn monokai_pro() -> Self {
@@ -631,30 +988,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -666,7 +1028,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn tokyo_night() -> Self {
@@ -700,30 +1086,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -735,7 +1126,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn catppuccin_mocha() -> Self {
@@ -769,30 +1184,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -804,7 +1224,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn rose_pine() -> Self {
@@ -838,30 +1282,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -873,7 +1322,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn coral_reef() -> Self {
@@ -907,30 +1380,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -942,7 +1420,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn lavender_dreams() -> Self {
@@ -976,30 +1478,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -1011,7 +1518,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn mint_fresh() -> Self {
@@ -1045,30 +1576,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -1080,7 +1616,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn peachy_keen() -> Self {
@@ -1114,30 +1674,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -1149,7 +1714,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn sky_blue() -> Self {
@@ -1183,30 +1772,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -1218,7 +1812,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 
     pub fn cherry_blossom() -> Self {
@@ -1252,30 +1870,35 @@ impl ThemeTokens {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(2.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_sm: BoxShadow {
                 offset: point(px(0.0), px(1.0)),
                 blur_radius: px(3.0),
                 spread_radius: px(0.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.2),
             },
             shadow_md: BoxShadow {
                 offset: point(px(0.0), px(4.0)),
                 blur_radius: px(6.0),
                 spread_radius: px(-1.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_lg: BoxShadow {
                 offset: point(px(0.0), px(10.0)),
                 blur_radius: px(15.0),
                 spread_radius: px(-3.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
             shadow_xl: BoxShadow {
                 offset: point(px(0.0), px(20.0)),
                 blur_radius: px(25.0),
                 spread_radius: px(-5.0),
+                inset: false,
                 color: hsla(0.0, 0.0, 0.0, 0.15),
             },
 
@@ -1287,7 +1910,31 @@ impl ThemeTokens {
 
             font_family: UI_FONT_FAMILY.into(),
             font_mono: UI_MONO_FONT_FAMILY.into(),
+
+            spacing_1: px(0.0),
+            spacing_2: px(0.0),
+            spacing_3: px(0.0),
+            spacing_4: px(0.0),
+            spacing_5: px(0.0),
+            spacing_6: px(0.0),
+            spacing_8: px(0.0),
+            spacing_10: px(0.0),
+            spacing_12: px(0.0),
+            spacing_16: px(0.0),
+            duration_fastest: Duration::ZERO,
+            duration_faster: Duration::ZERO,
+            duration_fast: Duration::ZERO,
+            duration_normal: Duration::ZERO,
+            duration_slow: Duration::ZERO,
+            duration_slower: Duration::ZERO,
+            duration_slowest: Duration::ZERO,
+            z_dropdown: 0,
+            z_sticky: 0,
+            z_modal: 0,
+            z_popover: 0,
+            z_tooltip: 0,
         }
+        .apply_standard()
     }
 }
 
@@ -1338,6 +1985,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(20.0 * intensity),
             spread_radius: px(2.0),
+            inset: false,
         }
     }
 
@@ -1347,6 +1995,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(2.0 * size)),
             blur_radius: px(8.0 * size),
             spread_radius: px(0.0),
+            inset: false,
         }
     }
 
@@ -1355,6 +2004,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(0.0),
             spread_radius: px(3.0 * progress),
+            inset: false,
             color: self.ring.opacity(0.5 * progress),
         }
     }
@@ -1365,6 +2015,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(0.0),
             spread_radius: px(3.0),
+            inset: false,
             color: self.ring.opacity(opacity),
         }
     }
@@ -1385,6 +2036,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(0.0),
             spread_radius: px(3.0),
+            inset: false,
             color: self.destructive.opacity(0.2),
         }
     }
@@ -1396,6 +2048,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(0.0),
             spread_radius: px(3.0),
+            inset: false,
             color: success_color.opacity(0.2),
         }
     }
@@ -1405,6 +2058,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(2.0)),
             blur_radius: px(4.0),
             spread_radius: px(-1.0),
+            inset: true,
             color: hsla(0.0, 0.0, 0.0, 0.08 * intensity),
         }
     }
@@ -1414,6 +2068,7 @@ impl ThemeTokens {
             offset: point(px(0.0), px(-2.0)),
             blur_radius: px(4.0),
             spread_radius: px(-1.0),
+            inset: true,
             color: hsla(0.0, 0.0, 0.0, 0.08 * intensity),
         }
     }

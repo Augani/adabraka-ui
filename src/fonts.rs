@@ -27,7 +27,7 @@
 //! Fonts are automatically registered when calling `adabraka_ui::init(cx)`.
 //! Access font families through the theme system or utility functions.
 //!
-//! ```rust
+//! ```rust,ignore
 //! // Access via theme (recommended)
 //! let theme = use_theme();
 //! div().font_family(theme.tokens.font_family.clone())

@@ -198,6 +198,7 @@ impl Render for Sheet {
                         offset: point(px(0.0), px(0.0)),
                         blur_radius: px(16.0),
                         spread_radius: px(0.0),
+                    inset: false,
                     }])
                     .on_mouse_down(MouseButton::Left, |_, _, _| {})
                     .when(self.side == SheetSide::Right, |this: Div| {

@@ -21,7 +21,7 @@
 //! ## Usage Examples
 //!
 //! ### Basic Animation
-//! ```rust
+//! ```rust,ignore
 //! use adabraka_ui::animations::*;
 //!
 //! // Fade in with smooth easing
@@ -34,7 +34,7 @@
 //! ```
 //!
 //! ### Spring Animation
-//! ```rust
+//! ```rust,ignore
 //! // Natural slide with bounce
 //! div()
 //!     .with_animation(
@@ -45,7 +45,7 @@
 //! ```
 //!
 //! ### Preset Usage
-//! ```rust
+//! ```rust,ignore
 //! // Use predefined animations
 //! div().with_animation(
 //!     "bounce",
@@ -691,6 +691,7 @@ pub fn lerp_shadow(from: &BoxShadow, to: &BoxShadow, t: f32) -> BoxShadow {
         ),
         blur_radius: lerp_pixels(from.blur_radius, to.blur_radius, t),
         spread_radius: lerp_pixels(from.spread_radius, to.spread_radius, t),
+        inset: false,
     }
 }
 
@@ -702,6 +703,7 @@ pub fn lerp_shadows(from: &[BoxShadow], to: &[BoxShadow], t: f32) -> SmallVec<[B
         offset: point(px(0.0), px(0.0)),
         blur_radius: px(0.0),
         spread_radius: px(0.0),
+        inset: false,
     };
     for i in 0..max_len {
         let f = from.get(i).unwrap_or(&empty);

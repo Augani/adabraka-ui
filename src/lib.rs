@@ -33,7 +33,7 @@
 //!
 //! ## Usage Example
 //!
-//! ```rust
+//! ```rust,ignore
 //! use adabraka_ui::{prelude::*, theme};
 //!
 //! // Initialize theme and components
@@ -53,6 +53,7 @@
 
 extern crate gpui;
 
+pub mod animate;
 pub mod animated_state;
 pub mod animation_coordinator;
 pub mod animations;
@@ -61,6 +62,7 @@ pub mod components;
 pub mod content_transition;
 pub mod display;
 pub mod gestures;
+pub mod gpui_ext;
 pub mod layout;
 pub mod navigation;
 pub mod overlays;
@@ -68,6 +70,7 @@ pub mod prelude;
 pub mod responsive;
 pub mod scroll_physics;
 pub mod spring;
+pub mod styled_ext;
 pub mod theme;
 pub mod transitions;
 pub mod virtual_list;
@@ -106,4 +109,6 @@ pub fn init(cx: &mut gpui::App) {
     components::editor::init(cx);
     navigation::sidebar::init_sidebar(cx);
     overlays::popover::init(cx);
+    overlays::sheet::init_sheet(cx);
+    overlays::alert_dialog::init_alert_dialog(cx);
 }

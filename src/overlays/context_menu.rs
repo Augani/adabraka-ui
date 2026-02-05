@@ -148,6 +148,7 @@ impl RenderOnce for ContextMenu {
                         offset: point(px(0.0), px(2.0)),
                         blur_radius: px(8.0),
                         spread_radius: px(0.0),
+                    inset: false,
                     }])
                     .p(px(4.0))
                     .map(|this| {

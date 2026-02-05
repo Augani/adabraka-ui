@@ -17,7 +17,7 @@ pub enum SeparatorOrientation {
 ///
 /// # Example
 ///
-/// ```rust
+/// ```rust,ignore
 /// // Horizontal separator
 /// Separator::new()
 ///

@@ -3,12 +3,104 @@
 version = 3
 
 [[package]]
+name = "adabraka-gpui"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "as-raw-xcb-connection",
+ "ashpd 0.11.0",
+ "async-task",
+ "bindgen 0.71.1",
+ "blade-graphics",
+ "blade-macros",
+ "blade-util",
+ "block",
+ "bytemuck",
+ "calloop",
+ "calloop-wayland-source",
+ "cbindgen",
+ "cocoa 0.26.1",
+ "core-foundation 0.10.1",
+ "core-foundation-sys",
+ "core-graphics 0.24.0",
+ "core-text",
+ "core-video",
+ "cosmic-text",
+ "ctor",
+ "derive_more",
+ "embed-resource",
+ "etagere",
+ "filedescriptor",
+ "flume",
+ "foreign-types",
+ "futures",
+ "gpui-macros",
+ "gpui_collections",
+ "gpui_http_client",
+ "gpui_media",
+ "gpui_refineable",
+ "gpui_semantic_version",
+ "gpui_sum_tree",
+ "gpui_util",
+ "gpui_util_macros",
+ "image",
+ "inventory",
+ "itertools 0.14.0",
+ "libc",
+ "log",
+ "lyon",
+ "metal",
+ "naga",
+ "num_cpus",
+ "objc",
+ "oo7",
+ "open",
+ "parking",
+ "parking_lot",
+ "pathfinder_geometry",
+ "postage",
+ "profiling",
+ "rand 0.9.2",
+ "raw-window-handle",
+ "resvg",
+ "schemars",
+ "seahash",
+ "serde",
+ "serde_json",
+ "slotmap",
+ "smallvec",
+ "smol",
+ "stacksafe",
+ "strum 0.27.2",
+ "taffy",
+ "thiserror 2.0.17",
+ "usvg",
+ "uuid",
+ "waker-fn",
+ "wayland-backend",
+ "wayland-client",
+ "wayland-cursor",
+ "wayland-protocols 0.31.2",
+ "wayland-protocols-plasma",
+ "windows 0.61.3",
+ "windows-core 0.61.2",
+ "windows-numerics",
+ "windows-registry 0.5.3",
+ "x11-clipboard",
+ "x11rb",
+ "xkbcommon",
+ "zed-font-kit",
+ "zed-scap",
+ "zed-xim",
+]
+
+[[package]]
 name = "adabraka-ui"
 version = "0.2.4"
 dependencies = [
+ "adabraka-gpui",
  "bytes",
  "futures",
- "gpui",
  "isahc",
  "once_cell",
  "regex",
@@ -2140,141 +2232,35 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpui"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d6cc8eeb8b75347d602fb1919e2c42f26c43c2a75d71b46200a8c24e8ba4c4c"
-dependencies = [
- "anyhow",
- "as-raw-xcb-connection",
- "ashpd 0.11.0",
- "async-task",
- "bindgen 0.71.1",
- "blade-graphics",
- "blade-macros",
- "blade-util",
- "block",
- "bytemuck",
- "calloop",
- "calloop-wayland-source",
- "cbindgen",
- "cocoa 0.26.1",
- "core-foundation 0.10.1",
- "core-foundation-sys",
- "core-graphics 0.24.0",
- "core-text",
- "core-video",
- "cosmic-text",
- "ctor",
- "derive_more",
- "embed-resource",
- "etagere",
- "filedescriptor",
- "flume",
- "foreign-types",
- "futures",
- "gpui-macros",
- "gpui_collections",
- "gpui_http_client",
- "gpui_media",
- "gpui_refineable",
- "gpui_semantic_version",
- "gpui_sum_tree",
- "gpui_util",
- "gpui_util_macros",
- "image",
- "inventory",
- "itertools 0.14.0",
- "libc",
- "log",
- "lyon",
- "metal",
- "naga",
- "num_cpus",
- "objc",
- "oo7",
- "open",
- "parking",
- "parking_lot",
- "pathfinder_geometry",
- "postage",
- "profiling",
- "rand 0.9.2",
- "raw-window-handle",
- "resvg",
- "schemars",
- "seahash",
- "serde",
- "serde_json",
- "slotmap",
- "smallvec",
- "smol",
- "stacksafe",
- "strum 0.27.2",
- "taffy",
- "thiserror 2.0.17",
- "usvg",
- "uuid",
- "waker-fn",
- "wayland-backend",
- "wayland-client",
- "wayland-cursor",
- "wayland-protocols 0.31.2",
- "wayland-protocols-plasma",
- "windows 0.61.3",
- "windows-core 0.61.2",
- "windows-numerics",
- "windows-registry 0.5.3",
- "workspace-hack",
- "x11-clipboard",
- "x11rb",
- "xkbcommon",
- "zed-font-kit",
- "zed-scap",
- "zed-xim",
-]
-
-[[package]]
 name = "gpui-macros"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73707a975cb38d764f90acc59dc651dfe86dc693af2f9719ad4b1026a05d830c"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
  "quote",
  "syn 2.0.107",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_collections"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81e961a1c901b2d015c8f1bbac6f5a506cdd578d2e0e25581404b9bf359528d7"
 dependencies = [
  "indexmap",
  "rustc-hash 2.1.1",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_derive_refineable"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15d8fb6574830b12cf49e373e01ffb31dda3e6454377f19f8bf731959b0cc797"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.107",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_http_client"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07f4575da99bf7f35489e2a7d0d0858d9f0537d40f88aa8702fc78cb5abdfb8b"
 dependencies = [
  "anyhow",
  "async-compression",
@@ -2293,15 +2279,12 @@ dependencies = [
  "sha2",
  "tempfile",
  "url",
- "workspace-hack",
  "zed-reqwest",
 ]
 
 [[package]]
 name = "gpui_media"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9f7f3d9e83c35efc9b53372485410d0b51d6ce39f3405e22c7306d3a3b133c5"
 dependencies = [
  "anyhow",
  "bindgen 0.71.1",
@@ -2311,59 +2294,44 @@ dependencies = [
  "foreign-types",
  "metal",
  "objc",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_perf"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f87032a24b8ad5eba847e9585c840f7cf1747c7a38ab5a3227820d9da37abb68"
 dependencies = [
  "gpui_collections",
  "serde",
  "serde_json",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_refineable"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec1ac7c0f175a56ff4edceeeb8515bea86576563d78608e16fed9c3be2cc54fc"
 dependencies = [
  "gpui_derive_refineable",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_semantic_version"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73dde41ea7acf6b9bf3bd421d7c4e1e7ca2923a9cbe795c84a068feceb6fa32f"
 dependencies = [
  "anyhow",
  "serde",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_sum_tree"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c6125543986a188ddb7735b65d10954c73f85a0b4e72ef1a7859c8311f3b874"
 dependencies = [
  "arrayvec",
  "log",
  "rayon",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_util"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "679e3626691f3ca246509dcd108467596ad58bc3a4a92b640ad69a17deb056f3"
 dependencies = [
  "anyhow",
  "async-fs",
@@ -2393,19 +2361,15 @@ dependencies = [
  "unicase",
  "walkdir",
  "which",
- "workspace-hack",
 ]
 
 [[package]]
 name = "gpui_util_macros"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f75f86119f7fc8ba6cd5937262d4529be647c0b7d2bcbf3f335165faa5876e2"
 dependencies = [
  "gpui_perf",
  "quote",
  "syn 2.0.107",
- "workspace-hack",
 ]
 
 [[package]]
@@ -7099,12 +7063,6 @@ name = "wit-bindgen"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
-
-[[package]]
-name = "workspace-hack"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "beffa227304dbaea3ad6a06ac674f9bc83a3dec3b7f63eeb442de37e7cb6bb01"
 
 [[package]]
 name = "writeable"

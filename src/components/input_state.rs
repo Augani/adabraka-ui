@@ -174,6 +174,8 @@ pub struct InputState {
     pub validate_on_blur: bool,
     pub validate_on_change: bool,
     pub trim_on_blur: bool,
+    pub shake_triggered: bool,
+    pub(crate) shake_count: u32,
     cursor_position_override: Option<usize>,
 }
 
@@ -210,6 +212,8 @@ impl InputState {
             validate_on_blur: true,
             validate_on_change: false,
             trim_on_blur: true,
+            shake_triggered: false,
+            shake_count: 0,
             cursor_position_override: None,
         }
     }
@@ -400,7 +404,10 @@ impl InputState {
         Ok(())
     }
 
-    /// Filter input based on input type or custom filter
+    pub fn trigger_shake(&mut self) {
+        self.shake_triggered = true;
+    }
+
     fn filter_input(&self, input: &str) -> String {
         if let Some(ref custom_filter) = self.validation_rules.custom_filter {
             return custom_filter(input);

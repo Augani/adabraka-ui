@@ -1292,6 +1292,73 @@ impl ThemeTokens {
 }
 
 impl ThemeTokens {
+    pub fn gradient_primary(&self) -> gpui::Background {
+        let c = self.primary;
+        let darkened = hsla(c.h, c.s, (c.l - 0.08).max(0.0), c.a);
+        gpui::linear_gradient(
+            180.0,
+            gpui::linear_color_stop(c, 0.0),
+            gpui::linear_color_stop(darkened, 1.0),
+        )
+    }
+
+    pub fn gradient_surface(&self) -> gpui::Background {
+        let c = self.card;
+        let lightened = hsla(c.h, c.s, (c.l + 0.02).min(1.0), c.a);
+        gpui::linear_gradient(
+            135.0,
+            gpui::linear_color_stop(c, 0.0),
+            gpui::linear_color_stop(lightened, 1.0),
+        )
+    }
+
+    pub fn gradient_accent(&self) -> gpui::Background {
+        let c = self.accent;
+        let darkened = hsla(c.h, c.s, (c.l - 0.06).max(0.0), c.a);
+        gpui::linear_gradient(
+            180.0,
+            gpui::linear_color_stop(c, 0.0),
+            gpui::linear_color_stop(darkened, 1.0),
+        )
+    }
+
+    pub fn gradient_destructive(&self) -> gpui::Background {
+        let c = self.destructive;
+        let darkened = hsla(c.h, c.s, (c.l - 0.08).max(0.0), c.a);
+        gpui::linear_gradient(
+            180.0,
+            gpui::linear_color_stop(c, 0.0),
+            gpui::linear_color_stop(darkened, 1.0),
+        )
+    }
+
+    pub fn glow_shadow(&self, color: Hsla, intensity: f32) -> BoxShadow {
+        BoxShadow {
+            color: color.opacity(0.4 * intensity),
+            offset: point(px(0.0), px(0.0)),
+            blur_radius: px(20.0 * intensity),
+            spread_radius: px(2.0),
+        }
+    }
+
+    pub fn colored_shadow(&self, color: Hsla, size: f32) -> BoxShadow {
+        BoxShadow {
+            color: color.opacity(0.25),
+            offset: point(px(0.0), px(2.0 * size)),
+            blur_radius: px(8.0 * size),
+            spread_radius: px(0.0),
+        }
+    }
+
+    pub fn focus_ring_animated(&self, progress: f32) -> BoxShadow {
+        BoxShadow {
+            offset: point(px(0.0), px(0.0)),
+            blur_radius: px(0.0),
+            spread_radius: px(3.0 * progress),
+            color: self.ring.opacity(0.5 * progress),
+        }
+    }
+
     /// Create a focus ring shadow (3px spread with opacity)
     pub fn focus_ring(&self, opacity: f32) -> BoxShadow {
         BoxShadow {
@@ -1324,12 +1391,64 @@ impl ThemeTokens {
 
     /// Create a success ring (for validated inputs)
     pub fn success_ring(&self) -> BoxShadow {
-        let success_color = hsla(0.33, 0.70, 0.50, 1.0); // Green
+        let success_color = hsla(0.33, 0.70, 0.50, 1.0);
         BoxShadow {
             offset: point(px(0.0), px(0.0)),
             blur_radius: px(0.0),
             spread_radius: px(3.0),
             color: success_color.opacity(0.2),
         }
+    }
+
+    pub fn inset_shadow_top(&self, intensity: f32) -> BoxShadow {
+        BoxShadow {
+            offset: point(px(0.0), px(2.0)),
+            blur_radius: px(4.0),
+            spread_radius: px(-1.0),
+            color: hsla(0.0, 0.0, 0.0, 0.08 * intensity),
+        }
+    }
+
+    pub fn inset_shadow_bottom(&self, intensity: f32) -> BoxShadow {
+        BoxShadow {
+            offset: point(px(0.0), px(-2.0)),
+            blur_radius: px(4.0),
+            spread_radius: px(-1.0),
+            color: hsla(0.0, 0.0, 0.0, 0.08 * intensity),
+        }
+    }
+
+    pub fn inset_shadow_both(&self, intensity: f32) -> Vec<BoxShadow> {
+        vec![
+            self.inset_shadow_top(intensity),
+            self.inset_shadow_bottom(intensity),
+        ]
+    }
+
+    pub fn elevation_shadow(&self, level: u8) -> Vec<BoxShadow> {
+        match level {
+            0 => vec![],
+            1 => vec![self.shadow_xs.clone()],
+            2 => vec![self.shadow_sm.clone()],
+            3 => vec![self.shadow_md.clone()],
+            4 => vec![self.shadow_lg.clone()],
+            _ => vec![self.shadow_xl.clone()],
+        }
+    }
+
+    pub fn layered_gradient(&self, angle: f32, colors: &[Hsla]) -> Vec<gpui::Background> {
+        if colors.len() < 2 {
+            return vec![];
+        }
+
+        let mut layers = Vec::new();
+        for window in colors.windows(2) {
+            layers.push(gpui::linear_gradient(
+                angle,
+                gpui::linear_color_stop(window[0], 0.0),
+                gpui::linear_color_stop(window[1], 1.0),
+            ));
+        }
+        layers
     }
 }

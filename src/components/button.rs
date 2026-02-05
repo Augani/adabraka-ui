@@ -1,6 +1,7 @@
 //! Button component with multiple variants and sizes.
 
 use crate::components::icon_source::IconSource;
+use crate::components::ripple::Ripple;
 use crate::components::text::{Text, TextVariant};
 use crate::icon_config::resolve_icon_path;
 use crate::theme::use_theme;
@@ -58,6 +59,7 @@ pub struct Button {
     icon_position: IconPosition,
     tooltip: Option<SharedString>,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
+    ripple_enabled: bool,
     style: StyleRefinement,
 }
 
@@ -91,6 +93,8 @@ impl Button {
             icon_position: IconPosition::Start,
             tooltip: None,
             on_click: None,
+            ripple_enabled: false,
+
             style: StyleRefinement::default(),
         }
     }
@@ -140,6 +144,11 @@ impl Button {
         handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
     ) -> Self {
         self.on_click = Some(Rc::new(handler));
+        self
+    }
+
+    pub fn ripple(mut self, enabled: bool) -> Self {
+        self.ripple_enabled = enabled;
         self
     }
 
@@ -226,6 +235,9 @@ impl RenderOnce for Button {
 
         let clickable = self.clickable();
         let handler = self.on_click.clone();
+        let ripple_enabled = self.ripple_enabled && clickable;
+        let ripple_id = ElementId::Name(format!("{}-ripple", self.id).into());
+        let ripple_color = fg;
 
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
@@ -250,6 +262,8 @@ impl RenderOnce for Button {
             .when(!self.disabled && !is_loading, |this| {
                 this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
             })
+            .relative()
+            .overflow_hidden()
             .flex()
             .items_center()
             .justify_center()
@@ -276,28 +290,40 @@ impl RenderOnce for Button {
             })
             .when(!self.disabled && !is_loading, |this| {
                 let shadow_sm = theme.tokens.shadow_sm;
-                this.cursor(CursorStyle::PointingHand).hover(move |style| {
-                    let hover_style = style.bg(hover_bg).text_color(hover_fg);
-                    if has_shadow {
-                        hover_style.shadow(vec![shadow_sm])
-                    } else {
-                        hover_style
-                    }
-                })
+                this.cursor(CursorStyle::PointingHand)
+                    .hover(move |style| {
+                        let hover_style = style.bg(hover_bg).text_color(hover_fg);
+                        if has_shadow {
+                            hover_style.shadow(vec![shadow_sm])
+                        } else {
+                            hover_style
+                        }
+                    })
+                    .active(|style| style.opacity(0.9))
             })
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);
                 div
             })
-            .on_mouse_down(MouseButton::Left, |_, window, _| {
+            .on_mouse_down(MouseButton::Left, move |_event, window, _| {
                 window.prevent_default();
+                if ripple_enabled {
+                    window.refresh();
+                }
             })
             .when_some(handler.filter(|_| clickable), |this, on_click| {
                 this.on_click(move |event, window, cx| {
                     cx.stop_propagation();
                     (on_click)(event, window, cx);
                 })
+            })
+            .when(self.ripple_enabled && clickable, |this| {
+                let size = height;
+                this.child(
+                    Ripple::new(ripple_id, point(size / 2.0, size / 2.0), ripple_color)
+                        .max_size(size * 2.5),
+                )
             })
             .child(
                 div()

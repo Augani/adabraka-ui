@@ -53,14 +53,21 @@
 
 extern crate gpui;
 
+pub mod animated_state;
+pub mod animation_coordinator;
 pub mod animations;
 pub mod charts;
 pub mod components;
+pub mod content_transition;
 pub mod display;
+pub mod gestures;
 pub mod layout;
 pub mod navigation;
 pub mod overlays;
 pub mod prelude;
+pub mod responsive;
+pub mod scroll_physics;
+pub mod spring;
 pub mod theme;
 pub mod transitions;
 pub mod virtual_list;

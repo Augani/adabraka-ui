@@ -4,6 +4,7 @@ use std::collections::HashMap;
 use std::ops::Range;
 use std::rc::Rc;
 
+use crate::layout::{PhysicsScrollState, ScrollDirection};
 use crate::util::{AxisExt, PixelsExt};
 use gpui::{
     div, point, px, size, Along, AnyElement, App, AvailableSpace, Axis, Bounds, Context, Div,
@@ -27,6 +28,7 @@ pub struct UniformVirtualList {
     >,
     on_visible_range: Option<Box<dyn Fn(Range<usize>, &mut Window, &mut App)>>,
     near_end_threshold: Option<(f32, Rc<RefCell<bool>>, Box<dyn Fn(&mut Window, &mut App)>)>,
+    physics_state: Option<PhysicsScrollState>,
 }
 
 impl Styled for UniformVirtualList {
@@ -63,6 +65,7 @@ impl UniformVirtualList {
             renderer: Box::new(renderer_boxed),
             on_visible_range: None,
             near_end_threshold: None,
+            physics_state: None,
         }
     }
 
@@ -134,6 +137,35 @@ impl UniformVirtualList {
             }
         }
         self.scroll_handle.set_offset(offset);
+    }
+
+    pub fn with_physics(mut self, state: &PhysicsScrollState) -> Self {
+        let physics_c = state.clone();
+        let handle_c = self.scroll_handle.clone();
+        let dir = if self.axis.is_vertical() {
+            ScrollDirection::Vertical
+        } else {
+            ScrollDirection::Horizontal
+        };
+        self.base = self.base.on_scroll_wheel(move |event, window, _cx| {
+            physics_c.handle_scroll_event(&handle_c, dir, event, window);
+        });
+        self.physics_state = Some(state.clone());
+        self
+    }
+
+    pub fn scroll_to_animated(&self, index: usize, window: &Window) {
+        if let Some(ref physics) = self.physics_state {
+            let target =
+                self.item_extent.as_f32() * index.min(self.item_count.saturating_sub(1)) as f32;
+            if self.axis.is_vertical() {
+                physics.scroll_to_y_animated(target, &self.scroll_handle, window);
+            } else {
+                physics.scroll_to_x_animated(target, &self.scroll_handle, window);
+            }
+        } else {
+            self.scroll_to(index, gpui::ScrollStrategy::Top);
+        }
     }
 }
 
@@ -495,6 +527,7 @@ pub struct VariableVirtualList<P: ItemExtentProvider> {
     >,
     on_visible_range: Option<Box<dyn Fn(Range<usize>, &mut Window, &mut App)>>,
     near_end_threshold: Option<(f32, Rc<RefCell<bool>>, Box<dyn Fn(&mut Window, &mut App)>)>,
+    physics_state: Option<PhysicsScrollState>,
 }
 
 impl<P: ItemExtentProvider> Styled for VariableVirtualList<P> {
@@ -533,6 +566,7 @@ impl<P: ItemExtentProvider + 'static> VariableVirtualList<P> {
             renderer: Box::new(renderer_boxed),
             on_visible_range: None,
             near_end_threshold: None,
+            physics_state: None,
         }
     }
 
@@ -592,6 +626,37 @@ impl<P: ItemExtentProvider + 'static> VariableVirtualList<P> {
             }
         }
         self.scroll_handle.set_offset(offset);
+    }
+
+    pub fn with_physics(mut self, state: &PhysicsScrollState) -> Self {
+        let physics_c = state.clone();
+        let handle_c = self.scroll_handle.clone();
+        let dir = if self.axis.is_vertical() {
+            ScrollDirection::Vertical
+        } else {
+            ScrollDirection::Horizontal
+        };
+        self.base = self.base.on_scroll_wheel(move |event, window, _cx| {
+            physics_c.handle_scroll_event(&handle_c, dir, event, window);
+        });
+        self.physics_state = Some(state.clone());
+        self
+    }
+
+    pub fn scroll_to_animated(&mut self, index: usize, window: &Window) {
+        if let Some(ref physics) = self.physics_state {
+            let target_px = self
+                .engine
+                .item_origin(index.min(self.engine.item_count.saturating_sub(1)));
+            let target = f32::from(target_px);
+            if self.axis.is_vertical() {
+                physics.scroll_to_y_animated(target, &self.scroll_handle, window);
+            } else {
+                physics.scroll_to_x_animated(target, &self.scroll_handle, window);
+            }
+        } else {
+            self.scroll_to(index, gpui::ScrollStrategy::Top);
+        }
     }
 }
 

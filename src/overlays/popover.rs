@@ -1,8 +1,10 @@
 //! Popover component with anchored positioning.
 
 use gpui::{prelude::FluentBuilder as _, *};
+use std::time::Duration;
 use std::{cell::RefCell, rc::Rc};
 
+use crate::animations::easings;
 use crate::theme::use_theme;
 
 const POPOVER_MARGIN: Pixels = px(8.0);
@@ -17,6 +19,7 @@ pub fn init(cx: &mut App) {
 pub struct PopoverContent {
     focus_handle: FocusHandle,
     content: Rc<dyn Fn(&mut Window, &mut Context<Self>) -> AnyElement>,
+    dismissing: bool,
 }
 
 impl PopoverContent {
@@ -27,6 +30,7 @@ impl PopoverContent {
         Self {
             focus_handle: cx.focus_handle(),
             content: Rc::new(content),
+            dismissing: false,
         }
     }
 }
@@ -42,6 +46,7 @@ impl Focusable for PopoverContent {
 impl Render for PopoverContent {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
+        let dismissing = self.dismissing;
 
         div()
             .p(px(12.0))
@@ -56,10 +61,42 @@ impl Render for PopoverContent {
             .overflow_hidden()
             .track_focus(&self.focus_handle)
             .key_context(CONTEXT)
-            .on_action(cx.listener(|_, _: &ClosePopover, _, cx| {
-                cx.emit(DismissEvent);
+            .on_action(cx.listener(|this, _: &ClosePopover, window, cx| {
+                if this.dismissing {
+                    return;
+                }
+                this.dismissing = true;
+                cx.notify();
+
+                cx.spawn_in(window, async move |entity, cx| {
+                    smol::Timer::after(Duration::from_millis(120)).await;
+                    let _ = entity.update(cx, |_, cx| {
+                        cx.emit(DismissEvent);
+                    });
+                })
+                .detach();
             }))
             .child((self.content)(window, cx))
+            .with_animation(
+                if dismissing {
+                    "popover-exit"
+                } else {
+                    "popover-enter"
+                },
+                Animation::new(Duration::from_millis(if dismissing { 120 } else { 150 }))
+                    .with_easing(if dismissing {
+                        easings::ease_in_cubic as fn(f32) -> f32
+                    } else {
+                        easings::ease_out_cubic as fn(f32) -> f32
+                    }),
+                move |el, delta| {
+                    if dismissing {
+                        el.opacity(1.0 - delta).mt(px(4.0 * delta))
+                    } else {
+                        el.opacity(delta).mt(px(4.0 * (1.0 - delta)))
+                    }
+                },
+            )
     }
 }
 

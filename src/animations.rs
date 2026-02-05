@@ -64,6 +64,7 @@
 //!
 
 use gpui::*;
+use smallvec::SmallVec;
 use std::time::Duration;
 
 /// Standard animation durations following modern UI guidelines
@@ -239,12 +240,135 @@ pub mod easings {
         result.clamp(0.0, 1.0)
     }
 
-    /// Smooth ease (similar to ease-in-out-cubic) - best for most UI
+    pub fn ease_in_expo(t: f32) -> f32 {
+        if t == 0.0 {
+            0.0
+        } else {
+            2_f32.powf(10.0 * t - 10.0)
+        }
+    }
+
+    pub fn ease_in_circ(t: f32) -> f32 {
+        1.0 - (1.0 - t * t).sqrt()
+    }
+
+    pub fn ease_out_circ(t: f32) -> f32 {
+        let t = t - 1.0;
+        (1.0 - t * t).sqrt()
+    }
+
+    pub fn ease_in_out_circ(t: f32) -> f32 {
+        if t < 0.5 {
+            (1.0 - (1.0 - (2.0 * t).powi(2)).sqrt()) / 2.0
+        } else {
+            ((1.0 - (-2.0 * t + 2.0).powi(2)).sqrt() + 1.0) / 2.0
+        }
+    }
+
+    pub fn ease_in_back(t: f32) -> f32 {
+        let c1 = 1.70158;
+        let c3 = c1 + 1.0;
+        (c3 * t * t * t - c1 * t * t).max(0.0)
+    }
+
+    pub fn ease_in_out_back(t: f32) -> f32 {
+        let c1 = 1.70158;
+        let c2 = c1 * 1.525;
+        if t < 0.5 {
+            ((2.0 * t).powi(2) * ((c2 + 1.0) * 2.0 * t - c2)) / 2.0
+        } else {
+            let result =
+                ((2.0 * t - 2.0).powi(2) * ((c2 + 1.0) * (t * 2.0 - 2.0) + c2) + 2.0) / 2.0;
+            result.clamp(0.0, 1.0)
+        }
+    }
+
+    pub fn ease_in_elastic(t: f32) -> f32 {
+        if t == 0.0 {
+            return 0.0;
+        }
+        if t >= 1.0 {
+            return 1.0;
+        }
+        let c4 = (2.0 * std::f32::consts::PI) / 3.0;
+        let result = -(2_f32.powf(10.0 * t - 10.0) * ((t * 10.0 - 10.75) * c4).sin());
+        result.clamp(0.0, 1.0)
+    }
+
+    pub fn ease_out_elastic(t: f32) -> f32 {
+        if t == 0.0 {
+            return 0.0;
+        }
+        if t >= 1.0 {
+            return 1.0;
+        }
+        let c4 = (2.0 * std::f32::consts::PI) / 3.0;
+        let result = 2_f32.powf(-10.0 * t) * ((t * 10.0 - 0.75) * c4).sin() + 1.0;
+        result.clamp(0.0, 1.0)
+    }
+
+    pub fn ease_in_quint(t: f32) -> f32 {
+        t * t * t * t * t
+    }
+
+    pub fn ease_out_quint(t: f32) -> f32 {
+        let t = t - 1.0;
+        1.0 + t * t * t * t * t
+    }
+
+    pub fn ease_in_out_quint(t: f32) -> f32 {
+        if t < 0.5 {
+            16.0 * t * t * t * t * t
+        } else {
+            let t = 2.0 * t - 2.0;
+            1.0 + t * t * t * t * t / 2.0
+        }
+    }
+
+    pub fn steps(n: u32) -> impl Fn(f32) -> f32 {
+        move |t: f32| {
+            let n = n.max(1) as f32;
+            (t * n).floor() / n
+        }
+    }
+
+    pub fn cubic_bezier(x1: f32, y1: f32, x2: f32, y2: f32) -> impl Fn(f32) -> f32 {
+        move |t: f32| {
+            if t <= 0.0 {
+                return 0.0;
+            }
+            if t >= 1.0 {
+                return 1.0;
+            }
+            let mut low = 0.0_f32;
+            let mut high = 1.0_f32;
+            let mut mid;
+            for _ in 0..20 {
+                mid = (low + high) / 2.0;
+                let x = cubic_bezier_sample(mid, x1, x2);
+                if (x - t).abs() < 0.0001 {
+                    return cubic_bezier_sample(mid, y1, y2);
+                }
+                if x < t {
+                    low = mid;
+                } else {
+                    high = mid;
+                }
+            }
+            cubic_bezier_sample((low + high) / 2.0, y1, y2)
+        }
+    }
+
+    fn cubic_bezier_sample(t: f32, p1: f32, p2: f32) -> f32 {
+        let t2 = t * t;
+        let t3 = t2 * t;
+        3.0 * (1.0 - t) * (1.0 - t) * t * p1 + 3.0 * (1.0 - t) * t2 * p2 + t3
+    }
+
     pub fn smooth() -> impl Fn(f32) -> f32 {
         ease_in_out_cubic
     }
 
-    /// Snappy ease - quick with slight overshoot
     pub fn snappy() -> impl Fn(f32) -> f32 {
         ease_out_back
     }
@@ -536,4 +660,53 @@ pub fn spring_bounce(delta: f32, amplitude: f32) -> f32 {
     let decay = (-damping * delta * 10.0).exp();
     let oscillation = (frequency * delta * std::f32::consts::PI * 2.0).sin();
     amplitude * decay * oscillation
+}
+
+pub fn lerp_f32(from: f32, to: f32, t: f32) -> f32 {
+    from + (to - from) * t.clamp(0.0, 1.0)
+}
+
+pub fn lerp_pixels(from: Pixels, to: Pixels, t: f32) -> Pixels {
+    let t = t.clamp(0.0, 1.0);
+    px(f32::from(from) + (f32::from(to) - f32::from(from)) * t)
+}
+
+pub fn lerp_color(from: Hsla, to: Hsla, t: f32) -> Hsla {
+    let t = t.clamp(0.0, 1.0);
+    Hsla {
+        h: from.h + (to.h - from.h) * t,
+        s: from.s + (to.s - from.s) * t,
+        l: from.l + (to.l - from.l) * t,
+        a: from.a + (to.a - from.a) * t,
+    }
+}
+
+pub fn lerp_shadow(from: &BoxShadow, to: &BoxShadow, t: f32) -> BoxShadow {
+    let t = t.clamp(0.0, 1.0);
+    BoxShadow {
+        color: lerp_color(from.color, to.color, t),
+        offset: point(
+            lerp_pixels(from.offset.x, to.offset.x, t),
+            lerp_pixels(from.offset.y, to.offset.y, t),
+        ),
+        blur_radius: lerp_pixels(from.blur_radius, to.blur_radius, t),
+        spread_radius: lerp_pixels(from.spread_radius, to.spread_radius, t),
+    }
+}
+
+pub fn lerp_shadows(from: &[BoxShadow], to: &[BoxShadow], t: f32) -> SmallVec<[BoxShadow; 2]> {
+    let max_len = from.len().max(to.len());
+    let mut result = SmallVec::new();
+    let empty = BoxShadow {
+        color: hsla(0.0, 0.0, 0.0, 0.0),
+        offset: point(px(0.0), px(0.0)),
+        blur_radius: px(0.0),
+        spread_radius: px(0.0),
+    };
+    for i in 0..max_len {
+        let f = from.get(i).unwrap_or(&empty);
+        let t_shadow = to.get(i).unwrap_or(&empty);
+        result.push(lerp_shadow(f, t_shadow, t));
+    }
+    result
 }

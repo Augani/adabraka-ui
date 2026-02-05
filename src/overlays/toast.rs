@@ -4,6 +4,7 @@ use gpui::{prelude::FluentBuilder as _, *};
 use smol::Timer;
 use std::time::Duration;
 
+use crate::animations::easings;
 use crate::components::icon::Icon;
 use crate::theme::use_theme;
 
@@ -78,6 +79,7 @@ pub struct ToastManager {
     toasts: Vec<ToastItem>,
     position: ToastPosition,
     max_toasts: usize,
+    dismissing: std::collections::HashSet<u64>,
 }
 
 impl ToastManager {
@@ -86,6 +88,7 @@ impl ToastManager {
             toasts: vec![],
             position: ToastPosition::BottomRight,
             max_toasts: 5,
+            dismissing: std::collections::HashSet::new(),
         }
     }
 
@@ -113,6 +116,11 @@ impl ToastManager {
             cx.spawn_in(window, async move |this, cx| {
                 Timer::after(duration).await;
                 let _ = this.update(cx, |this, cx| {
+                    this.dismissing.insert(id);
+                    cx.notify();
+                });
+                Timer::after(Duration::from_millis(250)).await;
+                let _ = this.update(cx, |this, cx| {
                     this.dismiss_toast(id, cx);
                 });
             })
@@ -133,7 +141,28 @@ impl ToastManager {
 
     pub fn dismiss_toast(&mut self, id: u64, cx: &mut Context<Self>) {
         self.toasts.retain(|t| t.id != id);
+        self.dismissing.remove(&id);
         cx.notify();
+    }
+
+    pub fn dismiss_toast_animated(&mut self, id: u64, window: &mut Window, cx: &mut Context<Self>) {
+        if self.dismissing.contains(&id) {
+            return;
+        }
+        self.dismissing.insert(id);
+        cx.notify();
+
+        cx.spawn_in(window, async move |this, cx| {
+            Timer::after(Duration::from_millis(250)).await;
+            let _ = this.update(cx, |this, cx| {
+                this.dismiss_toast(id, cx);
+            });
+        })
+        .detach();
+    }
+
+    pub fn is_dismissing(&self, id: u64) -> bool {
+        self.dismissing.contains(&id)
     }
 
     pub fn clear_all(&mut self, cx: &mut Context<Self>) {
@@ -223,9 +252,11 @@ impl Render for ToastManager {
                         };
 
                         let user_style = toast.style.clone();
+                        let toast_id = toast.id;
+                        let is_dismissing = self.dismissing.contains(&toast_id);
 
                         div()
-                            .id(("toast", toast.id))
+                            .id(("toast", toast_id))
                             .flex()
                             .items_start()
                             .gap(px(12.0))
@@ -284,11 +315,39 @@ impl Render for ToastManager {
                                     .hover(|style| style.bg(theme.tokens.accent))
                                     .on_mouse_down(
                                         MouseButton::Left,
-                                        cx.listener(move |this, _, _, cx| {
-                                            this.dismiss_toast(toast.id, cx);
+                                        cx.listener(move |this, _, window, cx| {
+                                            this.dismiss_toast_animated(toast.id, window, cx);
                                         }),
                                     )
                                     .child("×"),
+                            )
+                            .with_animation(
+                                ElementId::NamedInteger(
+                                    if is_dismissing {
+                                        "toast-exit"
+                                    } else {
+                                        "toast-enter"
+                                    }
+                                    .into(),
+                                    toast_id,
+                                ),
+                                Animation::new(Duration::from_millis(if is_dismissing {
+                                    250
+                                } else {
+                                    300
+                                }))
+                                .with_easing(if is_dismissing {
+                                    easings::ease_in_cubic as fn(f32) -> f32
+                                } else {
+                                    easings::ease_out_cubic as fn(f32) -> f32
+                                }),
+                                move |el, delta| {
+                                    if is_dismissing {
+                                        el.opacity(1.0 - delta).mt(px(8.0 * delta))
+                                    } else {
+                                        el.opacity(delta).mt(px(8.0 * (1.0 - delta)))
+                                    }
+                                },
                             )
                     })
                     .collect::<Vec<_>>(),

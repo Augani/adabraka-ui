@@ -1,5 +1,7 @@
 //! Convenient re-exports for end users
 
+pub use crate::animated_state::AnimatedInteraction;
+pub use crate::animations::{lerp_color, lerp_f32, lerp_pixels, lerp_shadow, lerp_shadows};
 pub use crate::charts::bar_chart::{
     BarChart, BarChartData, BarChartMode, BarChartOrientation, BarChartSeries,
 };
@@ -65,6 +67,7 @@ pub use crate::components::progress::{
 pub use crate::components::radio::{Radio, RadioGroup, RadioLayout};
 pub use crate::components::range_slider::{RangeSlider, RangeSliderState};
 pub use crate::components::rating::{Rating, RatingSize, RatingState};
+pub use crate::components::ripple::Ripple;
 pub use crate::components::scrollable::{
     scrollable_both, scrollable_horizontal, scrollable_vertical,
 };
@@ -107,7 +110,8 @@ pub use crate::display::data_table::{ColumnDef, DataTable, SortDirection};
 pub use crate::display::table::{Table, TableColumn, TableRow};
 pub use crate::layout::{
     Align, Cluster, Container, Flow, FlowDirection, Grid, HStack, Justify, MasonryGrid,
-    MasonryItem, Panel, ScrollContainer, ScrollDirection, ScrollList, Spacer, VStack,
+    MasonryItem, Panel, PhysicsScrollState, ScrollContainer, ScrollDirection, ScrollList, Spacer,
+    VStack,
 };
 pub use crate::navigation::app_menu::{
     edit_menu, file_menu, help_menu, view_menu, window_menu, AppMenu, AppMenuBar,
@@ -129,5 +133,17 @@ pub use crate::overlays::dialog::{Dialog, DialogSize};
 pub use crate::overlays::popover::Popover;
 pub use crate::overlays::toast::{ToastItem, ToastManager, ToastPosition, ToastVariant};
 pub use crate::theme::{install_theme, use_theme, Theme, ThemeTokens, ThemeVariant};
+
+pub use crate::animation_coordinator::AnimationCoordinator;
+pub use crate::content_transition::{ContentTransition, ContentTransitionState};
+pub use crate::gestures::{
+    GestureDetector, GestureEvent, LongPressGesture, PanGesture, SwipeDirection, SwipeGesture,
+    TapGesture,
+};
+pub use crate::responsive::{
+    current_breakpoint, responsive_columns, responsive_value, Breakpoint, Responsive,
+};
+pub use crate::scroll_physics::ScrollPhysics;
+pub use crate::spring::Spring;
 
 pub use crate::http::{init_http, init_http_with_user_agent};

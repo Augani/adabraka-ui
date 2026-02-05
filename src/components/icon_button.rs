@@ -2,6 +2,7 @@
 
 use crate::components::button::ButtonVariant;
 use crate::components::icon_source::IconSource;
+use crate::components::ripple::Ripple;
 use crate::icon_config::resolve_icon_path;
 use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
@@ -22,6 +23,7 @@ pub struct IconButton {
     disabled: bool,
     no_background: bool,
     on_click: Option<Rc<dyn Fn(&ClickEvent, &mut Window, &mut App)>>,
+    ripple_enabled: bool,
     style: StyleRefinement,
 }
 
@@ -45,8 +47,14 @@ impl IconButton {
             disabled: false,
             no_background: false,
             on_click: None,
+            ripple_enabled: false,
             style: StyleRefinement::default(),
         }
+    }
+
+    pub fn ripple(mut self, enabled: bool) -> Self {
+        self.ripple_enabled = enabled;
+        self
     }
 
     pub fn variant(mut self, variant: ButtonVariant) -> Self {
@@ -163,6 +171,9 @@ impl RenderOnce for IconButton {
         let handler = self.on_click.clone();
         let svg_path = self.get_svg_path();
         let user_style = self.style;
+        let ripple_enabled = self.ripple_enabled && clickable;
+        let ripple_id = ElementId::Name(format!("{}-ripple", self.id).into());
+        let ripple_color = fg;
 
         let focus_handle = window
             .use_keyed_state(self.id.clone(), cx, |_, cx| cx.focus_handle())
@@ -173,6 +184,8 @@ impl RenderOnce for IconButton {
             .when(!self.disabled, |this| {
                 this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
             })
+            .relative()
+            .overflow_hidden()
             .flex()
             .items_center()
             .justify_center()
@@ -195,14 +208,25 @@ impl RenderOnce for IconButton {
                     .when(self.no_background, |this| {
                         this.hover(|style| style.opacity(0.7))
                     })
+                    .active(|style| style.opacity(0.9))
             })
             .map(|this| {
                 let mut div = this;
                 div.style().refine(&user_style);
                 div
             })
-            .on_mouse_down(MouseButton::Left, |_, window, _| {
+            .on_mouse_down(MouseButton::Left, move |_, window, _| {
                 window.prevent_default();
+                if ripple_enabled {
+                    window.refresh();
+                }
+            })
+            .when(self.ripple_enabled && clickable, |this| {
+                let center = self.size / 2.0;
+                this.child(
+                    Ripple::new(ripple_id, point(center, center), ripple_color)
+                        .max_size(self.size * 2.0),
+                )
             })
             .when_some(handler.filter(|_| clickable), |this, on_click| {
                 this.on_click(move |event, window, cx| {

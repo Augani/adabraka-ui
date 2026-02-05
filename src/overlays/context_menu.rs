@@ -2,7 +2,9 @@
 
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
+use std::time::Duration;
 
+use crate::animations::easings;
 use crate::theme::use_theme;
 
 #[derive(Clone)]
@@ -64,6 +66,7 @@ pub struct ContextMenu {
     position: Point<Pixels>,
     items: Vec<ContextMenuItem>,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
+    dismissing: bool,
     style: StyleRefinement,
 }
 
@@ -73,8 +76,14 @@ impl ContextMenu {
             position,
             items: Vec::new(),
             on_close: None,
+            dismissing: false,
             style: StyleRefinement::default(),
         }
+    }
+
+    pub fn dismissing(mut self, dismissing: bool) -> Self {
+        self.dismissing = dismissing;
+        self
     }
 
     pub fn item(mut self, item: ContextMenuItem) -> Self {
@@ -108,6 +117,7 @@ impl RenderOnce for ContextMenu {
         let position = self.position;
         let on_close_handler = self.on_close.clone();
         let user_style = self.style;
+        let dismissing = self.dismissing;
 
         div()
             .absolute()
@@ -125,7 +135,7 @@ impl RenderOnce for ContextMenu {
             .child(
                 div()
                     .absolute()
-                    .occlude() // Prevent clicks from passing through
+                    .occlude()
                     .left(position.x)
                     .top(position.y)
                     .min_w(px(200.0))
@@ -192,7 +202,31 @@ impl RenderOnce for ContextMenu {
                             .when_some(item.icon, |this: Div, _icon| this)
                             .child(item.label)
                             .into_any_element()
-                    })),
+                    }))
+                    .with_animation(
+                        if self.dismissing {
+                            "ctx-menu-exit"
+                        } else {
+                            "ctx-menu-enter"
+                        },
+                        Animation::new(Duration::from_millis(if self.dismissing {
+                            100
+                        } else {
+                            120
+                        }))
+                        .with_easing(if self.dismissing {
+                            easings::ease_in_cubic as fn(f32) -> f32
+                        } else {
+                            easings::ease_out_cubic as fn(f32) -> f32
+                        }),
+                        move |el, delta| {
+                            if dismissing {
+                                el.opacity(1.0 - delta).mt(px(4.0 * delta))
+                            } else {
+                                el.opacity(delta).mt(px(4.0 * (1.0 - delta)))
+                            }
+                        },
+                    ),
             )
     }
 }

@@ -2,7 +2,9 @@
 
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
+use std::time::Duration;
 
+use crate::animations::easings;
 use crate::components::button::{Button, ButtonSize, ButtonVariant};
 use crate::theme::use_theme;
 
@@ -49,6 +51,8 @@ pub struct Dialog {
     close_on_escape: bool,
     on_close: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
     focused: bool,
+    dismissing: bool,
+    dismiss_complete: bool,
     style: StyleRefinement,
 }
 
@@ -67,6 +71,8 @@ impl Dialog {
             close_on_escape: true,
             on_close: None,
             focused: false,
+            dismissing: false,
+            dismiss_complete: false,
             style: StyleRefinement::default(),
         }
     }
@@ -131,10 +137,21 @@ impl Dialog {
         self
     }
 
-    fn handle_close(&self, window: &mut Window, cx: &mut Context<Self>) {
-        if let Some(handler) = &self.on_close {
-            (handler)(window, cx);
+    fn handle_close(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.dismissing {
+            return;
         }
+        self.dismissing = true;
+        cx.notify();
+
+        cx.spawn_in(window, async move |this, cx| {
+            smol::Timer::after(Duration::from_millis(200)).await;
+            let _ = this.update(cx, |dialog, cx| {
+                dialog.dismiss_complete = true;
+                cx.notify();
+            });
+        })
+        .detach();
     }
 }
 
@@ -146,6 +163,13 @@ impl Styled for Dialog {
 
 impl Render for Dialog {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        if self.dismiss_complete {
+            if let Some(handler) = &self.on_close {
+                (handler)(window, cx);
+            }
+            return div().into_any_element();
+        }
+
         let theme = use_theme();
         let has_slot_header = self.header.is_some();
         let has_header = has_slot_header
@@ -155,6 +179,7 @@ impl Render for Dialog {
 
         let dialog_entity = cx.entity().clone();
         let user_style = self.style.clone();
+        let dismissing = self.dismissing;
 
         if !self.focused {
             window.focus(&self.focus_handle);
@@ -314,8 +339,48 @@ impl Render for Dialog {
                                 .border_color(theme.tokens.border)
                                 .child(footer),
                         )
-                    }),
+                    })
+                    .with_animation(
+                        if dismissing {
+                            "dialog-content-exit"
+                        } else {
+                            "dialog-content-enter"
+                        },
+                        Animation::new(Duration::from_millis(if dismissing { 200 } else { 250 }))
+                            .with_easing(if dismissing {
+                                easings::ease_in_cubic as fn(f32) -> f32
+                            } else {
+                                easings::ease_out_cubic as fn(f32) -> f32
+                            }),
+                        move |el, delta| {
+                            if dismissing {
+                                el.opacity(1.0 - delta).mt(px(8.0 * delta))
+                            } else {
+                                el.opacity(delta).mt(px(12.0 * (1.0 - delta)))
+                            }
+                        },
+                    ),
             )
+            .with_animation(
+                if dismissing {
+                    "dialog-backdrop-exit"
+                } else {
+                    "dialog-backdrop-fade"
+                },
+                Animation::new(Duration::from_millis(200)).with_easing(if dismissing {
+                    easings::ease_in_cubic as fn(f32) -> f32
+                } else {
+                    easings::ease_out_cubic as fn(f32) -> f32
+                }),
+                move |el, delta| {
+                    if dismissing {
+                        el.opacity(1.0 - delta)
+                    } else {
+                        el.opacity(delta)
+                    }
+                },
+            )
+            .into_any_element()
     }
 }
 

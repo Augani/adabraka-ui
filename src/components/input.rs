@@ -1,5 +1,6 @@
 //! Input component - Advanced text input with validation, masking, and accessibility.
 
+use crate::animations::{easings, shake_offset};
 use crate::components::icon::Icon;
 pub use crate::components::input_state::{
     Backspace, Copy, Cut, Delete, End, Enter, Escape, Home, InputEvent, InputMask, InputState,
@@ -11,6 +12,7 @@ use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::time::Duration;
 
 pub fn init(cx: &mut App) {
     cx.bind_keys([
@@ -638,6 +640,15 @@ impl RenderOnce for Input {
         let max_length = input_state.validation_rules.max_length;
         let is_focused = input_state.focus_handle(cx).is_focused(window);
         let is_masked = input_state.masked;
+        let shake_triggered = input_state.shake_triggered;
+
+        if shake_triggered {
+            self.state.update(cx, |state, _cx| {
+                state.shake_triggered = false;
+                state.shake_count = state.shake_count.wrapping_add(1);
+            });
+        }
+        let shake_count = self.state.read(cx).shake_count;
 
         let shadow_xs = BoxShadow {
             offset: theme.tokens.shadow_xs.offset,
@@ -656,8 +667,8 @@ impl RenderOnce for Input {
         VStack::new()
             .w_full()
             .gap(px(4.0))
-            .child(
-                div()
+            .child({
+                let input_container = div()
                     .id(("input", self.state.entity_id()))
                     .key_context("Input")
                     .track_focus(
@@ -766,8 +777,21 @@ impl RenderOnce for Input {
                                 )
                             })
                             .children(self.suffix),
-                    ),
-            )
+                    );
+
+                if shake_count > 0 {
+                    input_container
+                        .with_animation(
+                            ElementId::Name(format!("input-shake-{}", shake_count).into()),
+                            Animation::new(Duration::from_millis(300))
+                                .with_easing(easings::ease_out_quad),
+                            move |el, delta| el.ml(px(shake_offset(delta, 6.0))),
+                        )
+                        .into_any_element()
+                } else {
+                    input_container.into_any_element()
+                }
+            })
             .when(
                 self.helper_text.is_some()
                     || validation_error.is_some()

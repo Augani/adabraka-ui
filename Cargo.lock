@@ -6,6 +6,15 @@ version = 3
 name = "adabraka-gpui"
 version = "0.3.0"
 dependencies = [
+ "adabraka-gpui-macros",
+ "adabraka_collections",
+ "adabraka_http_client",
+ "adabraka_media",
+ "adabraka_refineable",
+ "adabraka_semantic_version",
+ "adabraka_sum_tree",
+ "adabraka_util",
+ "adabraka_util_macros",
  "anyhow",
  "as-raw-xcb-connection",
  "ashpd 0.11.0",
@@ -34,15 +43,6 @@ dependencies = [
  "flume",
  "foreign-types",
  "futures",
- "gpui-macros",
- "gpui_collections",
- "gpui_http_client",
- "gpui_media",
- "gpui_refineable",
- "gpui_semantic_version",
- "gpui_sum_tree",
- "gpui_util",
- "gpui_util_macros",
  "image",
  "inventory",
  "itertools 0.14.0",
@@ -95,6 +95,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "adabraka-gpui-macros"
+version = "0.3.0"
+dependencies = [
+ "heck 0.5.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.107",
+]
+
+[[package]]
 name = "adabraka-ui"
 version = "0.2.4"
 dependencies = [
@@ -110,6 +120,127 @@ dependencies = [
  "tree-sitter",
  "tree-sitter-sequel",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "adabraka_collections"
+version = "0.3.0"
+dependencies = [
+ "indexmap",
+ "rustc-hash 2.1.1",
+]
+
+[[package]]
+name = "adabraka_derive_refineable"
+version = "0.3.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.107",
+]
+
+[[package]]
+name = "adabraka_http_client"
+version = "0.3.0"
+dependencies = [
+ "adabraka_util",
+ "anyhow",
+ "async-compression",
+ "async-fs",
+ "async-tar",
+ "bytes",
+ "derive_more",
+ "futures",
+ "http 1.3.1",
+ "http-body",
+ "log",
+ "parking_lot",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "url",
+ "zed-reqwest",
+]
+
+[[package]]
+name = "adabraka_media"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "bindgen 0.71.1",
+ "core-foundation 0.10.1",
+ "core-video",
+ "ctor",
+ "foreign-types",
+ "metal",
+ "objc",
+]
+
+[[package]]
+name = "adabraka_refineable"
+version = "0.3.0"
+dependencies = [
+ "adabraka_derive_refineable",
+]
+
+[[package]]
+name = "adabraka_semantic_version"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "serde",
+]
+
+[[package]]
+name = "adabraka_sum_tree"
+version = "0.3.0"
+dependencies = [
+ "arrayvec",
+ "log",
+ "rayon",
+]
+
+[[package]]
+name = "adabraka_util"
+version = "0.3.0"
+dependencies = [
+ "adabraka_collections",
+ "anyhow",
+ "async-fs",
+ "async_zip",
+ "command-fds",
+ "dirs 4.0.0",
+ "dunce",
+ "futures",
+ "futures-lite 1.13.0",
+ "globset",
+ "itertools 0.14.0",
+ "libc",
+ "log",
+ "nix 0.29.0",
+ "regex",
+ "rust-embed",
+ "schemars",
+ "serde",
+ "serde_json",
+ "serde_json_lenient",
+ "shlex",
+ "smol",
+ "take-until",
+ "tempfile",
+ "tendril",
+ "unicase",
+ "walkdir",
+ "which",
+]
+
+[[package]]
+name = "adabraka_util_macros"
+version = "0.3.0"
+dependencies = [
+ "quote",
+ "syn 2.0.107",
 ]
 
 [[package]]
@@ -2229,147 +2360,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "98ff03b468aa837d70984d55f5d3f846f6ec31fe34bbb97c4f85219caeee1ca4"
 dependencies = [
  "bitflags 2.10.0",
-]
-
-[[package]]
-name = "gpui-macros"
-version = "0.2.1"
-dependencies = [
- "heck 0.5.0",
- "proc-macro2",
- "quote",
- "syn 2.0.107",
-]
-
-[[package]]
-name = "gpui_collections"
-version = "0.2.1"
-dependencies = [
- "indexmap",
- "rustc-hash 2.1.1",
-]
-
-[[package]]
-name = "gpui_derive_refineable"
-version = "0.2.1"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.107",
-]
-
-[[package]]
-name = "gpui_http_client"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "async-compression",
- "async-fs",
- "async-tar",
- "bytes",
- "derive_more",
- "futures",
- "gpui_util",
- "http 1.3.1",
- "http-body",
- "log",
- "parking_lot",
- "serde",
- "serde_json",
- "sha2",
- "tempfile",
- "url",
- "zed-reqwest",
-]
-
-[[package]]
-name = "gpui_media"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "bindgen 0.71.1",
- "core-foundation 0.10.1",
- "core-video",
- "ctor",
- "foreign-types",
- "metal",
- "objc",
-]
-
-[[package]]
-name = "gpui_perf"
-version = "0.2.1"
-dependencies = [
- "gpui_collections",
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "gpui_refineable"
-version = "0.2.1"
-dependencies = [
- "gpui_derive_refineable",
-]
-
-[[package]]
-name = "gpui_semantic_version"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "serde",
-]
-
-[[package]]
-name = "gpui_sum_tree"
-version = "0.2.1"
-dependencies = [
- "arrayvec",
- "log",
- "rayon",
-]
-
-[[package]]
-name = "gpui_util"
-version = "0.2.1"
-dependencies = [
- "anyhow",
- "async-fs",
- "async_zip",
- "command-fds",
- "dirs 4.0.0",
- "dunce",
- "futures",
- "futures-lite 1.13.0",
- "globset",
- "gpui_collections",
- "itertools 0.14.0",
- "libc",
- "log",
- "nix 0.29.0",
- "regex",
- "rust-embed",
- "schemars",
- "serde",
- "serde_json",
- "serde_json_lenient",
- "shlex",
- "smol",
- "take-until",
- "tempfile",
- "tendril",
- "unicase",
- "walkdir",
- "which",
-]
-
-[[package]]
-name = "gpui_util_macros"
-version = "0.2.1"
-dependencies = [
- "gpui_perf",
- "quote",
- "syn 2.0.107",
 ]
 
 [[package]]

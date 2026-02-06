@@ -1,7 +1,12 @@
+pub mod area_chart;
 pub mod bar_chart;
 pub mod chart;
+pub mod donut_chart;
+pub mod gauge;
+pub mod heatmap;
 pub mod line_chart;
 pub mod pie_chart;
+pub mod radar_chart;
 
 pub use bar_chart::{BarChart, BarChartData, BarChartMode, BarChartOrientation, BarChartSeries};
 pub use chart::{

@@ -191,4 +191,26 @@ pub use crate::components::kbd::{KBDSize, KBD};
 pub use crate::components::pulse_indicator::PulseIndicator;
 pub use crate::components::shimmer::Shimmer;
 
+pub use crate::components::animated_progress::AnimatedProgress;
+pub use crate::components::animated_text::{AnimatedText, TextAnimation};
+pub use crate::components::dot_pattern::DotPattern;
+pub use crate::components::drawer_navigation::{DrawerNavigation, DrawerSide, DrawerState};
+pub use crate::components::expandable_card::{ExpandableCard, ExpandableCardState};
+pub use crate::components::floating_action_button::{FABSize, FABState, FloatingActionButton};
+pub use crate::components::gradient_text::GradientText;
+pub use crate::components::layout_transition::{LayoutAnimation, LayoutTransition};
+pub use crate::components::marquee::{Marquee, MarqueeDirection};
+pub use crate::components::number_ticker::NumberTicker;
+pub use crate::components::segmented_nav::{SegmentedNav, SegmentedNavSize, SegmentedNavState};
+pub use crate::components::spotlight::{Spotlight, SpotlightState};
+pub use crate::components::text_highlight::TextHighlight;
+pub use crate::components::text_reveal::{RevealMode, TextReveal};
+pub use crate::components::type_writer::{TypeWriter, TypeWriterState};
+
+pub use crate::charts::area_chart::{AreaChart, AreaChartMode, AreaChartSeries, AreaChartSize};
+pub use crate::charts::donut_chart::{DonutChart, DonutChartSize};
+pub use crate::charts::gauge::{Gauge, GaugeSize};
+pub use crate::charts::heatmap::Heatmap;
+pub use crate::charts::radar_chart::{RadarChart, RadarChartSize, RadarDataset};
+
 pub use crate::http::{init_http, init_http_with_user_agent};

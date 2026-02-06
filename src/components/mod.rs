@@ -69,6 +69,7 @@ pub mod time_picker;
 pub mod timeline;
 pub mod video_player;
 
+pub mod animated_list;
 pub mod animated_collapsible;
 pub mod animated_counter;
 pub mod animated_presence;
@@ -92,11 +93,28 @@ pub mod layout_transition;
 pub mod marquee;
 pub mod number_ticker;
 pub mod segmented_nav;
+pub mod shared_element_transition;
 pub mod sortable_list;
 pub mod spotlight;
 pub mod text_highlight;
 pub mod text_reveal;
 pub mod type_writer;
 pub mod view_router;
+
+pub mod aurora;
+pub mod crop_area;
+pub mod dock;
+pub mod magnetic_button;
+pub mod meteors;
+pub mod noise;
+pub mod qr_code;
+pub mod skeleton_loader;
+pub mod svg_renderer;
+pub mod tilt_card;
+
+pub mod canvas_component;
+pub mod confetti;
+pub mod particle_emitter;
+pub mod waveform;
 
 pub use crate::display::badge;

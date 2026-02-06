@@ -32,6 +32,9 @@ futures = "0.3"
 isahc = { version = "1.7", optional = true }
 bytes = "1.0"
 
+# QR Code generation
+qrcode = "0.14"
+
 # Syntax Highlighting (tree-sitter based)
 tree-sitter = "0.25.10"
 tree-sitter-sequel = "0.3.11"
@@ -39,10 +42,15 @@ tree-sitter-sequel = "0.3.11"
 # Audio playback (optional)
 rodio = { version = "0.19", optional = true }
 
+# Shiori example deps
+rusqlite = { version = "0.32", features = ["bundled"], optional = true }
+chrono = { version = "0.4", optional = true }
+
 [features]
 default = ["http"]
 http = ["isahc"]
 audio = ["rodio"]
+shiori = ["rusqlite", "chrono"]
 
 [[example]]
 name = "scroll_test"
@@ -260,3 +268,8 @@ path = "examples/mention_input_demo.rs"
 [[example]]
 name = "video_player_demo"
 path = "examples/video_player_demo.rs"
+
+[[example]]
+name = "shiori"
+path = "examples/shiori/main.rs"
+required-features = ["shiori"]

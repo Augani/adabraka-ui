@@ -7,6 +7,7 @@ pub mod heatmap;
 pub mod line_chart;
 pub mod pie_chart;
 pub mod radar_chart;
+pub mod treemap;
 
 pub use bar_chart::{BarChart, BarChartData, BarChartMode, BarChartOrientation, BarChartSeries};
 pub use chart::{

@@ -213,4 +213,27 @@ pub use crate::charts::gauge::{Gauge, GaugeSize};
 pub use crate::charts::heatmap::Heatmap;
 pub use crate::charts::radar_chart::{RadarChart, RadarChartSize, RadarDataset};
 
+pub use crate::components::animated_list::{AnimatedList, AnimatedListState};
+pub use crate::components::aurora::Aurora;
+pub use crate::components::canvas_component::CanvasComponent;
+pub use crate::components::confetti::{Confetti, ConfettiState};
+pub use crate::components::crop_area::{CropArea, CropAreaState, DragHandle};
+pub use crate::components::dock::{Dock, DockState};
+pub use crate::components::magnetic_button::{MagneticButton, MagneticButtonState};
+pub use crate::components::meteors::{MeteorState, Meteors};
+pub use crate::components::noise::Noise;
+pub use crate::components::particle_emitter::{
+    ParticleEmitter, ParticleEmitterConfig, ParticleEmitterState,
+};
+pub use crate::components::qr_code::QRCodeComponent;
+pub use crate::components::shared_element_transition::{
+    SharedElementState, SharedElementTransition,
+};
+pub use crate::components::skeleton_loader::{SkeletonLoader, SkeletonLoaderState};
+pub use crate::components::svg_renderer::SVGRenderer;
+pub use crate::components::tilt_card::{TiltCard, TiltCardState};
+pub use crate::components::waveform::Waveform;
+
+pub use crate::charts::treemap::{TreeMap, TreeMapNode};
+
 pub use crate::http::{init_http, init_http_with_user_agent};

@@ -7,6 +7,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-02-06
+
+### Added - Major Release: crates.io Publishing & GPUI Fork Enhancements
+
+#### Published to crates.io
+- All 12 adabraka-gpui ecosystem crates published under `adabraka_*` namespace
+- adabraka-ui v0.3.0 published - `cargo add adabraka-ui` now works with no git deps
+- Proper Zed attribution in all crate descriptions
+
+#### GPUI Fork Enhancements (adabraka-gpui v0.3.0)
+- **Inset shadows**: `BoxShadow.inset` field supported across Metal, WGSL, HLSL shader backends
+- **Letter spacing**: `TextStyle.letter_spacing` with `tracking_tight()`, `tracking_wide()` convenience methods
+- **Animation cancellation**: `AnimationHandle` and `with_cancellable_animation()` for interruptible animations
+- **Squircle corners**: `continuous_corners` on `Styled` for iOS-style superellipse corners
+- **Text shadow**: `TextShadow` struct with `text_shadow_sm/md/lg()` presets
+
+#### New Components
+- **Form** (`form.rs`) - Declarative form builder with validation, field groups, submit
+- **InfiniteScroll** (`infinite_scroll.rs`) - Auto-loading paginated data on scroll
+- **SortableList** (`sortable_list.rs`) - Drag-to-reorder list with smooth animations
+- **DataGrid** (`data_grid.rs`) - Spreadsheet-style grid with inline editing, sorting, column resize
+- **Animation Builder** (`animate.rs`) - Preset animations, keyframes, stagger, transitions
+
+#### Animation & Polish System (v2)
+- Exit animations for all overlay components (dismissing state + timer pattern)
+- Input shake on validation failure (`trigger_shake()` on InputState)
+- Ripple effect on Button and IconButton (`.ripple(true)`)
+- 30+ easing functions: cubic-bezier, steps, elastic, back, circ, expo, quint
+- Spring physics engine (`spring.rs`)
+- Gesture recognizers (`gestures.rs`) - swipe, pinch, long-press
+- Content transitions (`content_transition.rs`) - animated content swapping
+- Responsive utilities (`responsive.rs`) - breakpoint-aware layouts
+- Animation coordinator (`animation_coordinator.rs`) - multi-element orchestration
+- ScrollPhysics integration with momentum scrolling in layout.rs + virtual_list.rs
+- Smooth scroll-to: `scroll_to_y_animated`, `scroll_to_x_animated`
+- Elevation shadows, inset shadows, layered gradients in theme tokens
+
+#### Developer Experience
+- GPUI re-exports via `gpui_ext.rs`
+- `StyledExt` trait: `.center()`, `.stack()`, `.row()`, `.glass()`, `.elevated()`, `.ring()`
+- Spacing, duration, z-index tokens on all 18 themes
+- Expanded prelude with 15+ additional exports
+- Init fixes for Sheet and AlertDialog components
+
+### Changed
+- **BREAKING**: GPUI dependency changed from `gpui` to `adabraka-gpui` (fork with enhancements)
+- Version bumped from 0.2.4 to 0.3.0 to reflect ecosystem publishing
+- Component count increased from 80+ to 85+
+
+## [0.2.4] - 2026-01-15
+
+### Added
+- AudioPlayer component with real audio playback via rodio
+- VideoPlayer component with flexible video backend integration
+- Rating component with half-star support
+- Sparkline component (Line, Bar, Area variants)
+- MentionInput component with @mention dropdown
+- MasonryGrid layout component
+- Countdown timer component
+- Optional `audio` feature flag for real audio playback
+
 ## [0.2.3] - 2025-11-13
 
 ### Added
@@ -232,7 +293,10 @@ Created comprehensive styled demonstration examples for every component showing 
 - Platform-aware UI elements
 - Responsive layout utilities (VStack, HStack, Grid)
 
-[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/Augani/adabraka-ui/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.3.0
+[0.2.4]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.4
+[0.2.3]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.3
 [0.2.2]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.2
 [0.2.1]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.1
 [0.2.0]: https://github.com/Augani/adabraka-ui/releases/tag/v0.2.0

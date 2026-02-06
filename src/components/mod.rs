@@ -69,7 +69,19 @@ pub mod time_picker;
 pub mod timeline;
 pub mod video_player;
 
+pub mod animated_collapsible;
+pub mod animated_counter;
+pub mod animated_presence;
+pub mod animated_switch;
+pub mod code_block;
+pub mod copy_button;
+pub mod glass_morphism;
+pub mod gradient_border;
 pub mod infinite_scroll;
+pub mod kbd;
+pub mod pulse_indicator;
+pub mod shimmer;
 pub mod sortable_list;
+pub mod view_router;
 
 pub use crate::display::badge;

@@ -24,6 +24,8 @@ pub use crate::charts::pie_chart::{
     PieChart, PieChartLabelPosition, PieChartSegment, PieChartSize, PieChartVariant,
 };
 pub use crate::components::alert::{alert, Alert, AlertVariant};
+pub use crate::components::animated_collapsible::AnimatedCollapsible;
+pub use crate::components::animated_switch::{AnimatedSwitch, AnimatedSwitchTransition};
 pub use crate::components::audio_player::{
     AudioPlayer, AudioPlayerSize, AudioPlayerState, PlaybackSpeed,
 };
@@ -36,6 +38,7 @@ pub use crate::components::carousel::{
     CarouselSize, CarouselSlide, CarouselState, CarouselTransition,
 };
 pub use crate::components::checkbox::{Checkbox, CheckboxSize};
+pub use crate::components::code_block::CodeBlock;
 pub use crate::components::collapsible::Collapsible;
 pub use crate::components::color_picker::{ColorMode, ColorPicker, ColorPickerState};
 pub use crate::components::combobox::{Combobox, ComboboxEvent, ComboboxState};
@@ -51,6 +54,7 @@ pub use crate::components::file_upload::{
     FileTypeFilter, FileUpload, FileUploadError, FileUploadSize, FileUploadState, SelectedFile,
 };
 pub use crate::components::form::{Form, FormState};
+pub use crate::components::glass_morphism::{GlassIntensity, GlassMorphism};
 pub use crate::components::hotkey_input::{HotkeyInput, HotkeyInputState, HotkeyValue};
 pub use crate::components::icon::{icon, icon_button, Icon, IconSize, IconVariant};
 pub use crate::components::icon_button::IconButton;
@@ -127,6 +131,7 @@ pub use crate::components::video_player::{
     init_video_player, VideoPlaybackSpeed, VideoPlaybackState, VideoPlayer, VideoPlayerSize,
     VideoPlayerState,
 };
+pub use crate::components::view_router::{PageTransition, ViewRouter, ViewRouterState};
 pub use crate::display::accordion::{Accordion, AccordionItem};
 pub use crate::display::badge::{Badge, BadgeVariant};
 pub use crate::display::card::Card;
@@ -177,5 +182,13 @@ pub use crate::responsive::{
 };
 pub use crate::scroll_physics::ScrollPhysics;
 pub use crate::spring::Spring;
+
+pub use crate::components::animated_counter::{AnimatedCounter, AnimatedCounterState};
+pub use crate::components::animated_presence::{AnimatedPresence, AnimatedPresenceState};
+pub use crate::components::copy_button::{CopyButton, CopyButtonState};
+pub use crate::components::gradient_border::GradientBorder;
+pub use crate::components::kbd::{KBDSize, KBD};
+pub use crate::components::pulse_indicator::PulseIndicator;
+pub use crate::components::shimmer::Shimmer;
 
 pub use crate::http::{init_http, init_http_with_user_agent};

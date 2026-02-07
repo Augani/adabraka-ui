@@ -178,6 +178,7 @@ fn paint_waveform(bounds: Bounds<Pixels>, data: &WaveformPaintData, window: &mut
             border_style: BorderStyle::default(),
             continuous_corners: false,
             transform: Default::default(),
+            blend_mode: Default::default(),
         });
     }
 }

@@ -376,6 +376,7 @@ impl RenderOnce for TreeMap {
                                 border_style: BorderStyle::default(),
                                 continuous_corners: false,
                                 transform: Default::default(),
+                                blend_mode: Default::default(),
                             });
                         }
 

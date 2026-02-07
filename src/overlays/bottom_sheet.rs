@@ -168,12 +168,12 @@ impl RenderOnce for BottomSheet {
                         .border_color(theme.tokens.border)
                         .rounded_tl(theme.tokens.radius_xl)
                         .rounded_tr(theme.tokens.radius_xl)
-                        .shadow(vec![BoxShadow {
+                        .shadow(smallvec::smallvec![BoxShadow {
                             color: hsla(0.0, 0.0, 0.0, 0.3),
                             offset: point(px(0.0), px(-4.0)),
                             blur_radius: px(24.0),
                             spread_radius: px(0.0),
-                        inset: false,
+                            inset: false,
                         }])
                         .map(|this| {
                             let mut div = this;

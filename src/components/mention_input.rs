@@ -910,7 +910,7 @@ impl RenderOnce for MentionInput {
                         theme.tokens.input
                     })
                     .rounded(theme.tokens.radius_md)
-                    .shadow(vec![theme.tokens.shadow_xs.clone()])
+                    .shadow(smallvec::smallvec![theme.tokens.shadow_xs.clone()])
                     .when(!self.disabled, |this| {
                         this.hover(|style| style.border_color(theme.tokens.ring))
                     })

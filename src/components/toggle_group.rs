@@ -225,12 +225,12 @@ impl RenderOnce for ToggleGroup {
                     .when(is_selected, |this: Div| {
                         this.bg(theme.tokens.background)
                             .text_color(theme.tokens.foreground)
-                            .shadow(vec![BoxShadow {
+                            .shadow(smallvec::smallvec![BoxShadow {
                                 color: hsla(0.0, 0.0, 0.0, 0.05),
                                 offset: point(px(0.0), px(1.0)),
                                 blur_radius: px(2.0),
                                 spread_radius: px(0.0),
-                            inset: false,
+                                inset: false,
                             }])
                     })
                     .when(!is_selected, |this: Div| {

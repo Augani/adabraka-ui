@@ -325,9 +325,11 @@ impl RenderOnce for HotkeyInput {
                     .text_size(px(14.0))
                     .when(self.disabled, |d| d.opacity(0.5).cursor_not_allowed())
                     .when(!self.disabled, |d| d.cursor_pointer())
-                    .when(is_focused && !recording, |d| d.shadow(vec![focus_ring]))
+                    .when(is_focused && !recording, |d| {
+                        d.shadow(smallvec::smallvec![focus_ring])
+                    })
                     .when(recording, |d| {
-                        d.shadow(vec![recording_ring])
+                        d.shadow(smallvec::smallvec![recording_ring])
                             .border_color(theme.tokens.primary)
                     })
                     .when(!self.disabled, |d| {

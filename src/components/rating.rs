@@ -231,7 +231,7 @@ impl RenderOnce for Rating {
             })
             .when(is_focused && !self.read_only, |this| {
                 this.rounded(theme.tokens.radius_sm)
-                    .shadow(vec![focus_ring])
+                    .shadow(smallvec::smallvec![focus_ring])
             })
             .when(!self.read_only, |this| {
                 let state_for_key = self.state.clone();

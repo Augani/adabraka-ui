@@ -141,6 +141,7 @@ impl RenderOnce for Noise {
                                     border_color: transparent_black(),
                                     border_style: BorderStyle::default(),
                                     continuous_corners: false,
+                                    transform: Default::default(),
                                 });
                             }
                         }

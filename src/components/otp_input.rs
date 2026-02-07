@@ -516,7 +516,7 @@ impl RenderOnce for OTPInput {
                         theme.tokens.foreground
                     })
                     .when(is_focused && !disabled, |this| {
-                        this.shadow(vec![theme.tokens.focus_ring_light()])
+                        this.shadow(smallvec::smallvec![theme.tokens.focus_ring_light()])
                     })
                     .when(!disabled, |this| {
                         this.cursor(CursorStyle::IBeam)

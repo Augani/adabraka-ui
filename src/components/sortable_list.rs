@@ -28,12 +28,12 @@ impl Render for SortableItemDrag {
                 .border_1()
                 .border_color(theme.tokens.primary)
                 .rounded(theme.tokens.radius_md)
-                .shadow(vec![BoxShadow {
+                .shadow(smallvec::smallvec![BoxShadow {
                     color: hsla(0.0, 0.0, 0.0, 0.2),
                     offset: point(px(0.0), px(4.0)),
                     blur_radius: px(8.0),
                     spread_radius: px(0.0),
-                inset: false,
+                    inset: false,
                 }])
                 .text_size(px(14.0))
                 .text_color(theme.tokens.foreground)

@@ -175,7 +175,7 @@ impl Render for TabsStyledDemo {
                                 .variant(TabVariant::Pills)
                                 .bg(theme.tokens.card)
                                 .p(px(24.0))
-                                .shadow(vec![BoxShadow {
+                                .shadow(smallvec::smallvec![BoxShadow {
                                     offset: point(px(0.0), px(4.0)),
                                     blur_radius: px(12.0),
                                     spread_radius: px(0.0),
@@ -304,7 +304,7 @@ impl Render for TabsStyledDemo {
                                 .border_color(theme.tokens.border)
                                 .rounded(px(12.0))
                                 .p(px(20.0))
-                                .shadow(vec![BoxShadow {
+                                .shadow(smallvec::smallvec![BoxShadow {
                                     offset: point(px(0.0), px(2.0)),
                                     blur_radius: px(8.0),
                                     spread_radius: px(0.0),

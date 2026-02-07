@@ -712,7 +712,7 @@ impl RenderOnce for Input {
                             .text_size(font_size)
                             .font_family(theme.tokens.font_mono.clone())
                             .text_color(text_color)
-                            .shadow(vec![shadow_xs])
+                            .shadow(smallvec::smallvec![shadow_xs])
                             .when(!self.disabled, |h| {
                                 h.hover(move |style| {
                                     style.border_color(if self.error {
@@ -725,13 +725,14 @@ impl RenderOnce for Input {
                             .when(is_focused && !self.disabled, |h| {
                                 if self.error {
                                     h.border_color(destructive_color)
-                                        .shadow(vec![error_ring_focused])
+                                        .shadow(smallvec::smallvec![error_ring_focused])
                                 } else {
-                                    h.border_color(ring_color).shadow(vec![focus_ring])
+                                    h.border_color(ring_color)
+                                        .shadow(smallvec::smallvec![focus_ring])
                                 }
                             })
                             .when(self.error && !is_focused, |h| {
-                                h.shadow(vec![error_ring_unfocused])
+                                h.shadow(smallvec::smallvec![error_ring_unfocused])
                             })
                             .children(self.prefix)
                             .child(div().flex_1().overflow_hidden().child(self.state.clone()))

@@ -152,7 +152,7 @@ impl RenderOnce for Radio {
                 theme.tokens.foreground
             })
             .when(is_focused && !self.disabled, |this| {
-                this.shadow(vec![focus_ring])
+                this.shadow(smallvec::smallvec![focus_ring])
             })
             .rounded(theme.tokens.radius_md)
             .child(
@@ -164,7 +164,9 @@ impl RenderOnce for Radio {
                     .border_1()
                     .border_color(border_color)
                     .bg(bg)
-                    .when(!self.disabled, |this| this.shadow(vec![shadow_xs]))
+                    .when(!self.disabled, |this| {
+                        this.shadow(smallvec::smallvec![shadow_xs])
+                    })
                     .child(
                         div()
                             .absolute()

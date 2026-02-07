@@ -400,12 +400,12 @@ impl RenderOnce for TimePicker {
                         .border_1()
                         .border_color(theme.tokens.border)
                         .rounded(theme.tokens.radius_md)
-                        .shadow(vec![BoxShadow {
+                        .shadow(smallvec::smallvec![BoxShadow {
                             color: hsla(0.0, 0.0, 0.0, 0.15),
                             offset: point(px(0.0), px(4.0)),
                             blur_radius: px(12.0),
                             spread_radius: px(0.0),
-                        inset: false,
+                            inset: false,
                         }])
                         .p(px(16.0))
                         .child({

@@ -132,12 +132,12 @@ impl Render for AlertDialog {
                     .border_1()
                     .border_color(theme.tokens.border)
                     .rounded(theme.tokens.radius_lg)
-                    .shadow(vec![BoxShadow {
+                    .shadow(smallvec::smallvec![BoxShadow {
                         color: hsla(0.0, 0.0, 0.0, 0.25),
                         offset: point(px(0.0), px(8.0)),
                         blur_radius: px(24.0),
                         spread_radius: px(0.0),
-                    inset: false,
+                        inset: false,
                     }])
                     .overflow_hidden()
                     .child(

@@ -68,7 +68,7 @@ impl IntoElement for Card {
             .border_1()
             .border_color(theme.tokens.border)
             .rounded(theme.tokens.radius_lg)
-            .shadow(vec![shadow_sm])
+            .shadow(smallvec::smallvec![shadow_sm])
             .overflow_hidden();
 
         if let Some(header) = self.header {

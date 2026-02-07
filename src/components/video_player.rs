@@ -1176,7 +1176,7 @@ impl RenderOnce for VideoPlayer {
                                                                 .rounded(theme.tokens.radius_md)
                                                                 .border_1()
                                                                 .border_color(theme.tokens.border)
-                                                                .shadow(vec![theme.tokens.shadow_lg])
+                                                                .shadow(smallvec::smallvec![theme.tokens.shadow_lg])
                                                                 .py(px(4.0))
                                                                 .children(
                                                                     VideoPlaybackSpeed::all().iter().map(|speed| {

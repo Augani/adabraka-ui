@@ -353,7 +353,7 @@ impl RenderOnce for Carousel {
                 this.track_focus(&focus_handle.clone().tab_index(0).tab_stop(true))
             })
             .when(is_focused && !self.disabled, |this| {
-                this.shadow(vec![theme.tokens.focus_ring_light()])
+                this.shadow(smallvec::smallvec![theme.tokens.focus_ring_light()])
             })
             .rounded(theme.tokens.radius_lg)
             .bg(theme.tokens.background)

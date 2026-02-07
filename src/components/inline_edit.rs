@@ -724,7 +724,7 @@ impl RenderOnce for InlineEdit {
                 .border_1()
                 .border_color(theme.tokens.ring)
                 .rounded(theme.tokens.radius_md)
-                .shadow(vec![theme.tokens.focus_ring_light()])
+                .shadow(smallvec::smallvec![theme.tokens.focus_ring_light()])
                 .text_size(px(14.0))
                 .font_family(theme.tokens.font_family.clone())
                 .text_color(theme.tokens.foreground)

@@ -277,12 +277,12 @@ impl DragDropStyledDemo {
                     .border_2()
                     .border_color(accent_color.opacity(0.3))
                     .bg(accent_color.opacity(0.05))
-                    .shadow(vec![BoxShadow {
+                    .shadow(smallvec::smallvec![BoxShadow {
                         color: accent_color.opacity(0.1),
                         offset: point(px(0.0), px(2.0)),
                         blur_radius: px(8.0),
                         spread_radius: px(0.0),
-                    inset: false,
+                        inset: false,
                     }])
                     .on_drop(cx.listener(move |this, data: &DragData<Task>, _, cx| {
                         match zone_id {
@@ -324,12 +324,12 @@ impl DragDropStyledDemo {
                                 Draggable::new((zone_id, ix), drag_data)
                                     // Custom styling for draggable items
                                     .rounded(px(8.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: hsla(0.0, 0.0, 0.0, 0.05),
                                         offset: point(px(0.0), px(1.0)),
                                         blur_radius: px(3.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .hover_bg(theme.tokens.muted.opacity(0.2))
                                     .child(
@@ -398,12 +398,12 @@ impl DragDropStyledDemo {
                                 Draggable::new("gradient-1", DragData::new("Item 1".to_string()))
                                     .bg(Hsla::from(rgb(0x8b5cf6)))
                                     .rounded(px(12.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: Hsla::from(rgb(0x8b5cf6)).opacity(0.4),
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .child(
                                         div()
@@ -418,12 +418,12 @@ impl DragDropStyledDemo {
                                 Draggable::new("gradient-2", DragData::new("Item 2".to_string()))
                                     .bg(Hsla::from(rgb(0xec4899)))
                                     .rounded(px(12.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: Hsla::from(rgb(0xec4899)).opacity(0.4),
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .child(
                                         div()
@@ -438,12 +438,12 @@ impl DragDropStyledDemo {
                                 Draggable::new("gradient-3", DragData::new("Item 3".to_string()))
                                     .bg(Hsla::from(rgb(0x06b6d4)))
                                     .rounded(px(12.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: Hsla::from(rgb(0x06b6d4)).opacity(0.4),
                                         offset: point(px(0.0), px(4.0)),
                                         blur_radius: px(12.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .child(
                                         div()
@@ -474,12 +474,12 @@ impl DragDropStyledDemo {
                                     .drop_zone_style(DropZoneStyle::Solid)
                                     .min_h(px(120.0))
                                     .w(px(200.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: hsla(0.0, 0.0, 0.0, 0.15),
                                         offset: point(px(0.0), px(8.0)),
                                         blur_radius: px(24.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .child(
                                         div()
@@ -493,12 +493,12 @@ impl DragDropStyledDemo {
                                     .drop_zone_style(DropZoneStyle::Filled)
                                     .min_h(px(120.0))
                                     .w(px(200.0))
-                                    .shadow(vec![BoxShadow {
+                                    .shadow(smallvec::smallvec![BoxShadow {
                                         color: hsla(0.0, 0.0, 0.0, 0.15),
                                         offset: point(px(0.0), px(8.0)),
                                         blur_radius: px(24.0),
                                         spread_radius: px(0.0),
-                                    inset: false,
+                                        inset: false,
                                     }])
                                     .child(
                                         div()

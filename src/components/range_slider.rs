@@ -323,7 +323,7 @@ impl RangeSlider {
                         this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
                     })
                     .when(is_focused && !self.disabled, |this| {
-                        this.shadow(vec![focus_ring])
+                        this.shadow(smallvec::smallvec![focus_ring])
                     })
                     .rounded(theme.tokens.radius_md)
                     .child(
@@ -377,7 +377,8 @@ impl RangeSlider {
                             .when(!self.disabled, {
                                 let shadow = theme.tokens.shadow_sm.clone();
                                 move |this| {
-                                    this.shadow(vec![shadow]).cursor(CursorStyle::PointingHand)
+                                    this.shadow(smallvec::smallvec![shadow])
+                                        .cursor(CursorStyle::PointingHand)
                                 }
                             })
                             .when(!self.disabled, |this| {
@@ -422,7 +423,8 @@ impl RangeSlider {
                             .when(!self.disabled, {
                                 let shadow = theme.tokens.shadow_sm.clone();
                                 move |this| {
-                                    this.shadow(vec![shadow]).cursor(CursorStyle::PointingHand)
+                                    this.shadow(smallvec::smallvec![shadow])
+                                        .cursor(CursorStyle::PointingHand)
                                 }
                             })
                             .when(!self.disabled, |this| {
@@ -558,7 +560,7 @@ impl RangeSlider {
                         this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
                     })
                     .when(is_focused && !self.disabled, |this| {
-                        this.shadow(vec![focus_ring])
+                        this.shadow(smallvec::smallvec![focus_ring])
                     })
                     .rounded(theme.tokens.radius_md)
                     .child(
@@ -612,7 +614,8 @@ impl RangeSlider {
                             .when(!self.disabled, {
                                 let shadow = theme.tokens.shadow_sm.clone();
                                 move |this| {
-                                    this.shadow(vec![shadow]).cursor(CursorStyle::PointingHand)
+                                    this.shadow(smallvec::smallvec![shadow])
+                                        .cursor(CursorStyle::PointingHand)
                                 }
                             })
                             .when(!self.disabled, |this| {
@@ -657,7 +660,8 @@ impl RangeSlider {
                             .when(!self.disabled, {
                                 let shadow = theme.tokens.shadow_sm.clone();
                                 move |this| {
-                                    this.shadow(vec![shadow]).cursor(CursorStyle::PointingHand)
+                                    this.shadow(smallvec::smallvec![shadow])
+                                        .cursor(CursorStyle::PointingHand)
                                 }
                             })
                             .when(!self.disabled, |this| {

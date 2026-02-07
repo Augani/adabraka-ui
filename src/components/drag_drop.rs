@@ -99,12 +99,12 @@ impl<T: Clone + Debug + 'static> Render for DragData<T> {
                     .text_size(px(14.0))
                     .font_weight(FontWeight::MEDIUM)
                     .rounded(theme.tokens.radius_md)
-                    .shadow(vec![BoxShadow {
+                    .shadow(smallvec::smallvec![BoxShadow {
                         color: hsla(0.0, 0.0, 0.0, 0.3),
                         offset: point(px(0.0), px(4.0)),
                         blur_radius: px(12.0),
                         spread_radius: px(0.0),
-                    inset: false,
+                        inset: false,
                     }])
                     .when_some(self.label.clone(), |this, label| this.child(label))
                     .when(self.label.is_none(), |this| this.child("Dragging...")),

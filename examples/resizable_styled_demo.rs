@@ -365,7 +365,7 @@ impl Render for ResizableStyledDemoView {
                                                     .border_color(rgb(0x6366f1))
                                                     .rounded(px(8.0))
                                                     .p_4()
-                                                    .shadow(vec![
+                                                    .shadow(smallvec::smallvec![
                                                         BoxShadow {
                                                             offset: point(px(0.0), px(2.0)),
                                                             blur_radius: px(8.0),
@@ -391,7 +391,7 @@ impl Render for ResizableStyledDemoView {
                                                     .border_color(rgb(0xfbbf24))
                                                     .rounded(px(8.0))
                                                     .p_4()
-                                                    .shadow(vec![
+                                                    .shadow(smallvec::smallvec![
                                                         BoxShadow {
                                                             offset: point(px(0.0), px(2.0)),
                                                             blur_radius: px(8.0),
@@ -417,7 +417,7 @@ impl Render for ResizableStyledDemoView {
                                                     .border_color(rgb(0x34d399))
                                                     .rounded(px(8.0))
                                                     .p_4()
-                                                    .shadow(vec![
+                                                    .shadow(smallvec::smallvec![
                                                         BoxShadow {
                                                             offset: point(px(0.0), px(2.0)),
                                                             blur_radius: px(8.0),

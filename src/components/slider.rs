@@ -253,7 +253,7 @@ impl Slider {
                         this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
                     })
                     .when(is_focused && !self.disabled, |this| {
-                        this.shadow(vec![focus_ring])
+                        this.shadow(smallvec::smallvec![focus_ring])
                     })
                     .rounded(theme.tokens.radius_md)
                     .child(
@@ -305,7 +305,7 @@ impl Slider {
                             .border_2()
                             .border_color(theme.tokens.background)
                             .when(!self.disabled, |this| {
-                                this.shadow(vec![theme.tokens.shadow_sm])
+                                this.shadow(smallvec::smallvec![theme.tokens.shadow_sm])
                                     .cursor(CursorStyle::PointingHand)
                             })
                             .when(!self.disabled, |this| {
@@ -425,7 +425,7 @@ impl Slider {
                         this.track_focus(&focus_handle.tab_index(0).tab_stop(true))
                     })
                     .when(is_focused && !self.disabled, |this| {
-                        this.shadow(vec![focus_ring])
+                        this.shadow(smallvec::smallvec![focus_ring])
                     })
                     .rounded(theme.tokens.radius_md)
                     .child(
@@ -477,7 +477,7 @@ impl Slider {
                             .border_2()
                             .border_color(theme.tokens.background)
                             .when(!self.disabled, |this| {
-                                this.shadow(vec![theme.tokens.shadow_sm])
+                                this.shadow(smallvec::smallvec![theme.tokens.shadow_sm])
                                     .cursor(CursorStyle::PointingHand)
                             })
                             .when(!self.disabled, |this| {

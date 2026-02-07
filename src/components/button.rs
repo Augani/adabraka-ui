@@ -273,7 +273,9 @@ impl RenderOnce for Button {
             .rounded(theme.tokens.radius_md)
             .text_color(fg)
             .bg(bg)
-            .when(has_shadow, |this| this.shadow(vec![theme.tokens.shadow_xs]))
+            .when(has_shadow, |this| {
+                this.shadow(smallvec::smallvec![theme.tokens.shadow_xs])
+            })
             .when(self.variant == ButtonVariant::Outline, |this| {
                 this.border_1().border_color(border)
             })
@@ -294,7 +296,7 @@ impl RenderOnce for Button {
                     .hover(move |style| {
                         let hover_style = style.bg(hover_bg).text_color(hover_fg);
                         if has_shadow {
-                            hover_style.shadow(vec![shadow_sm])
+                            hover_style.shadow(smallvec::smallvec![shadow_sm])
                         } else {
                             hover_style
                         }

@@ -332,6 +332,7 @@ impl RenderOnce for CropArea {
                             border_color: data.border_color,
                             border_style: BorderStyle::default(),
                             continuous_corners: false,
+                            transform: Default::default(),
                         });
 
                         let handle_sz = px(8.0);
@@ -355,6 +356,7 @@ impl RenderOnce for CropArea {
                                 border_color: data.border_color,
                                 border_style: BorderStyle::default(),
                                 continuous_corners: false,
+                                transform: Default::default(),
                             });
                         }
                     },

@@ -1070,7 +1070,11 @@ impl EntityInputHandler for EditorState {
         _cx: &mut Context<Self>,
     ) -> Option<usize> {
         if let Some(bounds) = self.last_bounds {
-            let gutter_width = px(60.0);
+            let gutter_width = if self.show_line_numbers {
+                px(60.0)
+            } else {
+                px(12.0)
+            };
             let line_height = px(20.0);
             let font_size = px(14.0);
             let pos = self.position_for_mouse(
@@ -1155,8 +1159,13 @@ impl Element for EditorElement {
         _window: &mut Window,
         _cx: &mut App,
     ) -> Self::PrepaintState {
+        let show_line_numbers = self.state.read(_cx).show_line_numbers;
         PrepaintState {
-            gutter_width: px(60.0),
+            gutter_width: if show_line_numbers {
+                px(60.0)
+            } else {
+                px(12.0)
+            },
             line_height: px(20.0),
         }
     }
@@ -1185,8 +1194,6 @@ impl Element for EditorElement {
         self.state.update(cx, |state, _| {
             state.last_bounds = Some(bounds);
         });
-
-        window.paint_quad(fill(bounds, theme.tokens.card));
 
         let (lines, show_line_numbers, cursor, selection, syntax_tree) = {
             let state = self.state.read(cx);
@@ -1531,7 +1538,11 @@ impl RenderOnce for Editor {
                 let state = self.state.clone();
                 move |event: &MouseDownEvent, window: &mut Window, cx: &mut App| {
                     let bounds = state.read(cx).last_bounds.unwrap_or_default();
-                    let gutter_width = px(60.0);
+                    let gutter_width = if state.read(cx).show_line_numbers {
+                        px(60.0)
+                    } else {
+                        px(12.0)
+                    };
                     let line_height = px(20.0);
                     let font_size = px(14.0);
                     state.update(cx, |s, cx| {
@@ -1552,7 +1563,11 @@ impl RenderOnce for Editor {
                 let state = self.state.clone();
                 move |event: &MouseMoveEvent, window: &mut Window, cx: &mut App| {
                     let bounds = state.read(cx).last_bounds.unwrap_or_default();
-                    let gutter_width = px(60.0);
+                    let gutter_width = if state.read(cx).show_line_numbers {
+                        px(60.0)
+                    } else {
+                        px(12.0)
+                    };
                     let line_height = px(20.0);
                     let font_size = px(14.0);
                     state.update(cx, |s, cx| {

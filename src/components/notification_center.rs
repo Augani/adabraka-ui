@@ -242,7 +242,7 @@ impl RenderOnce for NotificationCenter {
             .border_1()
             .border_color(theme.tokens.border)
             .rounded(theme.tokens.radius_lg)
-            .shadow(vec![shadow_lg])
+            .shadow(smallvec::smallvec![shadow_lg])
             .overflow_hidden()
             .map(|mut this| {
                 this.style().refine(&user_style);

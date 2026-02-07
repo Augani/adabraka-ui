@@ -58,7 +58,7 @@ pub trait StyledExt: Styled + Sized {
                 color: hsla(0.0, 0.0, 0.0, 0.1),
             },
         };
-        self.shadow(vec![shadow])
+        self.shadow(smallvec::smallvec![shadow])
     }
 
     fn ring(self, color: Hsla, width: Pixels) -> Self {
@@ -69,7 +69,7 @@ pub trait StyledExt: Styled + Sized {
             inset: false,
             color,
         };
-        self.shadow(vec![shadow])
+        self.shadow(smallvec::smallvec![shadow])
     }
 }
 

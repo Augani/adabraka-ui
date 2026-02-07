@@ -459,7 +459,7 @@ impl Render for PopoverMenuStyledDemoView {
 
                 this.child(
                     PopoverMenu::new(point(px(150.0), px(550.0)), items)
-                        .shadow(vec![
+                        .shadow(smallvec::smallvec![
                             BoxShadow {
                                 offset: point(px(0.0), px(8.0)),
                                 blur_radius: px(24.0),

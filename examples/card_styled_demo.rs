@@ -255,7 +255,7 @@ impl Render for CardStyledDemoView {
                                         Card::new()
                                             .header(div().text_base().font_weight(FontWeight::SEMIBOLD).child("Elevated"))
                                             .content(div().child("This card appears elevated with a larger shadow effect."))
-                                            .shadow(vec![
+                                            .shadow(smallvec::smallvec![
                                                 BoxShadow {
                                                     offset: point(px(0.0), px(4.0)),
                                                     blur_radius: px(12.0),

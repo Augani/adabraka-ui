@@ -566,7 +566,7 @@ impl PolishV2Demo {
                     .border_1()
                     .border_color(theme.tokens.border)
                     .rounded(px(8.0))
-                    .shadow(shadows)
+                    .shadow(shadows.into())
                     .flex()
                     .items_center()
                     .justify_center()
@@ -677,7 +677,9 @@ impl PolishV2Demo {
                             .h(px(70.0))
                             .rounded(px(8.0))
                             .bg(theme.tokens.primary)
-                            .shadow(vec![theme.tokens.glow_shadow(theme.tokens.primary, 1.0)])
+                            .shadow(smallvec::smallvec![theme
+                                .tokens
+                                .glow_shadow(theme.tokens.primary, 1.0)])
                             .flex()
                             .items_center()
                             .justify_center()
@@ -694,7 +696,7 @@ impl PolishV2Demo {
                             .h(px(70.0))
                             .rounded(px(8.0))
                             .bg(rgb(0x3b82f6))
-                            .shadow(vec![theme
+                            .shadow(smallvec::smallvec![theme
                                 .tokens
                                 .glow_shadow(hsla(217.0 / 360.0, 0.91, 0.60, 1.0), 1.5)])
                             .flex()
@@ -713,7 +715,7 @@ impl PolishV2Demo {
                             .h(px(70.0))
                             .rounded(px(8.0))
                             .bg(theme.tokens.destructive)
-                            .shadow(vec![theme
+                            .shadow(smallvec::smallvec![theme
                                 .tokens
                                 .glow_shadow(theme.tokens.destructive, 2.0)])
                             .flex()
@@ -762,7 +764,7 @@ impl PolishV2Demo {
                                     let tokens = theme.tokens.clone();
                                     move |el, delta| {
                                         let ring = tokens.focus_ring_animated(delta);
-                                        el.shadow(vec![ring])
+                                        el.shadow(smallvec::smallvec![ring])
                                     }
                                 },
                             ),
@@ -794,7 +796,7 @@ impl PolishV2Demo {
                                             hsla(262.0 / 360.0, 0.83, 0.58, 1.0),
                                             delta * 2.0,
                                         );
-                                        el.shadow(vec![shadow])
+                                        el.shadow(smallvec::smallvec![shadow])
                                     }
                                 },
                             ),

@@ -185,25 +185,29 @@ impl Render for ShowcaseApp {
                     ),
             )
             .child(
-                scrollable_vertical(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap(px(24.0))
-                        .p(px(24.0))
-                        .when(active_tab.as_ref() == "text", |el| {
-                            el.child(self.render_text_section(&theme, cx))
-                        })
-                        .when(active_tab.as_ref() == "data", |el| {
-                            el.child(self.render_data_section(&theme, cx))
-                        })
-                        .when(active_tab.as_ref() == "interactive", |el| {
-                            el.child(self.render_interactive_section(&theme, cx))
-                        })
-                        .when(active_tab.as_ref() == "effects", |el| {
-                            el.child(self.render_effects_section(&theme, cx))
-                        }),
-                ),
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .overflow_hidden()
+                    .child(scrollable_vertical(
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(px(24.0))
+                            .p(px(24.0))
+                            .when(active_tab.as_ref() == "text", |el| {
+                                el.child(self.render_text_section(&theme, cx))
+                            })
+                            .when(active_tab.as_ref() == "data", |el| {
+                                el.child(self.render_data_section(&theme, cx))
+                            })
+                            .when(active_tab.as_ref() == "interactive", |el| {
+                                el.child(self.render_interactive_section(&theme, cx))
+                            })
+                            .when(active_tab.as_ref() == "effects", |el| {
+                                el.child(self.render_effects_section(&theme, cx))
+                            }),
+                    )),
             )
     }
 }

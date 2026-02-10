@@ -189,7 +189,7 @@ impl Render for SearchBar {
             .px(px(12.0))
             .pt(px(8.0))
             .pb(px(12.0))
-            .gap(px(6.0))
+            .gap(px(10.0))
             .child(
                 div()
                     .flex()

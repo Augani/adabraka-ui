@@ -64,8 +64,20 @@ fn main() {
                 |_, cx| {
                     cx.new(|cx| {
                         let mut state = AppState::new(cx);
-                        if !paths_for_window.is_empty() {
-                            state.open_paths(paths_for_window, cx);
+                        let mut file_paths = Vec::new();
+                        let mut folder_path = None;
+                        for path in paths_for_window {
+                            if path.is_dir() {
+                                folder_path = Some(path);
+                            } else {
+                                file_paths.push(path);
+                            }
+                        }
+                        if let Some(folder) = folder_path {
+                            state.open_folder(folder, cx);
+                        }
+                        if !file_paths.is_empty() {
+                            state.open_paths(file_paths, cx);
                         }
                         state
                     })

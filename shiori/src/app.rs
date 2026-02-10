@@ -2,8 +2,10 @@ use crate::autosave::AutosaveManager;
 use crate::search_bar::SearchBar;
 use crate::status_bar::StatusBarView;
 use adabraka_ui::components::editor::{Editor, EditorState};
-use adabraka_ui::components::input::{Input, InputState};
 use adabraka_ui::components::icon::Icon;
+use adabraka_ui::components::input::{Input, InputState};
+use adabraka_ui::components::resizable::{h_resizable, resizable_panel, ResizableState};
+use adabraka_ui::navigation::file_tree::{FileNode, FileTree};
 use adabraka_ui::theme::{install_theme, use_theme, Theme};
 use gpui::prelude::FluentBuilder as _;
 use gpui::EntityId;
@@ -21,6 +23,7 @@ actions!(
         SaveFile,
         CloseTab,
         OpenFile,
+        OpenFolder,
         NewFile,
         NextTab,
         PrevTab,
@@ -29,6 +32,7 @@ actions!(
         CloseSearch,
         GotoLine,
         CloseGotoLine,
+        ToggleSidebar,
     ]
 );
 
@@ -44,6 +48,8 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-f", ToggleSearch, Some("ShioriApp")),
         KeyBinding::new("cmd-h", ToggleSearchReplace, Some("ShioriApp")),
         KeyBinding::new("cmd-g", GotoLine, Some("ShioriApp")),
+        KeyBinding::new("cmd-shift-o", OpenFolder, Some("ShioriApp")),
+        KeyBinding::new("cmd-b", ToggleSidebar, Some("ShioriApp")),
     ]);
 }
 
@@ -60,6 +66,12 @@ pub struct AppState {
     goto_line_input: Entity<InputState>,
     tab_scroll_offset: usize,
     theme_selector_open: bool,
+    workspace_root: Option<PathBuf>,
+    file_tree_nodes: Vec<FileNode>,
+    expanded_paths: Vec<PathBuf>,
+    selected_tree_path: Option<PathBuf>,
+    sidebar_visible: bool,
+    resizable_state: Entity<ResizableState>,
 }
 
 struct TabMeta {
@@ -67,6 +79,50 @@ struct TabMeta {
     file_name: Option<String>,
     modified: bool,
     title: SharedString,
+}
+
+fn scan_directory(path: &Path, depth: usize) -> Vec<FileNode> {
+    let mut nodes = Vec::new();
+    let entries = match std::fs::read_dir(path) {
+        Ok(e) => e,
+        Err(_) => return nodes,
+    };
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+        let is_hidden = entry_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .map(|n| n.starts_with('.'))
+            .unwrap_or(false);
+        if entry_path.is_dir() {
+            let mut dir_node = FileNode::directory(&entry_path).hidden(is_hidden);
+            if depth > 0 {
+                dir_node = dir_node.with_children(scan_directory(&entry_path, depth - 1));
+            } else {
+                dir_node = dir_node.with_unloaded_children(true);
+            }
+            nodes.push(dir_node);
+        } else if entry_path.is_file() {
+            nodes.push(FileNode::file(&entry_path).hidden(is_hidden));
+        }
+    }
+    nodes
+}
+
+fn load_children_if_needed(nodes: &mut Vec<FileNode>, target: &Path) {
+    for node in nodes.iter_mut() {
+        if node.path == target {
+            if node.has_unloaded_children && node.children.is_empty() {
+                node.children = scan_directory(&node.path, 1);
+                node.has_unloaded_children = false;
+            }
+            return;
+        }
+        if target.starts_with(&node.path) && !node.children.is_empty() {
+            load_children_if_needed(&mut node.children, target);
+            return;
+        }
+    }
 }
 
 impl AppState {
@@ -92,6 +148,8 @@ impl AppState {
         buffer_index.insert(buffer.entity_id(), 0);
         let tab_meta = vec![Self::build_tab_meta(&buffer, 0, cx)];
 
+        let resizable_state = ResizableState::new(cx);
+
         Self {
             focus_handle,
             buffers: vec![buffer],
@@ -105,6 +163,12 @@ impl AppState {
             goto_line_input,
             tab_scroll_offset: 0,
             theme_selector_open: false,
+            workspace_root: None,
+            file_tree_nodes: Vec::new(),
+            expanded_paths: Vec::new(),
+            selected_tree_path: None,
+            sidebar_visible: false,
+            resizable_state,
         }
     }
 
@@ -695,6 +759,144 @@ impl AppState {
                     .child(format!("/ {}", line_count)),
             )
     }
+
+    pub fn open_folder(&mut self, path: PathBuf, cx: &mut Context<Self>) {
+        let nodes = scan_directory(&path, 2);
+        self.expanded_paths = vec![path.clone()];
+        self.workspace_root = Some(path);
+        self.file_tree_nodes = nodes;
+        self.sidebar_visible = true;
+        self.selected_tree_path = None;
+        cx.notify();
+    }
+
+    fn open_folder_dialog(&mut self, cx: &mut Context<Self>) {
+        let rx = cx.prompt_for_paths(PathPromptOptions {
+            files: false,
+            directories: true,
+            multiple: false,
+            prompt: None,
+        });
+        cx.spawn(async move |this, cx| {
+            if let Ok(Ok(Some(paths))) = rx.await {
+                if let Some(path) = paths.into_iter().next() {
+                    let _ = cx.update(|cx| {
+                        let _ = this.update(cx, |this, cx| {
+                            this.open_folder(path, cx);
+                        });
+                    });
+                }
+            }
+        })
+        .detach();
+    }
+
+    fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = use_theme();
+        let folder_name = self
+            .workspace_root
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| "Workspace".to_string());
+
+        let app_entity = cx.entity().clone();
+        let app_entity2 = cx.entity().clone();
+
+        let mut tree = FileTree::new()
+            .nodes(self.file_tree_nodes.clone())
+            .expanded_paths(self.expanded_paths.clone());
+        if let Some(path) = &self.selected_tree_path {
+            tree = tree.selected_path(path.clone());
+        }
+        tree = tree
+            .on_select({
+                move |path, _, cx| {
+                    let path = path.clone();
+                    let _ = app_entity.update(cx, |this, cx| {
+                        this.selected_tree_path = Some(path.clone());
+                        if path.is_file() {
+                            let already_open = this
+                                .tab_meta
+                                .iter()
+                                .position(|meta| meta.file_path.as_ref() == Some(&path));
+                            if let Some(idx) = already_open {
+                                this.active_tab = idx;
+                                this.update_search_editor(cx);
+                            } else {
+                                this.open_paths(vec![path], cx);
+                            }
+                        }
+                        cx.notify();
+                    });
+                }
+            })
+            .on_toggle({
+                move |path, expanding, _, cx| {
+                    let path = path.clone();
+                    let _ = app_entity2.update(cx, |this, cx| {
+                        if expanding {
+                            if !this.expanded_paths.contains(&path) {
+                                this.expanded_paths.push(path.clone());
+                            }
+                            load_children_if_needed(&mut this.file_tree_nodes, &path);
+                        } else {
+                            this.expanded_paths.retain(|p| p != &path);
+                        }
+                        cx.notify();
+                    });
+                }
+            });
+
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .bg(theme.tokens.background)
+            .child(
+                div()
+                    .w_full()
+                    .h(px(36.0))
+                    .flex()
+                    .items_center()
+                    .justify_between()
+                    .px(px(12.0))
+                    .border_b_1()
+                    .border_color(theme.tokens.border)
+                    .child(
+                        div()
+                            .text_size(px(13.0))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .text_color(theme.tokens.foreground)
+                            .overflow_x_hidden()
+                            .text_ellipsis()
+                            .child(folder_name),
+                    )
+                    .child(
+                        div()
+                            .id("toggle-sidebar-close")
+                            .w(px(22.0))
+                            .h(px(22.0))
+                            .flex()
+                            .flex_shrink_0()
+                            .items_center()
+                            .justify_center()
+                            .rounded(px(4.0))
+                            .cursor_pointer()
+                            .hover(|s| s.bg(theme.tokens.muted.opacity(0.5)))
+                            .on_click(cx.listener(|this, _, _, cx| {
+                                this.sidebar_visible = false;
+                                cx.notify();
+                            }))
+                            .child(
+                                Icon::new("chevron-left")
+                                    .size(px(14.0))
+                                    .color(theme.tokens.muted_foreground),
+                            ),
+                    ),
+            )
+            .child(div().id("sidebar-tree").flex_1().overflow_y_scroll().child(tree))
+    }
 }
 
 impl Focusable for AppState {
@@ -715,6 +917,46 @@ impl Render for AppState {
         let search_visible = self.search_visible;
         let goto_visible = self.goto_line_visible;
 
+        let main_content = if self.sidebar_visible {
+            let sidebar = self.render_sidebar(cx);
+            let editor_el = self.buffers.get(self.active_tab).map(|buffer| {
+                Editor::new(buffer)
+                    .show_line_numbers(true, cx)
+                    .show_border(false)
+            });
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .child(
+                    h_resizable("main-layout", self.resizable_state.clone())
+                        .child(
+                            resizable_panel()
+                                .size(px(250.0))
+                                .min_size(px(150.0))
+                                .max_size(px(500.0))
+                                .child(sidebar),
+                        )
+                        .child(
+                            resizable_panel().child(
+                                div()
+                                    .size_full()
+                                    .children(editor_el),
+                            ),
+                        ),
+                )
+                .into_any_element()
+        } else {
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .children(self.buffers.get(self.active_tab).map(|buffer| {
+                    Editor::new(buffer)
+                        .show_line_numbers(true, cx)
+                        .show_border(false)
+                }))
+                .into_any_element()
+        };
+
         div()
             .key_context("ShioriApp")
             .track_focus(&self.focus_handle)
@@ -726,6 +968,9 @@ impl Render for AppState {
             }))
             .on_action(cx.listener(|this, _: &OpenFile, _, cx| {
                 this.open_file_dialog(cx);
+            }))
+            .on_action(cx.listener(|this, _: &OpenFolder, _, cx| {
+                this.open_folder_dialog(cx);
             }))
             .on_action(cx.listener(|this, _: &NewFile, _, cx| {
                 this.new_file(cx);
@@ -800,13 +1045,25 @@ impl Render for AppState {
                 this.goto_line_visible = false;
                 cx.notify();
             }))
+            .on_action(cx.listener(|this, _: &ToggleSidebar, _, cx| {
+                if this.workspace_root.is_some() {
+                    this.sidebar_visible = !this.sidebar_visible;
+                    cx.notify();
+                }
+            }))
             .on_drop::<ExternalPaths>(cx.listener(|this, paths: &ExternalPaths, _, cx| {
-                let file_paths: Vec<PathBuf> = paths
-                    .paths()
-                    .iter()
-                    .filter(|p: &&PathBuf| p.is_file())
-                    .cloned()
-                    .collect();
+                let mut file_paths = Vec::new();
+                let mut folder_path = None;
+                for p in paths.paths() {
+                    if p.is_dir() {
+                        folder_path = Some(p.clone());
+                    } else if p.is_file() {
+                        file_paths.push(p.clone());
+                    }
+                }
+                if let Some(folder) = folder_path {
+                    this.open_folder(folder, cx);
+                }
                 if !file_paths.is_empty() {
                     this.open_paths(file_paths, cx);
                 }
@@ -836,16 +1093,7 @@ impl Render for AppState {
             .when(goto_visible, |el| {
                 el.child(self.render_goto_line(cx))
             })
-            .child(
-                div()
-                    .flex_1()
-                    .overflow_hidden()
-                    .children(self.buffers.get(self.active_tab).map(|buffer| {
-                        Editor::new(buffer)
-                            .show_line_numbers(true, cx)
-                            .show_border(false)
-                    })),
-            )
+            .child(main_content)
             .children(status)
     }
 }

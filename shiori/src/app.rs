@@ -1,10 +1,16 @@
 use crate::autosave::AutosaveManager;
+use crate::completion::{extract_symbols, CompletionItem, CompletionMenu, CompletionState};
 use crate::search_bar::SearchBar;
 use crate::status_bar::StatusBarView;
-use adabraka_ui::components::editor::{Editor, EditorState};
+use crate::terminal_view::TerminalView;
+use adabraka_ui::components::editor::{
+    Editor, EditorState, Enter as EditorEnter, MoveDown, MoveUp, Tab as EditorTab,
+};
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::input::{Input, InputState};
-use adabraka_ui::components::resizable::{h_resizable, resizable_panel, ResizableState};
+use adabraka_ui::components::resizable::{
+    h_resizable, resizable_panel, v_resizable, ResizableState,
+};
 use adabraka_ui::navigation::file_tree::{FileNode, FileTree};
 use adabraka_ui::theme::{install_theme, use_theme, Theme};
 use gpui::prelude::FluentBuilder as _;
@@ -33,6 +39,13 @@ actions!(
         GotoLine,
         CloseGotoLine,
         ToggleSidebar,
+        ToggleTerminal,
+        NewTerminal,
+        CompletionUp,
+        CompletionDown,
+        CompletionAccept,
+        CompletionDismiss,
+        TriggerCompletion,
     ]
 );
 
@@ -50,6 +63,15 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-g", GotoLine, Some("ShioriApp")),
         KeyBinding::new("cmd-shift-o", OpenFolder, Some("ShioriApp")),
         KeyBinding::new("cmd-b", ToggleSidebar, Some("ShioriApp")),
+        KeyBinding::new("cmd-`", ToggleTerminal, Some("ShioriApp")),
+        KeyBinding::new("ctrl-.", TriggerCompletion, Some("ShioriApp")),
+        KeyBinding::new("up", CompletionUp, Some("ShioriApp")),
+        KeyBinding::new("down", CompletionDown, Some("ShioriApp")),
+        KeyBinding::new("ctrl-p", CompletionUp, Some("ShioriApp")),
+        KeyBinding::new("ctrl-n", CompletionDown, Some("ShioriApp")),
+        KeyBinding::new("tab", CompletionAccept, Some("ShioriApp")),
+        KeyBinding::new("enter", CompletionAccept, Some("ShioriApp")),
+        KeyBinding::new("escape", CompletionDismiss, Some("ShioriApp")),
     ]);
 }
 
@@ -72,6 +94,14 @@ pub struct AppState {
     selected_tree_path: Option<PathBuf>,
     sidebar_visible: bool,
     resizable_state: Entity<ResizableState>,
+    terminals: Vec<Entity<TerminalView>>,
+    active_terminal: usize,
+    terminal_visible: bool,
+    terminal_resizable_state: Entity<ResizableState>,
+    completion_state: Entity<CompletionState>,
+    cached_symbols: Vec<CompletionItem>,
+    last_symbol_update_line: usize,
+    suppress_completion: bool,
 }
 
 struct TabMeta {
@@ -128,7 +158,14 @@ fn load_children_if_needed(nodes: &mut Vec<FileNode>, target: &Path) {
 impl AppState {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
-        let buffer = cx.new(|cx| EditorState::new(cx));
+        let completion_state = cx.new(|cx| CompletionState::new(cx));
+
+        let completion_for_check = completion_state.clone();
+        let buffer = cx.new(|cx| {
+            let mut state = EditorState::new(cx);
+            state.set_overlay_active_check(move |cx| completion_for_check.read(cx).is_visible());
+            state
+        });
         let goto_line_input = cx.new(|cx| InputState::new(cx));
 
         cx.observe(&buffer, Self::on_buffer_changed).detach();
@@ -149,6 +186,7 @@ impl AppState {
         let tab_meta = vec![Self::build_tab_meta(&buffer, 0, cx)];
 
         let resizable_state = ResizableState::new(cx);
+        let terminal_resizable_state = ResizableState::new(cx);
 
         Self {
             focus_handle,
@@ -169,6 +207,14 @@ impl AppState {
             selected_tree_path: None,
             sidebar_visible: false,
             resizable_state,
+            terminals: Vec::new(),
+            active_terminal: 0,
+            terminal_visible: false,
+            terminal_resizable_state,
+            completion_state,
+            cached_symbols: Vec::new(),
+            last_symbol_update_line: usize::MAX,
+            suppress_completion: false,
         }
     }
 
@@ -248,13 +294,21 @@ impl AppState {
         }
     }
 
-    fn add_buffer(&mut self, buffer: Entity<EditorState>, cx: &App) {
+    fn add_buffer(&mut self, buffer: Entity<EditorState>, cx: &mut Context<Self>) {
         let idx = self.buffers.len();
         self.buffer_index.insert(buffer.entity_id(), idx);
         self.tab_meta.push(Self::build_tab_meta(&buffer, idx, cx));
-        self.buffers.push(buffer);
+        self.buffers.push(buffer.clone());
         self.autosave.push();
         self.active_tab = idx;
+        self.setup_overlay_check(&buffer, cx);
+    }
+
+    fn setup_overlay_check(&self, buffer: &Entity<EditorState>, cx: &mut Context<Self>) {
+        let completion_state = self.completion_state.clone();
+        buffer.update(cx, |state, _| {
+            state.set_overlay_active_check(move |cx| completion_state.read(cx).is_visible());
+        });
     }
 
     fn remove_buffer_at(&mut self, idx: usize) {
@@ -304,8 +358,149 @@ impl AppState {
                 });
             });
             self.autosave.set(idx, task);
+
+            if idx == self.active_tab {
+                self.update_completion_for_typing(&buffer, cx);
+            }
         }
         cx.notify();
+    }
+
+    fn update_completion_for_typing(&mut self, buffer: &Entity<EditorState>, cx: &mut Context<Self>) {
+        if self.suppress_completion {
+            self.suppress_completion = false;
+            return;
+        }
+
+        let completion_visible = self.completion_state.read(cx).is_visible();
+
+        let (cursor, word_info, anchor, language, content, tree_exists) = {
+            let state = buffer.read(cx);
+            let cursor = state.cursor();
+            let word_info = state.word_at_cursor();
+            let anchor = state.cursor_screen_position(px(20.0));
+            let language = state.language();
+            let content = state.content();
+            let tree_exists = state.syntax_tree().is_some();
+            (cursor, word_info, anchor, language, content, tree_exists)
+        };
+
+        if completion_visible {
+            let trigger_line = self.completion_state.read(cx).trigger_line();
+
+            if let Some((word, _word_start)) = word_info {
+                if cursor.line != trigger_line {
+                    self.completion_state.update(cx, |s, cx| s.dismiss(cx));
+                    return;
+                }
+                self.completion_state.update(cx, |s, cx| {
+                    s.set_filter(&word, cx);
+                });
+                if let Some(anchor) = anchor {
+                    self.completion_state.update(cx, |s, _| {
+                        s.update_anchor(anchor);
+                    });
+                }
+            } else {
+                self.completion_state.update(cx, |s, cx| s.dismiss(cx));
+            }
+        } else if let Some((word, word_start)) = word_info {
+            if word.len() >= 2 && tree_exists {
+                if self.last_symbol_update_line != cursor.line {
+                    if let Some(tree) = buffer.read(cx).syntax_tree() {
+                        let symbols = extract_symbols(tree, &content, language);
+                        self.cached_symbols =
+                            symbols.into_iter().map(CompletionItem::from).collect();
+                        self.last_symbol_update_line = cursor.line;
+                    }
+                }
+
+                if !self.cached_symbols.is_empty() {
+                    if let Some(anchor) = anchor {
+                        let items = self.cached_symbols.clone();
+                        self.completion_state.update(cx, |s, cx| {
+                            s.show(items, cursor.line, word_start, anchor, cx);
+                            s.set_filter(&word, cx);
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    fn trigger_completion(&mut self, cx: &mut Context<Self>) {
+        let buffer = match self.buffers.get(self.active_tab) {
+            Some(b) => b.clone(),
+            None => return,
+        };
+
+        let state = buffer.read(cx);
+        let cursor = state.cursor();
+        let language = state.language();
+        let content = state.content();
+
+        if self.last_symbol_update_line != cursor.line {
+            if let Some(tree) = state.syntax_tree() {
+                let symbols = extract_symbols(tree, &content, language);
+                self.cached_symbols = symbols.into_iter().map(CompletionItem::from).collect();
+                self.last_symbol_update_line = cursor.line;
+            }
+        }
+
+        if self.cached_symbols.is_empty() {
+            return;
+        }
+
+        let anchor = match state.cursor_screen_position(px(20.0)) {
+            Some(p) => p,
+            None => return,
+        };
+
+        let (filter_prefix, trigger_col) = if let Some((word, word_start)) = state.word_at_cursor() {
+            (word, word_start)
+        } else {
+            (String::new(), cursor.col)
+        };
+
+        let items: Vec<CompletionItem> = self.cached_symbols.clone();
+
+        self.completion_state.update(cx, |s, cx| {
+            s.show(items, cursor.line, trigger_col, anchor, cx);
+            if !filter_prefix.is_empty() {
+                s.set_filter(&filter_prefix, cx);
+            }
+        });
+    }
+
+    fn apply_completion(&mut self, cx: &mut Context<Self>) {
+        let item = match self.completion_state.read(cx).selected_item() {
+            Some(i) => i.clone(),
+            None => return,
+        };
+
+        let trigger_col = self.completion_state.read(cx).trigger_col();
+
+        self.suppress_completion = true;
+
+        if let Some(buffer) = self.buffers.get(self.active_tab).cloned() {
+            buffer.update(cx, |state, ecx| {
+                state.apply_completion(trigger_col, &item.insert_text, ecx);
+            });
+        }
+
+        self.completion_state.update(cx, |s, cx| s.dismiss(cx));
+    }
+
+    fn completion_move_up(&mut self, cx: &mut Context<Self>) {
+        self.completion_state.update(cx, |s, cx| s.move_up(cx));
+    }
+
+    fn completion_move_down(&mut self, cx: &mut Context<Self>) {
+        self.completion_state.update(cx, |s, cx| s.move_down(cx));
+    }
+
+    fn completion_dismiss(&mut self, cx: &mut Context<Self>) {
+        self.completion_state.update(cx, |s, cx| s.dismiss(cx));
     }
 
     fn save_active(&mut self, cx: &mut Context<Self>) {
@@ -791,6 +986,184 @@ impl AppState {
         .detach();
     }
 
+    fn toggle_terminal(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.terminal_visible {
+            self.terminal_visible = false;
+        } else {
+            if self.terminals.is_empty() {
+                self.new_terminal(window, cx);
+                return;
+            }
+            self.terminal_visible = true;
+        }
+        cx.notify();
+    }
+
+    fn new_terminal(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        let working_dir = self.current_working_directory();
+        let terminal =
+            cx.new(|cx| TerminalView::new(cx).with_working_directory(working_dir));
+        terminal.update(cx, |t, cx| {
+            let _ = t.start_with_polling(window, cx);
+        });
+        self.terminals.push(terminal);
+        self.active_terminal = self.terminals.len() - 1;
+        self.terminal_visible = true;
+        cx.notify();
+    }
+
+    fn close_terminal_at(&mut self, idx: usize, cx: &mut Context<Self>) {
+        if idx >= self.terminals.len() {
+            return;
+        }
+        self.terminals[idx].update(cx, |t, _| t.stop());
+        self.terminals.remove(idx);
+        if self.terminals.is_empty() {
+            self.terminal_visible = false;
+            self.active_terminal = 0;
+        } else if self.active_terminal >= self.terminals.len() {
+            self.active_terminal = self.terminals.len() - 1;
+        }
+        cx.notify();
+    }
+
+    fn render_terminal_tab_bar(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = use_theme();
+        let border = theme.tokens.border;
+        let muted_fg = theme.tokens.muted_foreground;
+        let muted_bg = theme.tokens.muted;
+        let active_fg = theme.tokens.foreground;
+        let active_bg = theme.tokens.background;
+
+        let any_running = self
+            .terminals
+            .iter()
+            .any(|t| t.read(cx).is_running());
+
+        div()
+            .id("terminal-tab-bar")
+            .w_full()
+            .h(px(36.0))
+            .bg(theme.tokens.muted.opacity(0.3))
+            .border_b_1()
+            .border_color(border)
+            .flex()
+            .items_center()
+            .child(
+                div()
+                    .h_full()
+                    .flex()
+                    .flex_shrink_0()
+                    .items_center()
+                    .px(px(12.0))
+                    .child(
+                        div()
+                            .text_xs()
+                            .font_weight(gpui::FontWeight::SEMIBOLD)
+                            .text_color(muted_fg)
+                            .child("TERMINAL"),
+                    ),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .h_full()
+                    .flex()
+                    .items_center()
+                    .overflow_x_hidden()
+                    .children(self.terminals.iter().enumerate().map(|(idx, term)| {
+                        let is_active = idx == self.active_terminal;
+                        let title = term.read(cx).title();
+
+                        div()
+                            .id(ElementId::Name(format!("term-tab-{}", idx).into()))
+                            .h_full()
+                            .flex()
+                            .flex_shrink_0()
+                            .items_center()
+                            .gap(px(6.0))
+                            .px(px(12.0))
+                            .cursor_pointer()
+                            .text_size(px(13.0))
+                            .border_r_1()
+                            .border_color(border.opacity(0.5))
+                            .when(is_active, |el| el.bg(active_bg).text_color(active_fg))
+                            .when(!is_active, |el| {
+                                el.text_color(muted_fg)
+                                    .hover(|s| s.bg(muted_bg.opacity(0.5)))
+                            })
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                this.active_terminal = idx;
+                                cx.notify();
+                            }))
+                            .child(title)
+                            .child(
+                                div()
+                                    .id(ElementId::Name(
+                                        format!("term-tab-close-{}", idx).into(),
+                                    ))
+                                    .w(px(16.0))
+                                    .h(px(16.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(px(3.0))
+                                    .text_color(muted_fg)
+                                    .hover(|s| s.bg(muted_bg).text_color(active_fg))
+                                    .on_click(cx.listener(move |this, _, _, cx| {
+                                        this.close_terminal_at(idx, cx);
+                                    }))
+                                    .child(
+                                        Icon::new("x").size(px(12.0)).color(muted_fg),
+                                    ),
+                            )
+                    }))
+                    .child(
+                        div()
+                            .id("new-terminal-btn")
+                            .h_full()
+                            .flex()
+                            .flex_shrink_0()
+                            .items_center()
+                            .px(px(6.0))
+                            .cursor_pointer()
+                            .hover(|s| s.bg(muted_bg.opacity(0.5)))
+                            .on_click(cx.listener(|this, _, window, cx| {
+                                this.new_terminal(window, cx);
+                            }))
+                            .child(Icon::new("plus").size(px(14.0)).color(muted_fg)),
+                    ),
+            )
+            .child(
+                div()
+                    .flex_shrink_0()
+                    .px(px(10.0))
+                    .child(
+                        div().w(px(8.0)).h(px(8.0)).rounded_full().bg(
+                            if any_running {
+                                gpui::rgb(0x4ade80)
+                            } else {
+                                gpui::rgb(0x8b7b6b)
+                            },
+                        ),
+                    ),
+            )
+    }
+
+    fn current_working_directory(&self) -> PathBuf {
+        if let Some(meta) = self.tab_meta.get(self.active_tab) {
+            if let Some(path) = &meta.file_path {
+                if let Some(parent) = path.parent() {
+                    return parent.to_path_buf();
+                }
+            }
+        }
+        if let Some(root) = &self.workspace_root {
+            return root.clone();
+        }
+        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"))
+    }
+
     fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let folder_name = self
@@ -909,15 +1282,25 @@ impl Render for AppState {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
 
+        let terminal_visible = self.terminal_visible;
+        let app_entity = cx.entity().clone();
         let status = self
             .buffers
             .get(self.active_tab)
-            .map(|b| StatusBarView::from_editor(b.read(cx)));
+            .map(|b| {
+                StatusBarView::from_editor(b.read(cx))
+                    .terminal_open(terminal_visible)
+                    .on_toggle_terminal(move |window, cx| {
+                        let _ = app_entity.update(cx, |this, cx| {
+                            this.toggle_terminal(window, cx);
+                        });
+                    })
+            });
 
         let search_visible = self.search_visible;
         let goto_visible = self.goto_line_visible;
 
-        let main_content = if self.sidebar_visible {
+        let editor_area = if self.sidebar_visible {
             let sidebar = self.render_sidebar(cx);
             let editor_el = self.buffers.get(self.active_tab).map(|buffer| {
                 Editor::new(buffer)
@@ -925,8 +1308,7 @@ impl Render for AppState {
                     .show_border(false)
             });
             div()
-                .flex_1()
-                .overflow_hidden()
+                .size_full()
                 .child(
                     h_resizable("main-layout", self.resizable_state.clone())
                         .child(
@@ -947,13 +1329,53 @@ impl Render for AppState {
                 .into_any_element()
         } else {
             div()
-                .flex_1()
-                .overflow_hidden()
+                .size_full()
                 .children(self.buffers.get(self.active_tab).map(|buffer| {
                     Editor::new(buffer)
                         .show_line_numbers(true, cx)
                         .show_border(false)
                 }))
+                .into_any_element()
+        };
+
+        let main_content = if terminal_visible {
+            let terminal_tab_bar = self.render_terminal_tab_bar(cx);
+            let active_terminal = self.terminals.get(self.active_terminal).cloned();
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .child(
+                    v_resizable(
+                        "editor-terminal",
+                        self.terminal_resizable_state.clone(),
+                    )
+                    .child(resizable_panel().child(editor_area))
+                    .child(
+                        resizable_panel()
+                            .size(px(300.0))
+                            .min_size(px(100.0))
+                            .max_size(px(600.0))
+                            .child(
+                                div()
+                                    .size_full()
+                                    .flex()
+                                    .flex_col()
+                                    .child(terminal_tab_bar)
+                                    .child(
+                                        div()
+                                            .flex_1()
+                                            .overflow_hidden()
+                                            .children(active_terminal),
+                                    ),
+                            ),
+                    ),
+                )
+                .into_any_element()
+        } else {
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .child(editor_area)
                 .into_any_element()
         };
 
@@ -1051,6 +1473,63 @@ impl Render for AppState {
                     cx.notify();
                 }
             }))
+            .on_action(cx.listener(|this, _: &ToggleTerminal, window, cx| {
+                this.toggle_terminal(window, cx);
+            }))
+            .on_action(cx.listener(|this, _: &NewTerminal, window, cx| {
+                this.new_terminal(window, cx);
+            }))
+            .on_action(cx.listener(|this, _: &TriggerCompletion, _, cx| {
+                this.trigger_completion(cx);
+            }))
+            .on_action(cx.listener(|this, _: &CompletionUp, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.completion_move_up(cx);
+                } else {
+                    cx.propagate();
+                }
+            }))
+            .on_action(cx.listener(|this, _: &CompletionDown, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.completion_move_down(cx);
+                } else {
+                    cx.propagate();
+                }
+            }))
+            .on_action(cx.listener(|this, _: &CompletionAccept, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.apply_completion(cx);
+                } else {
+                    cx.propagate();
+                }
+            }))
+            .on_action(cx.listener(|this, _: &CompletionDismiss, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.completion_dismiss(cx);
+                } else {
+                    cx.propagate();
+                }
+            }))
+            .on_action(cx.listener(|this, _: &MoveUp, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.completion_move_up(cx);
+                }
+            }))
+            .on_action(cx.listener(|this, _: &MoveDown, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.completion_move_down(cx);
+                }
+            }))
+            .on_action(cx.listener(|this, _: &EditorTab, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.apply_completion(cx);
+                }
+            }))
+            .on_action(cx.listener(|this, _: &EditorEnter, _, cx| {
+                if this.completion_state.read(cx).is_visible() {
+                    this.apply_completion(cx);
+                }
+            }))
             .on_drop::<ExternalPaths>(cx.listener(|this, paths: &ExternalPaths, _, cx| {
                 let mut file_paths = Vec::new();
                 let mut folder_path = None;
@@ -1095,5 +1574,13 @@ impl Render for AppState {
             })
             .child(main_content)
             .children(status)
+            .child({
+                let app_entity = cx.entity().clone();
+                CompletionMenu::new(self.completion_state.clone()).on_accept(move |_, cx| {
+                    let _ = app_entity.update(cx, |this, cx| {
+                        this.apply_completion(cx);
+                    });
+                })
+            })
     }
 }

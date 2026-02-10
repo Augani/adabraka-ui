@@ -464,6 +464,8 @@ pub struct EditorState {
     tab_size: usize,
     read_only: bool,
 
+    overlay_active_check: Option<Box<dyn Fn(&App) -> bool + 'static>>,
+
     reparse_task: Option<Task<()>>,
 
     search_query: String,
@@ -502,6 +504,7 @@ impl EditorState {
             show_line_numbers: true,
             tab_size: 4,
             read_only: false,
+            overlay_active_check: None,
             reparse_task: None,
             search_query: String::new(),
             search_matches: Vec::new(),
@@ -544,6 +547,78 @@ impl EditorState {
 
     pub fn language(&self) -> Language {
         self.language
+    }
+
+    pub fn syntax_tree(&self) -> Option<&Tree> {
+        self.syntax_tree.as_ref()
+    }
+
+    pub fn word_at_cursor(&self) -> Option<(String, usize)> {
+        let line_text = self.line_text(self.cursor.line);
+        if line_text.is_empty() || self.cursor.col == 0 {
+            return None;
+        }
+
+        let bytes = line_text.as_bytes();
+        let col = self.cursor.col.min(bytes.len());
+
+        let mut word_start = col;
+        while word_start > 0 {
+            let ch = bytes[word_start - 1];
+            if !ch.is_ascii_alphanumeric() && ch != b'_' {
+                break;
+            }
+            word_start -= 1;
+        }
+
+        if word_start == col {
+            return None;
+        }
+
+        let word = line_text[word_start..col].to_string();
+        Some((word, word_start))
+    }
+
+    pub fn cursor_screen_position(&self, line_height: Pixels) -> Option<Point<Pixels>> {
+        let bounds = self.last_bounds?;
+        let gutter_width = if self.show_line_numbers {
+            px(60.0)
+        } else {
+            px(12.0)
+        };
+        let padding_top = px(12.0);
+
+        let scroll_offset = self.scroll_handle.offset();
+        let cursor_y = bounds.top() + padding_top + line_height * (self.cursor.line as f32) + scroll_offset.y;
+
+        let cursor_x = if let Some(layout) = self.line_layouts.get(&self.cursor.line) {
+            let line_text = self.line_text(self.cursor.line);
+            let char_offset = self.cursor.col.min(line_text.len());
+            let x_offset = layout.x_for_index(char_offset);
+            bounds.left() + gutter_width + x_offset
+        } else {
+            let approx_char_width = px(8.4);
+            bounds.left() + gutter_width + approx_char_width * (self.cursor.col as f32)
+        };
+
+        Some(Point::new(cursor_x, cursor_y + line_height))
+    }
+
+    pub fn apply_completion(&mut self, trigger_col: usize, insert_text: &str, cx: &mut Context<Self>) {
+        if self.read_only {
+            return;
+        }
+
+        let delete_count = self.cursor.col.saturating_sub(trigger_col);
+        if delete_count > 0 {
+            let start_pos = Position::new(self.cursor.line, trigger_col);
+            let end_pos = self.cursor;
+            self.delete_selection_internal(Selection::new(start_pos, end_pos), cx);
+        }
+
+        self.insert_text_at_cursor(insert_text, cx);
+        self.ensure_cursor_visible(cx);
+        cx.notify();
     }
 
     fn line_text(&self, line: usize) -> String {
@@ -605,6 +680,17 @@ impl EditorState {
             self.highlight_query = None;
         }
         self.update_syntax_tree();
+    }
+
+    pub fn set_overlay_active_check(&mut self, check: impl Fn(&App) -> bool + 'static) {
+        self.overlay_active_check = Some(Box::new(check));
+    }
+
+    fn is_overlay_active(&self, cx: &App) -> bool {
+        self.overlay_active_check
+            .as_ref()
+            .map(|check| check(cx))
+            .unwrap_or(false)
     }
 
     pub fn load_file(&mut self, path: impl Into<PathBuf>, cx: &mut Context<Self>) {
@@ -1010,6 +1096,10 @@ impl EditorState {
     }
 
     pub fn move_up(&mut self, _: &MoveUp, _: &mut Window, cx: &mut Context<Self>) {
+        if self.is_overlay_active(cx) {
+            cx.propagate();
+            return;
+        }
         if self.cursor.line > 0 {
             self.cursor.line -= 1;
             self.clamp_cursor();
@@ -1019,6 +1109,10 @@ impl EditorState {
     }
 
     pub fn move_down(&mut self, _: &MoveDown, _: &mut Window, cx: &mut Context<Self>) {
+        if self.is_overlay_active(cx) {
+            cx.propagate();
+            return;
+        }
         if self.cursor.line < self.total_lines() - 1 {
             self.cursor.line += 1;
             self.clamp_cursor();
@@ -1298,6 +1392,10 @@ impl EditorState {
     }
 
     pub fn enter(&mut self, _: &Enter, _: &mut Window, cx: &mut Context<Self>) {
+        if self.is_overlay_active(cx) {
+            cx.propagate();
+            return;
+        }
         if self.read_only {
             return;
         }
@@ -1306,6 +1404,10 @@ impl EditorState {
     }
 
     pub fn tab(&mut self, _: &Tab, _: &mut Window, cx: &mut Context<Self>) {
+        if self.is_overlay_active(cx) {
+            cx.propagate();
+            return;
+        }
         if self.read_only {
             return;
         }

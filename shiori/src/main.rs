@@ -1,7 +1,12 @@
+mod ansi_parser;
 mod app;
 mod autosave;
+mod completion;
+mod pty_service;
 mod search_bar;
 mod status_bar;
+mod terminal_state;
+mod terminal_view;
 
 use app::AppState;
 use adabraka_ui::theme::{install_theme, Theme};

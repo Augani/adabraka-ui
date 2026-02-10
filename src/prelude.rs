@@ -48,7 +48,7 @@ pub use crate::components::countdown::{
 pub use crate::components::date_picker::{DateFormat, DatePicker, DatePickerState};
 pub use crate::components::drag_drop::{DragData, Draggable, DropZone, DropZoneStyle};
 pub use crate::components::dropdown::{Dropdown, DropdownAlign, DropdownItem, DropdownState};
-pub use crate::components::editor::{Editor, EditorState};
+pub use crate::components::editor::{Editor, EditorState, Language as EditorLanguage};
 pub use crate::components::empty_state::{EmptyState, EmptyStateSize};
 pub use crate::components::file_upload::{
     FileTypeFilter, FileUpload, FileUploadError, FileUploadSize, FileUploadState, SelectedFile,
@@ -139,6 +139,9 @@ pub use crate::display::data_grid::{
     CellEditor, CellPosition, DataGrid, DataGridState, GridColumnDef, GridSortDirection,
 };
 pub use crate::display::data_table::{ColumnDef, DataTable, SortDirection};
+pub use crate::display::html::Html;
+pub use crate::display::markdown::Markdown;
+pub use crate::display::rich_text::{RichBlock, RichInline, TableAlignment as RichTableAlignment};
 pub use crate::display::table::{Table, TableColumn, TableRow};
 pub use crate::layout::{
     Align, Cluster, Container, Flow, FlowDirection, Grid, HStack, Justify, MasonryGrid,

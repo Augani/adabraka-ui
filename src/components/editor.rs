@@ -442,6 +442,7 @@ pub struct EditorState {
 
     file_path: Option<PathBuf>,
     is_modified: bool,
+    content_version: u64,
 
     parser: Parser,
     syntax_tree: Option<Tree>,
@@ -449,10 +450,13 @@ pub struct EditorState {
     language: Language,
 
     scroll_handle: ScrollHandle,
+    scroll_offset_x: Pixels,
+    max_line_width: Pixels,
     line_layouts: HashMap<usize, ShapedLine>,
     last_bounds: Option<Bounds<Pixels>>,
 
     is_selecting: bool,
+    dragging_h_scrollbar: bool,
     last_mouse_pos: Option<Point<Pixels>>,
     last_mouse_gutter_width: Pixels,
     autoscroll_task: Option<Task<()>>,
@@ -488,14 +492,18 @@ impl EditorState {
             redo_stack: Vec::new(),
             file_path: None,
             is_modified: false,
+            content_version: 0,
             parser,
             syntax_tree: None,
             highlight_query: None,
             language: Language::Plain,
             scroll_handle: ScrollHandle::new(),
+            scroll_offset_x: px(0.0),
+            max_line_width: px(0.0),
             line_layouts: HashMap::new(),
             last_bounds: None,
             is_selecting: false,
+            dragging_h_scrollbar: false,
             last_mouse_pos: None,
             last_mouse_gutter_width: px(60.0),
             autoscroll_task: None,
@@ -898,6 +906,11 @@ impl EditorState {
 
     fn mark_modified(&mut self) {
         self.is_modified = true;
+        self.content_version = self.content_version.wrapping_add(1);
+    }
+
+    pub fn content_version(&self) -> u64 {
+        self.content_version
     }
 
     fn insert_text_at_cursor(&mut self, text: &str, cx: &mut Context<Self>) {
@@ -1675,6 +1688,9 @@ impl EditorState {
         let padding_top = px(12.0);
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
+        let viewport_width = viewport_bounds.size.width;
+        let gutter_width = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+        let content_width = viewport_width - gutter_width;
         let offset = self.scroll_handle.offset();
         let mut new_offset_y = offset.y;
         let cursor_y = padding_top + line_height * (self.cursor.line as f32);
@@ -1693,7 +1709,38 @@ impl EditorState {
         if (new_offset_y - offset.y).abs() > px(0.0) {
             self.scroll_handle.set_offset(point(offset.x, new_offset_y));
         }
+
+        if let Some(layout) = self.line_layouts.get(&self.cursor.line) {
+            let cursor_x = layout.x_for_index(self.cursor.col);
+            let visible_left = self.scroll_offset_x;
+            let visible_right = visible_left + content_width - px(20.0);
+
+            if cursor_x < visible_left {
+                self.scroll_offset_x = (cursor_x - px(20.0)).max(px(0.0));
+            } else if cursor_x > visible_right {
+                self.scroll_offset_x = cursor_x - content_width + px(40.0);
+            }
+        }
+
         cx.notify();
+    }
+
+    pub fn scroll_horizontal(&mut self, delta: Pixels, cx: &mut Context<Self>) {
+        let viewport_bounds = self.scroll_handle.bounds();
+        let gutter_width = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+        let content_width = viewport_bounds.size.width - gutter_width;
+        let max_scroll = (self.max_line_width - content_width + px(40.0)).max(px(0.0));
+
+        self.scroll_offset_x = (self.scroll_offset_x + delta).max(px(0.0)).min(max_scroll);
+        cx.notify();
+    }
+
+    pub fn scroll_offset_x(&self) -> Pixels {
+        self.scroll_offset_x
+    }
+
+    pub fn max_line_width(&self) -> Pixels {
+        self.max_line_width
     }
 
     fn position_for_mouse(
@@ -1859,6 +1906,23 @@ impl EditorState {
         _window: &Window,
         cx: &mut Context<Self>,
     ) {
+        if self.dragging_h_scrollbar {
+            let max_w = self.max_line_width;
+            let vp = self.scroll_handle.bounds();
+            let gw = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+            let cw = vp.size.width - gw;
+            let scroll_range = max_w - cw;
+
+            if scroll_range > px(0.0) {
+                let track_width = vp.size.width;
+                let click_ratio = (event.position.x - vp.left()) / track_width;
+                let new_scroll = scroll_range * click_ratio;
+                self.scroll_offset_x = new_scroll.max(px(0.0)).min(scroll_range);
+                cx.notify();
+            }
+            return;
+        }
+
         if !self.is_selecting {
             return;
         }
@@ -1878,6 +1942,7 @@ impl EditorState {
 
     fn on_mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, cx: &mut Context<Self>) {
         self.is_selecting = false;
+        self.dragging_h_scrollbar = false;
         self.autoscroll_task = None;
         self.last_mouse_pos = None;
         cx.notify();
@@ -2168,10 +2233,31 @@ impl Element for EditorElement {
         let total = self.state.read(cx).total_lines();
         let last_visible_line = min(first_visible_line + visible_lines, total);
 
-        let (cursor, selection, show_line_numbers) = {
+        let (cursor, selection, show_line_numbers, scroll_offset_x) = {
             let state = self.state.read(cx);
-            (state.cursor, state.selection, state.show_line_numbers)
+            (state.cursor, state.selection, state.show_line_numbers, state.scroll_offset_x)
         };
+
+        if show_line_numbers {
+            let gutter_bg = Bounds {
+                origin: bounds.origin,
+                size: Size {
+                    width: gutter_width,
+                    height: bounds.size.height,
+                },
+            };
+            window.paint_quad(PaintQuad {
+                bounds: gutter_bg,
+                corner_radii: Corners::default(),
+                background: theme.tokens.background.into(),
+                border_widths: Edges::default(),
+                border_color: Hsla::transparent_black(),
+                border_style: BorderStyle::default(),
+                continuous_corners: false,
+                transform: Default::default(),
+                blend_mode: Default::default(),
+            });
+        }
 
         let highlight_spans =
             self.collect_highlight_spans(first_visible_line, last_visible_line, cx);
@@ -2179,10 +2265,10 @@ impl Element for EditorElement {
         let text_style = window.text_style();
         let mut shaped_layouts: Vec<(usize, Option<ShapedLine>)> =
             Vec::with_capacity(last_visible_line - first_visible_line);
+        let mut max_line_width = px(0.0);
 
         for line_idx in first_visible_line..last_visible_line {
             let y = bounds.top() + padding_top + line_height * line_idx as f32;
-            let line_text = self.state.read(cx).line_text(line_idx);
 
             if show_line_numbers {
                 let line_num_text = format!("{:>4}", line_idx + 1);
@@ -2203,6 +2289,23 @@ impl Element for EditorElement {
                 let _ = shaped.paint(point(bounds.left() + px(6.0), y), line_height, window, cx);
             }
 
+            let cached_line = self.state.read(cx).line_layouts.get(&line_idx).cloned();
+            if let Some(cached) = cached_line {
+                let line_width = cached.x_for_index(cached.len());
+                if line_width > max_line_width {
+                    max_line_width = line_width;
+                }
+                let _ = cached.paint(
+                    point(bounds.left() + gutter_width - scroll_offset_x, y),
+                    line_height,
+                    window,
+                    cx,
+                );
+                continue;
+            }
+
+            let line_text = self.state.read(cx).line_text(line_idx);
+
             if line_text.is_empty() {
                 shaped_layouts.push((line_idx, None));
                 continue;
@@ -2211,13 +2314,19 @@ impl Element for EditorElement {
             let text_runs =
                 self.build_text_runs(&line_text, line_idx, &highlight_spans, &text_style, &theme);
 
+            let line_len = line_text.len();
             let shaped =
                 window
                     .text_system()
                     .shape_line(line_text.into(), font_size, &text_runs, None);
 
+            let line_width = shaped.x_for_index(line_len);
+            if line_width > max_line_width {
+                max_line_width = line_width;
+            }
+
             let _ = shaped.paint(
-                point(bounds.left() + gutter_width, y),
+                point(bounds.left() + gutter_width - scroll_offset_x, y),
                 line_height,
                 window,
                 cx,
@@ -2227,11 +2336,16 @@ impl Element for EditorElement {
         }
 
         self.state.update(cx, |state, _| {
-            state.line_layouts.clear();
+            state.line_layouts.retain(|&line_idx, _| {
+                line_idx >= first_visible_line && line_idx < last_visible_line
+            });
             for (idx, layout) in shaped_layouts {
                 if let Some(shaped) = layout {
                     state.line_layouts.insert(idx, shaped);
                 }
+            }
+            if max_line_width > state.max_line_width {
+                state.max_line_width = max_line_width;
             }
         });
 
@@ -2254,9 +2368,9 @@ impl Element for EditorElement {
                     if let Some(layout) = self.state.read(cx).line_layouts.get(&line_idx) {
                         let x_start = layout.x_for_index(start_col);
                         let x_end = layout.x_for_index(end_col);
-                        (bounds.left() + gutter_width + x_start, x_end - x_start)
+                        (bounds.left() + gutter_width + x_start - scroll_offset_x, x_end - x_start)
                     } else {
-                        (bounds.left() + gutter_width, px(0.0))
+                        (bounds.left() + gutter_width - scroll_offset_x, px(0.0))
                     };
 
                 window.paint_quad(fill(
@@ -2294,7 +2408,7 @@ impl Element for EditorElement {
                     let (hx, hw) = if let Some(layout) = state.line_layouts.get(&line_idx) {
                         let x_start = layout.x_for_index(sc);
                         let x_end = layout.x_for_index(ec);
-                        (bounds.left() + gutter_width + x_start, x_end - x_start)
+                        (bounds.left() + gutter_width + x_start - scroll_offset_x, x_end - x_start)
                     } else {
                         continue;
                     };
@@ -2316,9 +2430,9 @@ impl Element for EditorElement {
             let cursor_y = bounds.top() + padding_top + line_height * cursor.line as f32;
             let cursor_x =
                 if let Some(layout) = self.state.read(cx).line_layouts.get(&cursor.line) {
-                    bounds.left() + gutter_width + layout.x_for_index(cursor_col)
+                    bounds.left() + gutter_width + layout.x_for_index(cursor_col) - scroll_offset_x
                 } else {
-                    bounds.left() + gutter_width
+                    bounds.left() + gutter_width - scroll_offset_x
                 };
 
             window.paint_quad(fill(
@@ -2663,6 +2777,130 @@ impl RenderOnce for Editor {
                 MouseButton::Left,
                 window.listener_for(&self.state, EditorState::on_mouse_up),
             )
-            .child(scrollable_vertical(self.state.clone()).with_scroll_handle(scroll_handle))
+            .on_scroll_wheel({
+                let state = self.state.clone();
+                move |event: &ScrollWheelEvent, _window: &mut Window, cx: &mut App| {
+                    let delta_x = match event.delta {
+                        ScrollDelta::Pixels(p) => p.x,
+                        ScrollDelta::Lines(l) => px(l.x * 20.0),
+                    };
+                    if delta_x.abs() > px(0.5) {
+                        state.update(cx, |s, cx| {
+                            s.scroll_horizontal(-delta_x, cx);
+                        });
+                    }
+                }
+            })
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .size_full()
+                    .child(
+                        div()
+                            .flex_1()
+                            .overflow_hidden()
+                            .child(scrollable_vertical(self.state.clone()).with_scroll_handle(scroll_handle))
+                    )
+                    .child(HorizontalScrollbar::new(self.state.clone(), cx))
+            )
+    }
+}
+
+struct HorizontalScrollbar {
+    state: Entity<EditorState>,
+    needs_scrollbar: bool,
+    thumb_width_pct: f32,
+    thumb_left_pct: f32,
+    show_line_numbers: bool,
+}
+
+impl HorizontalScrollbar {
+    fn new(state: Entity<EditorState>, cx: &App) -> Self {
+        let s = state.read(cx);
+        let max_width = s.max_line_width;
+        let scroll_x = s.scroll_offset_x;
+        let viewport_bounds = s.scroll_handle.bounds();
+        let gutter_width = if s.show_line_numbers { px(60.0) } else { px(12.0) };
+        let content_width = viewport_bounds.size.width - gutter_width;
+        let show_line_numbers = s.show_line_numbers;
+
+        let needs_scrollbar = max_width > content_width && content_width > px(0.0);
+
+        let (thumb_width_pct, thumb_left_pct) = if needs_scrollbar {
+            let visible_ratio = (content_width / max_width).min(1.0);
+            let twp = (visible_ratio * 100.0).max(5.0);
+            let scroll_range = max_width - content_width;
+            let tlp = if scroll_range > px(0.0) {
+                ((scroll_x / scroll_range) * (100.0 - twp)).max(0.0)
+            } else {
+                0.0
+            };
+            (twp, tlp)
+        } else {
+            (0.0, 0.0)
+        };
+
+        Self {
+            state,
+            needs_scrollbar,
+            thumb_width_pct,
+            thumb_left_pct,
+            show_line_numbers,
+        }
+    }
+}
+
+impl IntoElement for HorizontalScrollbar {
+    type Element = AnyElement;
+
+    fn into_element(self) -> Self::Element {
+        if !self.needs_scrollbar {
+            return div().h(px(0.0)).into_any_element();
+        }
+
+        let theme = use_theme();
+        let editor_state = self.state.clone();
+
+        div()
+            .id("h-scrollbar")
+            .w_full()
+            .h(px(12.0))
+            .bg(theme.tokens.muted.opacity(0.3))
+            .cursor(CursorStyle::PointingHand)
+            .on_mouse_down(MouseButton::Left, {
+                let state = editor_state.clone();
+                move |event: &MouseDownEvent, _window, cx| {
+                    cx.stop_propagation();
+                    state.update(cx, |s, cx| {
+                        s.dragging_h_scrollbar = true;
+                        let max_w = s.max_line_width;
+                        let vp = s.scroll_handle.bounds();
+                        let gw = if s.show_line_numbers { px(60.0) } else { px(12.0) };
+                        let cw = vp.size.width - gw;
+                        let scroll_range = max_w - cw;
+
+                        if scroll_range > px(0.0) {
+                            let track_width = vp.size.width;
+                            let click_ratio = (event.position.x - vp.left()) / track_width;
+                            let new_scroll = scroll_range * click_ratio;
+                            s.scroll_offset_x = new_scroll.max(px(0.0)).min(scroll_range);
+                        }
+                        cx.notify();
+                    });
+                }
+            })
+            .child(
+                div()
+                    .absolute()
+                    .top(px(2.0))
+                    .bottom(px(2.0))
+                    .left(relative(self.thumb_left_pct / 100.0))
+                    .w(relative(self.thumb_width_pct / 100.0))
+                    .bg(theme.tokens.muted_foreground.opacity(0.6))
+                    .rounded(px(3.0))
+                    .hover(|s| s.bg(theme.tokens.muted_foreground.opacity(0.8))),
+            )
+            .into_any_element()
     }
 }

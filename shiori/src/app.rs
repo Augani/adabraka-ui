@@ -102,6 +102,7 @@ pub struct AppState {
     cached_symbols: Vec<CompletionItem>,
     last_symbol_update_line: usize,
     suppress_completion: bool,
+    last_content_version: u64,
 }
 
 struct TabMeta {
@@ -215,6 +216,7 @@ impl AppState {
             cached_symbols: Vec::new(),
             last_symbol_update_line: usize::MAX,
             suppress_completion: false,
+            last_content_version: 0,
         }
     }
 
@@ -372,18 +374,18 @@ impl AppState {
             return;
         }
 
-        let completion_visible = self.completion_state.read(cx).is_visible();
+        let state = buffer.read(cx);
+        let content_version = state.content_version();
 
-        let (cursor, word_info, anchor, language, content, tree_exists) = {
-            let state = buffer.read(cx);
-            let cursor = state.cursor();
-            let word_info = state.word_at_cursor();
-            let anchor = state.cursor_screen_position(px(20.0));
-            let language = state.language();
-            let content = state.content();
-            let tree_exists = state.syntax_tree().is_some();
-            (cursor, word_info, anchor, language, content, tree_exists)
-        };
+        if content_version == self.last_content_version {
+            return;
+        }
+        self.last_content_version = content_version;
+
+        let completion_visible = self.completion_state.read(cx).is_visible();
+        let cursor = state.cursor();
+        let word_info = state.word_at_cursor();
+        let anchor = state.cursor_screen_position(px(20.0));
 
         if completion_visible {
             let trigger_line = self.completion_state.read(cx).trigger_line();
@@ -405,9 +407,14 @@ impl AppState {
                 self.completion_state.update(cx, |s, cx| s.dismiss(cx));
             }
         } else if let Some((word, word_start)) = word_info {
+            let state = buffer.read(cx);
+            let tree_exists = state.syntax_tree().is_some();
+
             if word.len() >= 2 && tree_exists {
                 if self.last_symbol_update_line != cursor.line {
-                    if let Some(tree) = buffer.read(cx).syntax_tree() {
+                    if let Some(tree) = state.syntax_tree() {
+                        let content = state.content();
+                        let language = state.language();
                         let symbols = extract_symbols(tree, &content, language);
                         self.cached_symbols =
                             symbols.into_iter().map(CompletionItem::from).collect();

@@ -11,3 +11,8 @@ path = "src/main.rs"
 adabraka-ui = { path = "..", features = ["editor-languages"] }
 gpui = { package = "adabraka-gpui", version = "0.3", path = "../../adabraka-gpui/crates/gpui" }
 smol = "2.0.2"
+portable-pty = "0.8"
+flume = "0.11"
+thiserror = "2.0"
+tree-sitter = "0.25.10"
+unicode-width = "0.2"

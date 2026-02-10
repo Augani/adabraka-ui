@@ -40,6 +40,7 @@ actions!(
         CloseGotoLine,
         ToggleSidebar,
         ToggleTerminal,
+        ToggleTerminalFullscreen,
         NewTerminal,
         CompletionUp,
         CompletionDown,
@@ -64,6 +65,7 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-shift-o", OpenFolder, Some("ShioriApp")),
         KeyBinding::new("cmd-b", ToggleSidebar, Some("ShioriApp")),
         KeyBinding::new("cmd-`", ToggleTerminal, Some("ShioriApp")),
+        KeyBinding::new("cmd-shift-enter", ToggleTerminalFullscreen, Some("ShioriApp")),
         KeyBinding::new("ctrl-.", TriggerCompletion, Some("ShioriApp")),
         KeyBinding::new("up", CompletionUp, Some("ShioriApp")),
         KeyBinding::new("down", CompletionDown, Some("ShioriApp")),
@@ -97,6 +99,7 @@ pub struct AppState {
     terminals: Vec<Entity<TerminalView>>,
     active_terminal: usize,
     terminal_visible: bool,
+    terminal_fullscreen: bool,
     terminal_resizable_state: Entity<ResizableState>,
     completion_state: Entity<CompletionState>,
     cached_symbols: Vec<CompletionItem>,
@@ -211,6 +214,7 @@ impl AppState {
             terminals: Vec::new(),
             active_terminal: 0,
             terminal_visible: false,
+            terminal_fullscreen: false,
             terminal_resizable_state,
             completion_state,
             cached_symbols: Vec::new(),
@@ -1027,9 +1031,21 @@ impl AppState {
         self.terminals.remove(idx);
         if self.terminals.is_empty() {
             self.terminal_visible = false;
+            self.terminal_fullscreen = false;
             self.active_terminal = 0;
         } else if self.active_terminal >= self.terminals.len() {
             self.active_terminal = self.terminals.len() - 1;
+        }
+        cx.notify();
+    }
+
+    fn toggle_terminal_fullscreen(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.terminals.is_empty() {
+            self.new_terminal(window, cx);
+        }
+        self.terminal_fullscreen = !self.terminal_fullscreen;
+        if self.terminal_fullscreen {
+            self.terminal_visible = true;
         }
         cx.notify();
     }
@@ -1139,6 +1155,29 @@ impl AppState {
                                 this.new_terminal(window, cx);
                             }))
                             .child(Icon::new("plus").size(px(14.0)).color(muted_fg)),
+                    ),
+            )
+            .child(
+                div()
+                    .id("terminal-fullscreen-btn")
+                    .flex_shrink_0()
+                    .h_full()
+                    .flex()
+                    .items_center()
+                    .px(px(8.0))
+                    .cursor_pointer()
+                    .hover(|s| s.bg(muted_bg.opacity(0.5)))
+                    .on_click(cx.listener(|this, _, window, cx| {
+                        this.toggle_terminal_fullscreen(window, cx);
+                    }))
+                    .child(
+                        Icon::new(if self.terminal_fullscreen {
+                            "minimize-2"
+                        } else {
+                            "maximize-2"
+                        })
+                        .size(px(14.0))
+                        .color(muted_fg),
                     ),
             )
             .child(
@@ -1345,7 +1384,23 @@ impl Render for AppState {
                 .into_any_element()
         };
 
-        let main_content = if terminal_visible {
+        let main_content = if self.terminal_fullscreen {
+            let terminal_tab_bar = self.render_terminal_tab_bar(cx);
+            let active_terminal = self.terminals.get(self.active_terminal).cloned();
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .flex()
+                .flex_col()
+                .child(terminal_tab_bar)
+                .child(
+                    div()
+                        .flex_1()
+                        .overflow_hidden()
+                        .children(active_terminal),
+                )
+                .into_any_element()
+        } else if terminal_visible {
             let terminal_tab_bar = self.render_terminal_tab_bar(cx);
             let active_terminal = self.terminals.get(self.active_terminal).cloned();
             div()
@@ -1483,6 +1538,9 @@ impl Render for AppState {
             .on_action(cx.listener(|this, _: &ToggleTerminal, window, cx| {
                 this.toggle_terminal(window, cx);
             }))
+            .on_action(cx.listener(|this, _: &ToggleTerminalFullscreen, window, cx| {
+                this.toggle_terminal_fullscreen(window, cx);
+            }))
             .on_action(cx.listener(|this, _: &NewTerminal, window, cx| {
                 this.new_terminal(window, cx);
             }))
@@ -1558,29 +1616,33 @@ impl Render for AppState {
             .flex()
             .flex_col()
             .bg(theme.tokens.background)
-            .child(
-                div()
-                    .w_full()
-                    .h(px(36.0))
-                    .flex()
-                    .items_center()
-                    .bg(theme.tokens.muted.opacity(0.3))
-                    .border_b_1()
-                    .border_color(theme.tokens.border)
-                    .child(self.render_tab_bar(cx))
-                    .child(self.render_theme_button(cx)),
-            )
-            .when(self.theme_selector_open, |el| {
+            .when(!self.terminal_fullscreen, |el| {
+                el.child(
+                    div()
+                        .w_full()
+                        .h(px(36.0))
+                        .flex()
+                        .items_center()
+                        .bg(theme.tokens.muted.opacity(0.3))
+                        .border_b_1()
+                        .border_color(theme.tokens.border)
+                        .child(self.render_tab_bar(cx))
+                        .child(self.render_theme_button(cx)),
+                )
+            })
+            .when(self.theme_selector_open && !self.terminal_fullscreen, |el| {
                 el.child(self.render_theme_panel(cx))
             })
-            .when(search_visible, |el| {
+            .when(search_visible && !self.terminal_fullscreen, |el| {
                 el.child(self.search_bar.clone())
             })
-            .when(goto_visible, |el| {
+            .when(goto_visible && !self.terminal_fullscreen, |el| {
                 el.child(self.render_goto_line(cx))
             })
             .child(main_content)
-            .children(status)
+            .when(!self.terminal_fullscreen, |el| {
+                el.children(status)
+            })
             .child({
                 let app_entity = cx.entity().clone();
                 CompletionMenu::new(self.completion_state.clone()).on_accept(move |_, cx| {

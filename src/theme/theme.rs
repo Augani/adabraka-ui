@@ -44,6 +44,31 @@ pub enum ThemeVariant {
     CherryBlossom,
 }
 
+impl ThemeVariant {
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            Self::Light => "Light",
+            Self::Dark => "Dark",
+            Self::MidnightBlue => "Midnight Blue",
+            Self::ForestGrove => "Forest Grove",
+            Self::SunsetAmber => "Sunset Amber",
+            Self::OceanBreeze => "Ocean Breeze",
+            Self::Dracula => "Dracula",
+            Self::Nord => "Nord",
+            Self::MonokaiPro => "Monokai Pro",
+            Self::TokyoNight => "Tokyo Night",
+            Self::CatppuccinMocha => "Catppuccin Mocha",
+            Self::RosePine => "Rose Pine",
+            Self::CoralReef => "Coral Reef",
+            Self::LavenderDreams => "Lavender Dreams",
+            Self::MintFresh => "Mint Fresh",
+            Self::PeachyKeen => "Peachy Keen",
+            Self::SkyBlue => "Sky Blue",
+            Self::CherryBlossom => "Cherry Blossom",
+        }
+    }
+}
+
 /// GPUI-accessible theme wrapper
 #[derive(Clone, Debug)]
 pub struct Theme {
@@ -159,6 +184,29 @@ impl Theme {
             variant: ThemeVariant::CherryBlossom,
             tokens: ThemeTokens::cherry_blossom(),
         }
+    }
+
+    pub fn all() -> Vec<Theme> {
+        vec![
+            Self::dark(),
+            Self::light(),
+            Self::midnight_blue(),
+            Self::forest_grove(),
+            Self::sunset_amber(),
+            Self::ocean_breeze(),
+            Self::dracula(),
+            Self::nord(),
+            Self::monokai_pro(),
+            Self::tokyo_night(),
+            Self::catppuccin_mocha(),
+            Self::rose_pine(),
+            Self::coral_reef(),
+            Self::lavender_dreams(),
+            Self::mint_fresh(),
+            Self::peachy_keen(),
+            Self::sky_blue(),
+            Self::cherry_blossom(),
+        ]
     }
 }
 

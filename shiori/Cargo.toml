@@ -1,0 +1,13 @@
+[package]
+name = "shiori"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "shiori"
+path = "src/main.rs"
+
+[dependencies]
+adabraka-ui = { path = "..", features = ["editor-languages"] }
+gpui = { package = "adabraka-gpui", version = "0.3", path = "../../adabraka-gpui/crates/gpui" }
+smol = "2.0.2"

@@ -99,10 +99,31 @@ impl PtyService {
         let mut cmd = CommandBuilder::new(&shell);
         cmd.cwd(&self.working_directory);
 
-        if let Ok(term) = std::env::var("TERM") {
-            cmd.env("TERM", term);
+        cmd.env("TERM", "xterm-256color");
+        cmd.env("COLORTERM", "truecolor");
+        cmd.env("TERM_PROGRAM", "Shiori");
+        cmd.env("TERM_PROGRAM_VERSION", "0.1.0");
+
+        if let Ok(lang) = std::env::var("LANG") {
+            cmd.env("LANG", lang);
         } else {
-            cmd.env("TERM", "xterm-256color");
+            cmd.env("LANG", "en_US.UTF-8");
+        }
+        if let Ok(lc) = std::env::var("LC_ALL") {
+            cmd.env("LC_ALL", lc);
+        }
+
+        if let Ok(home) = std::env::var("HOME") {
+            cmd.env("HOME", home);
+        }
+        if let Ok(path) = std::env::var("PATH") {
+            cmd.env("PATH", path);
+        }
+        if let Ok(user) = std::env::var("USER") {
+            cmd.env("USER", user);
+        }
+        if let Ok(shell_env) = std::env::var("SHELL") {
+            cmd.env("SHELL", shell_env);
         }
 
         let _child = pty_pair

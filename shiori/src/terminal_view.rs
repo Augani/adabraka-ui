@@ -212,6 +212,9 @@ impl TerminalView {
             ParsedSegment::OriginMode(enabled) => self.state.set_origin_mode(enabled),
             ParsedSegment::AutoWrap(enabled) => self.state.set_autowrap(enabled),
             ParsedSegment::InsertMode(enabled) => self.state.set_insert_mode(enabled),
+            ParsedSegment::ApplicationCursorKeys(enabled) => {
+                self.state.set_application_cursor_keys(enabled)
+            }
             ParsedSegment::Reset => self.state.reset(),
         }
     }
@@ -281,18 +284,37 @@ impl TerminalView {
 
         let key = event.keystroke.key.as_str();
 
+        let app_cursor = self.state.application_cursor_keys();
         let handled = match key {
             "enter" => { self.send_input(key_codes::ENTER); true }
             "tab" => { self.send_input(key_codes::TAB); true }
             "backspace" => { self.send_input(key_codes::BACKSPACE); true }
             "escape" => { self.send_input(key_codes::ESCAPE); true }
             "delete" => { self.send_input(key_codes::DELETE); true }
-            "up" => { self.send_input(key_codes::UP); true }
-            "down" => { self.send_input(key_codes::DOWN); true }
-            "left" => { self.send_input(key_codes::LEFT); true }
-            "right" => { self.send_input(key_codes::RIGHT); true }
-            "home" => { self.send_input(key_codes::HOME); true }
-            "end" => { self.send_input(key_codes::END); true }
+            "up" => {
+                if app_cursor { self.send_input(b"\x1bOA"); } else { self.send_input(key_codes::UP); }
+                true
+            }
+            "down" => {
+                if app_cursor { self.send_input(b"\x1bOB"); } else { self.send_input(key_codes::DOWN); }
+                true
+            }
+            "right" => {
+                if app_cursor { self.send_input(b"\x1bOC"); } else { self.send_input(key_codes::RIGHT); }
+                true
+            }
+            "left" => {
+                if app_cursor { self.send_input(b"\x1bOD"); } else { self.send_input(key_codes::LEFT); }
+                true
+            }
+            "home" => {
+                if app_cursor { self.send_input(b"\x1bOH"); } else { self.send_input(key_codes::HOME); }
+                true
+            }
+            "end" => {
+                if app_cursor { self.send_input(b"\x1bOF"); } else { self.send_input(key_codes::END); }
+                true
+            }
             "pageup" => { self.send_input(key_codes::PAGE_UP); true }
             "pagedown" => { self.send_input(key_codes::PAGE_DOWN); true }
             "insert" => { self.send_input(b"\x1b[2~"); true }
@@ -377,7 +399,7 @@ impl TerminalView {
         let lines = delta_y.abs().ceil() as usize;
         let lines = lines.max(1);
 
-        if delta_y < 0.0 {
+        if delta_y > 0.0 {
             self.scroll_up(lines);
         } else {
             self.scroll_down(lines);

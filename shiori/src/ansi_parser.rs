@@ -167,6 +167,7 @@ pub enum ParsedSegment {
     OriginMode(bool),
     AutoWrap(bool),
     InsertMode(bool),
+    ApplicationCursorKeys(bool),
     Reset,
 }
 
@@ -671,8 +672,16 @@ impl AnsiParser {
             b'u' => {
                 segments.push(ParsedSegment::CursorRestore);
             }
-            b'n' => {}
+            b'c' => {
+                // DA - Device Attributes query - we don't respond but ignore it
+            }
+            b'n' => {
+                // DSR - Device Status Report - we don't respond but ignore it
+            }
             b't' => {}
+            b'q' => {
+                // DECSCUSR - Set Cursor Style (ignore, handled via private modes)
+            }
             _ => {}
         }
     }
@@ -682,7 +691,9 @@ impl AnsiParser {
 
         for &param in &self.params {
             match param {
-                1 => {}
+                1 => {
+                    segments.push(ParsedSegment::ApplicationCursorKeys(enabled));
+                }
                 6 => {
                     segments.push(ParsedSegment::OriginMode(enabled));
                 }

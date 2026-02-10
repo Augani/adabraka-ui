@@ -303,6 +303,7 @@ pub struct TerminalState {
     bracketed_paste: bool,
     mouse_tracking: bool,
     focus_tracking: bool,
+    application_cursor_keys: bool,
 
     user_scrolled: bool,
 
@@ -358,6 +359,7 @@ impl TerminalState {
             bracketed_paste: false,
             mouse_tracking: false,
             focus_tracking: false,
+            application_cursor_keys: false,
             user_scrolled: false,
             tabs,
         }
@@ -466,6 +468,14 @@ impl TerminalState {
 
     pub fn set_focus_tracking(&mut self, enabled: bool) {
         self.focus_tracking = enabled;
+    }
+
+    pub fn application_cursor_keys(&self) -> bool {
+        self.application_cursor_keys
+    }
+
+    pub fn set_application_cursor_keys(&mut self, enabled: bool) {
+        self.application_cursor_keys = enabled;
     }
 
     pub fn line(&self, index: usize) -> Option<&TerminalLine> {

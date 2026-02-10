@@ -4,6 +4,10 @@ use adabraka_ui::components::input::{Input, InputEvent, InputState};
 use adabraka_ui::theme::use_theme;
 use gpui::prelude::FluentBuilder as _;
 use gpui::*;
+use smol::Timer;
+use std::time::Duration;
+
+const SEARCH_DEBOUNCE: Duration = Duration::from_millis(150);
 
 actions!(
     search_bar,
@@ -34,6 +38,8 @@ pub struct SearchBar {
     #[allow(dead_code)]
     pub visible: bool,
     dismiss_callback: Option<Box<dyn Fn(&mut App)>>,
+    search_task: Option<Task<()>>,
+    last_query: SharedString,
 }
 
 impl SearchBar {
@@ -43,14 +49,41 @@ impl SearchBar {
 
         cx.subscribe(&find_input, |this, _input, event, cx| {
             if matches!(event, InputEvent::Change) {
-                let query = this.find_input.read(cx).content().to_string();
-                if let Some(editor) = &this.editor {
-                    let editor = editor.clone();
-                    editor.update(cx, |state, ecx| {
-                        state.find_all(&query, ecx);
-                    });
+                let query = this.find_input.read(cx).content.clone();
+                if query == this.last_query {
+                    return;
                 }
-                cx.notify();
+                this.last_query = query.clone();
+                this.search_task = None;
+                if query.is_empty() {
+                    if let Some(editor) = &this.editor {
+                        let editor = editor.clone();
+                        editor.update(cx, |state, ecx| {
+                            state.find_all("", ecx);
+                        });
+                    }
+                    cx.notify();
+                    return;
+                }
+
+                let bar = cx.entity().clone();
+                let task = cx.spawn(async move |_, cx| {
+                    Timer::after(SEARCH_DEBOUNCE).await;
+                    let _ = bar.update(cx, |this, cx| {
+                        let current = this.find_input.read(cx).content.clone();
+                        if current != query {
+                            return;
+                        }
+                        if let Some(editor) = &this.editor {
+                            let editor = editor.clone();
+                            editor.update(cx, |state, ecx| {
+                                state.find_all(current.as_ref(), ecx);
+                            });
+                        }
+                        cx.notify();
+                    });
+                });
+                this.search_task = Some(task);
             }
         })
         .detach();
@@ -62,11 +95,26 @@ impl SearchBar {
             show_replace: false,
             visible: false,
             dismiss_callback: None,
+            search_task: None,
+            last_query: SharedString::from(""),
         }
     }
 
-    pub fn set_editor(&mut self, editor: Entity<EditorState>, _cx: &mut Context<Self>) {
-        self.editor = Some(editor);
+    pub fn set_editor(&mut self, editor: Entity<EditorState>, cx: &mut Context<Self>) {
+        self.editor = Some(editor.clone());
+        let query = self.find_input.read(cx).content.clone();
+        self.last_query = query.clone();
+        if query.is_empty() {
+            editor.update(cx, |state, ecx| {
+                state.clear_search(ecx);
+            });
+            cx.notify();
+            return;
+        }
+        editor.update(cx, |state, ecx| {
+            state.find_all(query.as_ref(), ecx);
+        });
+        cx.notify();
     }
 
     pub fn set_dismiss<F: Fn(&mut App) + 'static>(&mut self, callback: F) {

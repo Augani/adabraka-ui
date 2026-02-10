@@ -6,8 +6,10 @@ use adabraka_ui::components::input::{Input, InputState};
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::theme::{install_theme, use_theme, Theme};
 use gpui::prelude::FluentBuilder as _;
+use gpui::EntityId;
 use gpui::*;
 use smol::Timer;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
@@ -48,14 +50,23 @@ pub fn init(cx: &mut App) {
 pub struct AppState {
     focus_handle: FocusHandle,
     buffers: Vec<Entity<EditorState>>,
+    buffer_index: HashMap<EntityId, usize>,
     active_tab: usize,
     autosave: AutosaveManager,
+    tab_meta: Vec<TabMeta>,
     search_bar: Entity<SearchBar>,
     search_visible: bool,
     goto_line_visible: bool,
     goto_line_input: Entity<InputState>,
     tab_scroll_offset: usize,
     theme_selector_open: bool,
+}
+
+struct TabMeta {
+    file_path: Option<PathBuf>,
+    file_name: Option<String>,
+    modified: bool,
+    title: SharedString,
 }
 
 impl AppState {
@@ -77,11 +88,17 @@ impl AppState {
             bar
         });
 
+        let mut buffer_index = HashMap::new();
+        buffer_index.insert(buffer.entity_id(), 0);
+        let tab_meta = vec![Self::build_tab_meta(&buffer, 0, cx)];
+
         Self {
             focus_handle,
             buffers: vec![buffer],
+            buffer_index,
             active_tab: 0,
             autosave: AutosaveManager::new(1),
+            tab_meta,
             search_bar,
             search_visible: false,
             goto_line_visible: false,
@@ -89,6 +106,106 @@ impl AppState {
             tab_scroll_offset: 0,
             theme_selector_open: false,
         }
+    }
+
+    fn build_tab_meta(buffer: &Entity<EditorState>, idx: usize, cx: &App) -> TabMeta {
+        let state = buffer.read(cx);
+        let file_path = state.file_path().cloned();
+        let file_name = file_path
+            .as_ref()
+            .and_then(|p| p.file_name())
+            .map(|n| n.to_string_lossy().to_string());
+        let modified = state.is_modified();
+        let title = Self::compose_tab_title(file_name.as_deref(), idx, modified);
+        TabMeta {
+            file_path,
+            file_name,
+            modified,
+            title,
+        }
+    }
+
+    fn compose_tab_title(name: Option<&str>, idx: usize, modified: bool) -> SharedString {
+        let base = match name {
+            Some(name) => name.to_string(),
+            None => format!("Untitled {}", idx + 1),
+        };
+        let title = if modified {
+            format!("{} \u{2022}", base)
+        } else {
+            base
+        };
+        SharedString::from(title)
+    }
+
+    fn update_tab_meta_at(&mut self, idx: usize, cx: &App) {
+        if idx >= self.buffers.len() || idx >= self.tab_meta.len() {
+            return;
+        }
+        let state = self.buffers[idx].read(cx);
+        let file_path = state.file_path();
+        let modified = state.is_modified();
+
+        let meta = &mut self.tab_meta[idx];
+        let mut changed = false;
+
+        let file_path_changed = match (&meta.file_path, file_path) {
+            (Some(prev), Some(current)) => prev != current,
+            (None, None) => false,
+            _ => true,
+        };
+
+        if file_path_changed {
+            meta.file_path = file_path.cloned();
+            meta.file_name = meta
+                .file_path
+                .as_ref()
+                .and_then(|p| p.file_name())
+                .map(|n| n.to_string_lossy().to_string());
+            changed = true;
+        }
+
+        if meta.modified != modified {
+            meta.modified = modified;
+            changed = true;
+        }
+
+        if changed {
+            meta.title = Self::compose_tab_title(meta.file_name.as_deref(), idx, meta.modified);
+        }
+    }
+
+    fn refresh_untitled_titles_from(&mut self, start: usize) {
+        for idx in start..self.tab_meta.len() {
+            if self.tab_meta[idx].file_path.is_none() {
+                let modified = self.tab_meta[idx].modified;
+                self.tab_meta[idx].title = Self::compose_tab_title(None, idx, modified);
+            }
+        }
+    }
+
+    fn add_buffer(&mut self, buffer: Entity<EditorState>, cx: &App) {
+        let idx = self.buffers.len();
+        self.buffer_index.insert(buffer.entity_id(), idx);
+        self.tab_meta.push(Self::build_tab_meta(&buffer, idx, cx));
+        self.buffers.push(buffer);
+        self.autosave.push();
+        self.active_tab = idx;
+    }
+
+    fn remove_buffer_at(&mut self, idx: usize) {
+        if idx >= self.buffers.len() {
+            return;
+        }
+        let buffer = self.buffers.remove(idx);
+        self.tab_meta.remove(idx);
+        self.autosave.remove(idx);
+        self.buffer_index.remove(&buffer.entity_id());
+        for i in idx..self.buffers.len() {
+            let id = self.buffers[i].entity_id();
+            self.buffer_index.insert(id, i);
+        }
+        self.refresh_untitled_titles_from(idx);
     }
 
     pub fn open_paths(&mut self, paths: Vec<PathBuf>, cx: &mut Context<Self>) {
@@ -99,9 +216,7 @@ impl AppState {
                 state
             });
             cx.observe(&buffer, Self::on_buffer_changed).detach();
-            self.buffers.push(buffer);
-            self.autosave.push();
-            self.active_tab = self.buffers.len() - 1;
+            self.add_buffer(buffer, cx);
         }
         self.clamp_tab_scroll();
         self.update_search_editor(cx);
@@ -109,7 +224,8 @@ impl AppState {
     }
 
     fn on_buffer_changed(&mut self, buffer: Entity<EditorState>, cx: &mut Context<Self>) {
-        if let Some(idx) = self.buffers.iter().position(|b| *b == buffer) {
+        if let Some(&idx) = self.buffer_index.get(&buffer.entity_id()) {
+            self.update_tab_meta_at(idx, cx);
             let buf = buffer.clone();
             let task = cx.spawn(async move |_, cx| {
                 Timer::after(AUTOSAVE_DELAY).await;
@@ -160,9 +276,9 @@ impl AppState {
         if self.buffers.len() <= 1 {
             return;
         }
-        self.autosave.cancel(self.active_tab);
-        self.autosave.remove(self.active_tab);
-        self.buffers.remove(self.active_tab);
+        let idx = self.active_tab;
+        self.autosave.cancel(idx);
+        self.remove_buffer_at(idx);
         if self.active_tab >= self.buffers.len() {
             self.active_tab = self.buffers.len().saturating_sub(1);
         }
@@ -193,26 +309,10 @@ impl AppState {
     fn new_file(&mut self, cx: &mut Context<Self>) {
         let buffer = cx.new(|cx| EditorState::new(cx));
         cx.observe(&buffer, Self::on_buffer_changed).detach();
-        self.buffers.push(buffer);
-        self.autosave.push();
-        self.active_tab = self.buffers.len() - 1;
+        self.add_buffer(buffer, cx);
         self.clamp_tab_scroll();
         self.update_search_editor(cx);
         cx.notify();
-    }
-
-    fn tab_title(&self, idx: usize, cx: &App) -> String {
-        let state = self.buffers[idx].read(cx);
-        let name = state
-            .file_path()
-            .and_then(|p| p.file_name())
-            .map(|n| n.to_string_lossy().to_string())
-            .unwrap_or_else(|| format!("Untitled {}", idx + 1));
-        if state.is_modified() {
-            format!("{} \u{2022}", name)
-        } else {
-            name
-        }
     }
 
     fn update_search_editor(&self, cx: &mut Context<Self>) {
@@ -270,8 +370,7 @@ impl AppState {
             return;
         }
         self.autosave.cancel(idx);
-        self.autosave.remove(idx);
-        self.buffers.remove(idx);
+        self.remove_buffer_at(idx);
         if self.active_tab >= self.buffers.len() {
             self.active_tab = self.buffers.len().saturating_sub(1);
         } else if self.active_tab > idx {
@@ -345,7 +444,11 @@ impl AppState {
                             .skip(offset)
                             .map(|(idx, _)| {
                                 let is_active = idx == self.active_tab;
-                                let title = self.tab_title(idx, cx);
+                                let title = self
+                                    .tab_meta
+                                    .get(idx)
+                                    .map(|meta| meta.title.clone())
+                                    .unwrap_or_else(|| SharedString::from("Untitled"));
                                 let can_close = self.buffers.len() > 1;
                                 let active_bg = theme.tokens.background;
 
@@ -403,7 +506,6 @@ impl AppState {
                                         )
                                     })
                             })
-                            .collect::<Vec<_>>(),
                     )
                     .child(
                         div()
@@ -509,6 +611,7 @@ impl AppState {
                 } else {
                     theme.tokens.foreground
                 };
+                let chosen = t.clone();
 
                 div()
                     .id(ElementId::Name(format!("theme-{}", i).into()))
@@ -525,11 +628,7 @@ impl AppState {
                         el.hover(|s| s.bg(theme.tokens.muted.opacity(0.8)))
                     })
                     .on_click(cx.listener(move |this, _, _, cx| {
-                        let chosen =
-                            Theme::all().into_iter().find(|t| t.variant == variant);
-                        if let Some(chosen) = chosen {
-                            install_theme(cx, chosen);
-                        }
+                        install_theme(cx, chosen.clone());
                         this.theme_selector_open = false;
                         cx.notify();
                     }))
@@ -571,16 +670,19 @@ impl AppState {
                             .text_size(px(13.0))
                             .on_enter({
                                 let goto_input = self.goto_line_input.clone();
-                                let buffers = self.buffers.clone();
-                                let active_tab = self.active_tab;
+                                let app_entity = cx.entity().clone();
                                 move |_, cx| {
                                     let text = goto_input.read(cx).content().to_string();
                                     if let Ok(line) = text.trim().parse::<usize>() {
-                                        if let Some(buffer) = buffers.get(active_tab) {
-                                            buffer.update(cx, |state, ecx| {
-                                                state.goto_line(line, ecx);
-                                            });
-                                        }
+                                        let _ = app_entity.update(cx, |this, cx| {
+                                            if let Some(buffer) =
+                                                this.buffers.get(this.active_tab)
+                                            {
+                                                buffer.update(cx, |state, ecx| {
+                                                    state.goto_line(line, ecx);
+                                                });
+                                            }
+                                        });
                                     }
                                 }
                             }),

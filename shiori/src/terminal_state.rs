@@ -1,5 +1,6 @@
 use gpui::Rgba;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 pub const DEFAULT_COLS: usize = 80;
 pub const DEFAULT_ROWS: usize = 24;
@@ -12,6 +13,8 @@ pub struct CellStyle {
     pub bold: bool,
     pub italic: bool,
     pub underline: bool,
+    pub underline_style: UnderlineStyle,
+    pub underline_color: Option<Rgba>,
     pub strikethrough: bool,
     pub dim: bool,
     pub inverse: bool,
@@ -37,6 +40,8 @@ impl Default for CellStyle {
             bold: false,
             italic: false,
             underline: false,
+            underline_style: UnderlineStyle::None,
+            underline_color: None,
             strikethrough: false,
             dim: false,
             inverse: false,
@@ -81,12 +86,36 @@ impl CellStyle {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq)]
+pub enum ImageCellKind {
+    #[default]
+    None,
+    Anchor(u32),
+    Continuation(u32),
+}
+
+#[derive(Clone, Debug)]
+pub struct TerminalImage {
+    pub id: u32,
+    pub data: Arc<gpui::Image>,
+    pub display_cols: usize,
+    pub display_rows: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct ImagePlacement {
+    pub image: Arc<TerminalImage>,
+    pub anchor_line: usize,
+    pub anchor_col: usize,
+}
+
 #[derive(Clone, Debug)]
 pub struct TerminalCell {
     pub char: char,
     pub style: CellStyle,
     pub width: u8,
     pub hyperlink: Option<String>,
+    pub image_cell: ImageCellKind,
 }
 
 impl Default for TerminalCell {
@@ -96,6 +125,7 @@ impl Default for TerminalCell {
             style: CellStyle::default(),
             width: 1,
             hyperlink: None,
+            image_cell: ImageCellKind::None,
         }
     }
 }
@@ -112,6 +142,7 @@ impl TerminalCell {
             style,
             width,
             hyperlink: None,
+            image_cell: ImageCellKind::None,
         }
     }
 
@@ -186,6 +217,7 @@ impl TerminalLine {
                 style: style.clone(),
                 width: 1,
                 hyperlink: None,
+                image_cell: ImageCellKind::None,
             };
         }
     }
@@ -205,6 +237,7 @@ impl TerminalLine {
                 style: style.clone(),
                 width: 1,
                 hyperlink: None,
+                image_cell: ImageCellKind::None,
             };
         }
     }
@@ -248,6 +281,7 @@ impl TerminalLine {
                 style: style.clone(),
                 width: 1,
                 hyperlink: None,
+                image_cell: ImageCellKind::None,
             };
         }
     }
@@ -319,6 +353,17 @@ impl CursorPosition {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum UnderlineStyle {
+    #[default]
+    None,
+    Single,
+    Double,
+    Curly,
+    Dotted,
+    Dashed,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CursorStyle {
     Block,
@@ -369,7 +414,8 @@ pub struct TerminalState {
     use_alt_screen: bool,
 
     bracketed_paste: bool,
-    mouse_tracking: bool,
+    mouse_mode: u16,
+    sgr_mouse: bool,
     focus_tracking: bool,
     application_cursor_keys: bool,
 
@@ -381,6 +427,9 @@ pub struct TerminalState {
     g1_charset: Charset,
     active_charset: u8,
     current_hyperlink: Option<String>,
+
+    image_placements: Vec<ImagePlacement>,
+    next_image_id: u32,
 }
 
 #[derive(Clone, Debug)]
@@ -430,7 +479,8 @@ impl TerminalState {
             alt_screen: None,
             use_alt_screen: false,
             bracketed_paste: false,
-            mouse_tracking: false,
+            mouse_mode: 0,
+            sgr_mouse: false,
             focus_tracking: false,
             application_cursor_keys: false,
             user_scrolled: false,
@@ -439,6 +489,8 @@ impl TerminalState {
             g1_charset: Charset::Ascii,
             active_charset: 0,
             current_hyperlink: None,
+            image_placements: Vec::new(),
+            next_image_id: 0,
         }
     }
 
@@ -539,8 +591,28 @@ impl TerminalState {
         self.bracketed_paste = enabled;
     }
 
-    pub fn set_mouse_tracking(&mut self, enabled: bool) {
-        self.mouse_tracking = enabled;
+    pub fn mouse_mode(&self) -> u16 {
+        self.mouse_mode
+    }
+
+    pub fn sgr_mouse(&self) -> bool {
+        self.sgr_mouse
+    }
+
+    pub fn mouse_tracking(&self) -> bool {
+        self.mouse_mode > 0
+    }
+
+    pub fn set_mouse_mode(&mut self, mode: u16, enabled: bool) {
+        match mode {
+            1000 | 1002 | 1003 => {
+                self.mouse_mode = if enabled { mode } else { 0 };
+            }
+            1006 | 1015 => {
+                self.sgr_mouse = enabled;
+            }
+            _ => {}
+        }
     }
 
     pub fn focus_tracking(&self) -> bool {
@@ -657,6 +729,7 @@ impl TerminalState {
                         style: CellStyle::default(),
                         width: 0,
                         hyperlink: None,
+                        image_cell: ImageCellKind::None,
                     },
                 );
             }
@@ -751,6 +824,11 @@ impl TerminalState {
             self.lines.push(TerminalLine::new(self.cols));
             while self.lines.len() > self.rows + self.max_scrollback {
                 self.lines.remove(0);
+                for placement in &mut self.image_placements {
+                    placement.anchor_line = placement.anchor_line.saturating_sub(1);
+                }
+                self.image_placements
+                    .retain(|p| p.anchor_line + p.image.display_rows > 0);
             }
         }
     }
@@ -921,6 +999,7 @@ impl TerminalState {
         self.saved_cursor = None;
         self.use_alt_screen = true;
         self.scroll_offset = 0;
+        self.image_placements.clear();
     }
 
     pub fn exit_alt_screen(&mut self) {
@@ -935,13 +1014,34 @@ impl TerminalState {
         }
 
         self.use_alt_screen = false;
+        self.mouse_mode = 0;
+        self.sgr_mouse = false;
+        self.bracketed_paste = false;
+        self.origin_mode = false;
     }
 
     pub fn clear_screen(&mut self) {
-        for line in &mut self.lines {
-            line.clear_with_style(&self.current_style);
+        let start = self.lines.len().saturating_sub(self.rows);
+        for i in start..self.lines.len() {
+            self.lines[i].clear_with_style(&self.current_style);
         }
         self.cursor = CursorPosition::origin();
+        self.image_placements
+            .retain(|p| p.anchor_line + p.image.display_rows <= start);
+    }
+
+    pub fn clear_scrollback(&mut self) {
+        let scrollback = self.lines.len().saturating_sub(self.rows);
+        if scrollback > 0 {
+            self.lines.drain(..scrollback);
+            self.image_placements
+                .retain(|p| p.anchor_line >= scrollback);
+            for placement in &mut self.image_placements {
+                placement.anchor_line -= scrollback;
+            }
+        }
+        self.scroll_offset = 0;
+        self.user_scrolled = false;
     }
 
     pub fn clear_screen_above(&mut self) {
@@ -1077,6 +1177,8 @@ impl TerminalState {
             return;
         }
 
+        let cursor_abs = self.lines.len().saturating_sub(self.rows) + self.cursor.row;
+
         self.cols = cols;
         self.rows = rows;
 
@@ -1088,7 +1190,10 @@ impl TerminalState {
             self.lines.push(TerminalLine::new(cols));
         }
 
-        self.cursor.row = self.cursor.row.min(rows.saturating_sub(1));
+        let new_viewport_start = self.lines.len().saturating_sub(rows);
+        self.cursor.row = cursor_abs
+            .saturating_sub(new_viewport_start)
+            .min(rows.saturating_sub(1));
         self.cursor.col = self.cursor.col.min(cols.saturating_sub(1));
 
         self.scroll_region_top = 0;
@@ -1099,6 +1204,17 @@ impl TerminalState {
         self.tabs.clear();
         for i in (0..cols).step_by(8) {
             self.tabs.push(i);
+        }
+
+        for placement in &mut self.image_placements {
+            if placement.image.display_cols > cols {
+                let clamped_cols = cols.saturating_sub(placement.anchor_col).max(1);
+                let ratio = clamped_cols as f32 / placement.image.display_cols as f32;
+                let new_rows = (placement.image.display_rows as f32 * ratio).ceil() as usize;
+                let image = Arc::make_mut(&mut placement.image);
+                image.display_cols = clamped_cols;
+                image.display_rows = new_rows.max(1);
+            }
         }
     }
 
@@ -1122,12 +1238,88 @@ impl TerminalState {
         self.alt_screen = None;
         self.use_alt_screen = false;
         self.bracketed_paste = false;
-        self.mouse_tracking = false;
+        self.mouse_mode = 0;
+        self.sgr_mouse = false;
         self.focus_tracking = false;
         self.user_scrolled = false;
         self.g0_charset = Charset::Ascii;
         self.g1_charset = Charset::Ascii;
         self.active_charset = 0;
         self.current_hyperlink = None;
+        self.image_placements.clear();
+    }
+
+    pub fn place_image(
+        &mut self,
+        data: Arc<gpui::Image>,
+        display_cols: usize,
+        display_rows: usize,
+    ) {
+        let id = self.next_image_id;
+        self.next_image_id = self.next_image_id.wrapping_add(1);
+
+        let anchor_line = self.viewport_to_absolute(self.cursor.row);
+        let anchor_col = self.cursor.col;
+
+        let image = Arc::new(TerminalImage {
+            id,
+            data,
+            display_cols,
+            display_rows,
+        });
+
+        for row_offset in 0..display_rows {
+            let line_idx = anchor_line + row_offset;
+            while self.lines.len() <= line_idx {
+                self.lines.push(TerminalLine::new(self.cols));
+            }
+            let line = &mut self.lines[line_idx];
+            for col_offset in 0..display_cols {
+                let col = anchor_col + col_offset;
+                if col >= line.len() {
+                    break;
+                }
+                let kind = if row_offset == 0 && col_offset == 0 {
+                    ImageCellKind::Anchor(id)
+                } else {
+                    ImageCellKind::Continuation(id)
+                };
+                line.cells[col].image_cell = kind;
+            }
+        }
+
+        self.image_placements.push(ImagePlacement {
+            image,
+            anchor_line,
+            anchor_col,
+        });
+
+        for _ in 0..display_rows {
+            if self.cursor.row >= self.scroll_region_bottom {
+                self.scroll_up_region();
+            } else if self.cursor.row + 1 < self.rows {
+                self.cursor.row += 1;
+            }
+        }
+        self.cursor.col = 0;
+    }
+
+    pub fn visible_image_placements(&self) -> Vec<&ImagePlacement> {
+        let total = self.lines.len();
+        let viewport_start = total.saturating_sub(self.rows + self.scroll_offset);
+        let viewport_end = total.saturating_sub(self.scroll_offset);
+
+        self.image_placements
+            .iter()
+            .filter(|p| {
+                let img_end = p.anchor_line + p.image.display_rows;
+                p.anchor_line < viewport_end && img_end > viewport_start
+            })
+            .collect()
+    }
+
+    pub fn viewport_start(&self) -> usize {
+        let total = self.lines.len();
+        total.saturating_sub(self.rows + self.scroll_offset)
     }
 }

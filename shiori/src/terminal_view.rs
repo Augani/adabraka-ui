@@ -1,19 +1,24 @@
 use gpui::{
-    div, px, App, ClipboardItem, Context, FocusHandle, Focusable, InteractiveElement, IntoElement,
-    KeyDownEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Render,
-    ScrollWheelEvent, StatefulInteractiveElement, Styled, Subscription, Timer, Window,
+    div, img, point, px, App, ClipboardItem, Context, Font, FontStyle, FontWeight, FocusHandle,
+    Focusable, Image, ImageFormat, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, ObjectFit, ParentElement, Pixels, Point, Render,
+    ScrollWheelEvent, SharedString, StatefulInteractiveElement, Styled, StyledImage, Subscription,
+    Timer, Window,
 };
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use adabraka_ui::theme::use_theme;
 
-use crate::ansi_parser::{AnsiParser, ClearMode, ParsedSegment};
+use crate::ansi_parser::{AnsiParser, ClearMode, ImageDimension, ParsedSegment};
 use crate::pty_service::{key_codes, PtyService};
-use crate::terminal_state::{Charset, CursorStyle, TerminalLine, TerminalState};
+use crate::terminal_state::{
+    Charset, CursorStyle, ImageCellKind, TerminalLine, TerminalState, UnderlineStyle,
+};
 
 const LINE_HEIGHT: f32 = 18.0;
-const CHAR_WIDTH: f32 = 8.6;
+const DEFAULT_CHAR_WIDTH: f32 = 7.8;
 const TERMINAL_PADDING: f32 = 8.0;
 const CURSOR_BLINK_INTERVAL_MS: u64 = 530;
 
@@ -39,6 +44,9 @@ pub struct TerminalView {
     last_click_time: Instant,
     last_click_pos: Option<(usize, usize)>,
     click_count: u8,
+    bell_flash_time: Option<Instant>,
+    content_origin: Point<Pixels>,
+    char_width: f32,
 }
 
 impl TerminalView {
@@ -80,6 +88,9 @@ impl TerminalView {
             last_click_time: Instant::now(),
             last_click_pos: None,
             click_count: 0,
+            bell_flash_time: None,
+            content_origin: point(px(0.0), px(0.0)),
+            char_width: 0.0,
         }
     }
 
@@ -133,6 +144,7 @@ impl TerminalView {
                 .update(cx, |view, cx| {
                     if !view.is_running() {
                         view.polling_started = false;
+                        view.state.set_mouse_mode(1000, false);
                         return false;
                     }
                     view.process_output();
@@ -156,6 +168,7 @@ impl TerminalView {
             pty.stop();
         }
         self.state.set_running(false);
+        self.state.set_mouse_mode(1000, false);
     }
 
     pub fn process_output(&mut self) {
@@ -203,7 +216,8 @@ impl TerminalView {
             ParsedSegment::ClearScreen(mode) => match mode {
                 ClearMode::ToEnd => self.state.clear_to_end_of_screen(),
                 ClearMode::ToStart => self.state.clear_to_start_of_screen(),
-                ClearMode::All | ClearMode::Scrollback => self.state.clear_screen(),
+                ClearMode::All => self.state.clear_screen(),
+                ClearMode::Scrollback => self.state.clear_scrollback(),
             },
             ParsedSegment::ClearLine(mode) => match mode {
                 ClearMode::ToEnd => self.state.clear_to_end_of_line(),
@@ -220,7 +234,9 @@ impl TerminalView {
             ParsedSegment::SetScrollRegion(top, bottom) => self.state.set_scroll_region(top, bottom),
             ParsedSegment::ResetScrollRegion => self.state.reset_scroll_region(),
             ParsedSegment::SetTitle(title) => self.state.set_title(Some(title)),
-            ParsedSegment::Bell => {}
+            ParsedSegment::Bell => {
+                self.bell_flash_time = Some(Instant::now());
+            }
             ParsedSegment::Backspace => self.state.backspace(),
             ParsedSegment::Tab => self.state.tab(),
             ParsedSegment::LineFeed => self.state.line_feed(),
@@ -229,7 +245,7 @@ impl TerminalView {
             ParsedSegment::AltScreenEnter => self.state.enter_alt_screen(),
             ParsedSegment::AltScreenExit => self.state.exit_alt_screen(),
             ParsedSegment::BracketedPasteMode(enabled) => self.state.set_bracketed_paste(enabled),
-            ParsedSegment::MouseTracking(enabled) => self.state.set_mouse_tracking(enabled),
+            ParsedSegment::MouseTracking(mode, enabled) => self.state.set_mouse_mode(mode, enabled),
             ParsedSegment::FocusTracking(enabled) => self.state.set_focus_tracking(enabled),
             ParsedSegment::OriginMode(enabled) => self.state.set_origin_mode(enabled),
             ParsedSegment::AutoWrap(enabled) => self.state.set_autowrap(enabled),
@@ -261,6 +277,25 @@ impl TerminalView {
             ParsedSegment::Notification(title, body) => {
                 self.pending_notification = Some((title, body));
             }
+            ParsedSegment::InlineImage(image_data) => {
+                self.place_inline_image(image_data);
+            }
+            ParsedSegment::DeviceAttributes(level) => {
+                if level == 0 {
+                    self.send_input(b"\x1b[?62;4c");
+                } else {
+                    self.send_input(b"\x1b[>1;1;0c");
+                }
+            }
+            ParsedSegment::CursorPositionReport => {
+                let row = self.state.cursor().row + 1;
+                let col = self.state.cursor().col + 1;
+                let response = format!("\x1b[{};{}R", row, col);
+                self.send_input(response.as_bytes());
+            }
+            ParsedSegment::SetWorkingDirectory(path) => {
+                self.state.set_working_directory(PathBuf::from(path));
+            }
             ParsedSegment::Reset => self.state.reset(),
         }
     }
@@ -275,9 +310,38 @@ impl TerminalView {
         self.send_input(s.as_bytes());
     }
 
+    fn char_width(&self) -> f32 {
+        if self.char_width > 0.0 {
+            self.char_width
+        } else {
+            DEFAULT_CHAR_WIDTH
+        }
+    }
+
+    fn measure_char_width(&mut self, window: &Window) {
+        if self.char_width > 0.0 {
+            return;
+        }
+        let font = Font {
+            family: SharedString::from("JetBrains Mono"),
+            features: Default::default(),
+            fallbacks: None,
+            weight: FontWeight::NORMAL,
+            style: FontStyle::Normal,
+        };
+        let font_id = window.text_system().resolve_font(&font);
+        if let Ok(advance) = window.text_system().em_advance(font_id, px(13.0)) {
+            let w = f32::from(advance);
+            if w > 0.0 {
+                self.char_width = w;
+            }
+        }
+    }
+
     fn calculate_cols(&self) -> usize {
+        let cw = self.char_width();
         let available = self.viewport_width - TERMINAL_PADDING * 2.0 - 12.0;
-        ((available / CHAR_WIDTH).floor() as usize).max(20)
+        ((available / cw).floor() as usize).max(20)
     }
 
     fn calculate_rows(&self) -> usize {
@@ -414,10 +478,32 @@ impl TerminalView {
                     self.send_str(key_char);
                     self.clear_selection();
                 }
-            } else if !event.keystroke.modifiers.platform
-                && !event.keystroke.modifiers.control
-                && !event.keystroke.modifiers.alt
-            {
+            } else if event.keystroke.modifiers.platform {
+                match key {
+                    "c" => {
+                        if self.has_selection() {
+                            self.copy_selection(cx);
+                        } else {
+                            self.send_input(&[0x03]);
+                        }
+                    }
+                    "v" => {
+                        self.paste_from_clipboard(cx);
+                    }
+                    "d" => {
+                        self.send_input(&[0x04]);
+                    }
+                    _ => {}
+                }
+            } else if event.keystroke.modifiers.control {
+                if key.len() == 1 {
+                    let c = key.as_bytes()[0];
+                    if c.is_ascii_alphabetic() {
+                        let ctrl_code = (c.to_ascii_lowercase()) - b'a' + 1;
+                        self.send_input(&[ctrl_code]);
+                    }
+                }
+            } else if !event.keystroke.modifiers.alt {
                 if key == "space" {
                     self.send_input(b" ");
                     self.clear_selection();
@@ -442,6 +528,16 @@ impl TerminalView {
             gpui::ScrollDelta::Pixels(pixels) => f32::from(pixels.y) / LINE_HEIGHT,
         };
 
+        if self.state.mouse_tracking() && !event.modifiers.shift {
+            let (row, col) = self.mouse_grid_position(event.position);
+            let button = if delta_y > 0.0 { 64 } else { 65 };
+            let ticks = delta_y.abs().ceil() as usize;
+            for _ in 0..ticks.max(1) {
+                self.send_mouse_event(button, col, row, true);
+            }
+            return;
+        }
+
         let lines = delta_y.abs().ceil() as usize;
         let lines = lines.max(1);
 
@@ -459,6 +555,18 @@ impl TerminalView {
         cx: &mut Context<Self>,
     ) {
         window.focus(&self.focus_handle);
+
+        if self.state.mouse_tracking() && !event.modifiers.shift {
+            let (row, col) = self.mouse_grid_position(event.position);
+            let button = match event.button {
+                MouseButton::Left => 0,
+                MouseButton::Middle => 1,
+                MouseButton::Right => 2,
+                _ => 0,
+            };
+            self.send_mouse_event(button, col, row, true);
+            return;
+        }
 
         if event.button == MouseButton::Left {
             let (line, col) = self.position_from_mouse(event.position);
@@ -561,7 +669,17 @@ impl TerminalView {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        if self.is_selecting {
+        if self.state.mouse_mode() >= 1002 && !event.modifiers.shift {
+            let (row, col) = self.mouse_grid_position(event.position);
+            self.send_mouse_event(32, col, row, true);
+            return;
+        }
+
+        let dragging = self.is_selecting
+            || (event.pressed_button == Some(MouseButton::Left) && self.selection_start.is_some());
+
+        if dragging {
+            self.is_selecting = true;
             let (line, col) = self.position_from_mouse(event.position);
             self.selection_end = Some((line, col));
             cx.notify();
@@ -574,17 +692,59 @@ impl TerminalView {
         _window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self.state.mouse_tracking() && !event.modifiers.shift {
+            let (row, col) = self.mouse_grid_position(event.position);
+            let button = match event.button {
+                MouseButton::Left => 0,
+                MouseButton::Middle => 1,
+                MouseButton::Right => 2,
+                _ => 0,
+            };
+            self.send_mouse_event(button, col, row, false);
+            return;
+        }
+
         if event.button == MouseButton::Left {
             self.is_selecting = false;
+
+            if self.click_count == 1
+                && !self.has_selection()
+                && self.state.is_at_bottom()
+                && !event.modifiers.platform
+            {
+                let (click_line, click_col) = self.position_from_mouse(event.position);
+                let cursor_abs_line = self.cursor_absolute_line();
+                if click_line == cursor_abs_line {
+                    let cursor_col = self.state.cursor().col;
+                    self.move_cursor_to_col(click_col, cursor_col);
+                    self.clear_selection();
+                }
+            }
+
             cx.notify();
         }
     }
 
-    fn position_from_mouse(&self, position: gpui::Point<gpui::Pixels>) -> (usize, usize) {
-        let x = f32::from(position.x) - TERMINAL_PADDING;
-        let y = f32::from(position.y) - TERMINAL_PADDING;
+    fn move_cursor_to_col(&mut self, target_col: usize, current_col: usize) {
+        let app_cursor = self.state.application_cursor_keys();
+        if target_col > current_col {
+            let right: &[u8] = if app_cursor { b"\x1bOC" } else { b"\x1b[C" };
+            for _ in 0..(target_col - current_col) {
+                self.send_input(right);
+            }
+        } else if target_col < current_col {
+            let left: &[u8] = if app_cursor { b"\x1bOD" } else { b"\x1b[D" };
+            for _ in 0..(current_col - target_col) {
+                self.send_input(left);
+            }
+        }
+    }
 
-        let col = (x / CHAR_WIDTH).max(0.0) as usize;
+    fn position_from_mouse(&self, position: gpui::Point<gpui::Pixels>) -> (usize, usize) {
+        let x = f32::from(position.x) - f32::from(self.content_origin.x) - TERMINAL_PADDING;
+        let y = f32::from(position.y) - f32::from(self.content_origin.y) - TERMINAL_PADDING;
+
+        let col = (x / self.char_width()).max(0.0) as usize;
         let row = (y / LINE_HEIGHT).max(0.0) as usize;
 
         let total = self.state.total_lines();
@@ -743,7 +903,7 @@ impl TerminalView {
         let theme = use_theme();
         let cursor_bg = theme.tokens.primary;
         let cursor_fg = theme.tokens.background;
-        let selection_bg = theme.tokens.accent.opacity(0.3);
+        let selection_bg = gpui::hsla(0.58, 0.6, 0.5, 0.4);
 
         let has_selection = self.has_selection() && {
             let (start, end) = (self.selection_start.unwrap(), self.selection_end.unwrap());
@@ -764,6 +924,25 @@ impl TerminalView {
 
         for col in 0..cols {
             let cell = line.get(col);
+
+            if let Some(c) = cell {
+                match &c.image_cell {
+                    ImageCellKind::Anchor(_) | ImageCellKind::Continuation(_) => {
+                        if !current_text.is_empty() {
+                            let style = current_style.cloned().unwrap_or_default();
+                            spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
+                            current_text.clear();
+                        }
+                        current_text.push(' ');
+                        current_style = Some(&c.style);
+                        current_selected = false;
+                        current_has_link = false;
+                        continue;
+                    }
+                    ImageCellKind::None => {}
+                }
+            }
+
             let is_cursor_pos = show_cursor && col == cursor_col;
             let is_selected = has_selection && self.is_position_selected(idx, col);
             let has_link = cell.map(|c| c.hyperlink.is_some()).unwrap_or(false);
@@ -868,8 +1047,20 @@ impl TerminalView {
             el = el.italic();
         }
 
-        if style.underline || has_hyperlink {
-            el = el.underline();
+        let effective_underline = style.underline || has_hyperlink;
+        if effective_underline {
+            let underline_color = style.underline_color.unwrap_or(fg);
+            match style.underline_style {
+                UnderlineStyle::Double => {
+                    el = el.border_b_2().border_color(underline_color);
+                }
+                UnderlineStyle::Curly | UnderlineStyle::Dotted | UnderlineStyle::Dashed => {
+                    el = el.border_b_1().border_color(underline_color);
+                }
+                _ => {
+                    el = el.underline();
+                }
+            }
         }
 
         if style.strikethrough {
@@ -877,6 +1068,81 @@ impl TerminalView {
         }
 
         el.child(text.to_string()).into_any_element()
+    }
+
+    fn place_inline_image(&mut self, image_data: crate::ansi_parser::InlineImageData) {
+        let format = detect_image_format(&image_data.data);
+        let gpui_image = Arc::new(Image::from_bytes(format, image_data.data));
+
+        let (display_cols, display_rows) = resolve_image_dimensions(
+            &image_data.width,
+            &image_data.height,
+            image_data.preserve_aspect,
+            image_data.source_width,
+            image_data.source_height,
+            self.state.cols(),
+            self.char_width(),
+        );
+
+        self.state.place_image(gpui_image, display_cols, display_rows);
+    }
+
+    fn collect_visible_images(&self) -> Vec<gpui::AnyElement> {
+        let placements = self.state.visible_image_placements();
+        let viewport_start = self.state.viewport_start();
+
+        placements
+            .into_iter()
+            .map(|p| {
+                let row_offset = p.anchor_line as isize - viewport_start as isize;
+                let top = row_offset as f32 * LINE_HEIGHT;
+                let cw = self.char_width();
+                let left = p.anchor_col as f32 * cw;
+                let w = p.image.display_cols as f32 * cw;
+                let h = p.image.display_rows as f32 * LINE_HEIGHT;
+
+                div()
+                    .absolute()
+                    .top(px(top))
+                    .left(px(left))
+                    .w(px(w))
+                    .h(px(h))
+                    .overflow_hidden()
+                    .child(
+                        img(p.image.data.clone())
+                            .w(px(w))
+                            .h(px(h))
+                            .object_fit(ObjectFit::Contain),
+                    )
+                    .into_any_element()
+            })
+            .collect()
+    }
+
+    fn send_mouse_event(&mut self, button: u8, col: usize, row: usize, pressed: bool) {
+        if !self.state.mouse_tracking() {
+            return;
+        }
+        let col = col + 1;
+        let row = row + 1;
+        if self.state.sgr_mouse() {
+            let suffix = if pressed { 'M' } else { 'm' };
+            let report = format!("\x1b[<{};{};{}{}", button, col, row, suffix);
+            self.send_input(report.as_bytes());
+        } else {
+            let cb = button + 32;
+            let cx_byte = (col as u8).saturating_add(32).min(255);
+            let cy_byte = (row as u8).saturating_add(32).min(255);
+            self.send_input(&[0x1b, b'[', b'M', cb, cx_byte, cy_byte]);
+        }
+    }
+
+    fn mouse_grid_position(&self, position: gpui::Point<gpui::Pixels>) -> (usize, usize) {
+        let x = f32::from(position.x) - f32::from(self.content_origin.x) - TERMINAL_PADDING;
+        let y = f32::from(position.y) - f32::from(self.content_origin.y) - TERMINAL_PADDING;
+        let col = (x / self.char_width()).max(0.0) as usize;
+        let row = (y / LINE_HEIGHT).max(0.0) as usize;
+        (row, col)
     }
 
     fn cursor_absolute_line(&self) -> usize {
@@ -892,8 +1158,71 @@ impl Focusable for TerminalView {
     }
 }
 
+fn detect_image_format(data: &[u8]) -> ImageFormat {
+    if data.starts_with(&[0x89, b'P', b'N', b'G']) {
+        ImageFormat::Png
+    } else if data.starts_with(&[0xFF, 0xD8, 0xFF]) {
+        ImageFormat::Jpeg
+    } else if data.starts_with(b"GIF8") {
+        ImageFormat::Gif
+    } else if data.starts_with(b"RIFF") && data.len() > 12 && &data[8..12] == b"WEBP" {
+        ImageFormat::Webp
+    } else {
+        ImageFormat::Png
+    }
+}
+
+fn resolve_image_dimensions(
+    width: &ImageDimension,
+    height: &ImageDimension,
+    preserve_aspect: bool,
+    source_width: Option<u32>,
+    source_height: Option<u32>,
+    terminal_cols: usize,
+    cw: f32,
+) -> (usize, usize) {
+    let cols = match width {
+        ImageDimension::Cells(c) => *c,
+        ImageDimension::Pixels(p) => ((*p as f32) / cw).ceil() as usize,
+        ImageDimension::Percent(pct) => (terminal_cols * (*pct as usize)) / 100,
+        ImageDimension::Auto => {
+            if let Some(sw) = source_width {
+                let natural = (sw as f32 / cw).ceil() as usize;
+                natural.min(terminal_cols)
+            } else {
+                20.min(terminal_cols)
+            }
+        }
+    };
+
+    let rows = match height {
+        ImageDimension::Cells(r) => *r,
+        ImageDimension::Pixels(p) => ((*p as f32) / LINE_HEIGHT).ceil() as usize,
+        ImageDimension::Percent(pct) => ((24 * (*pct as usize)) / 100).max(1),
+        ImageDimension::Auto => {
+            if let (Some(sw), Some(sh)) = (source_width, source_height) {
+                if preserve_aspect && sw > 0 {
+                    let pixel_width = cols as f32 * cw;
+                    let scale = pixel_width / sw as f32;
+                    let pixel_height = sh as f32 * scale;
+                    (pixel_height / LINE_HEIGHT).ceil() as usize
+                } else if sh > 0 {
+                    (sh as f32 / LINE_HEIGHT).ceil() as usize
+                } else {
+                    10
+                }
+            } else {
+                10
+            }
+        }
+    };
+
+    (cols.max(1).min(terminal_cols), rows.max(1).min(50))
+}
+
 impl Render for TerminalView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        self.measure_char_width(window);
         self.process_output();
 
         if let Some(text) = self.pending_clipboard.take() {
@@ -913,6 +1242,7 @@ impl Render for TerminalView {
                     .update(cx, |view, cx| {
                         if !view.is_running() {
                             view.polling_started = false;
+                            view.state.set_mouse_mode(1000, false);
                             return false;
                         }
                         view.process_output();
@@ -932,6 +1262,14 @@ impl Render for TerminalView {
 
         let _theme = use_theme();
         let terminal_bg = gpui::rgb(0x1a1b26);
+
+        let bell_active = self
+            .bell_flash_time
+            .map(|t| t.elapsed() < Duration::from_millis(150))
+            .unwrap_or(false);
+        if !bell_active {
+            self.bell_flash_time = None;
+        }
 
         let cursor_line = self.cursor_absolute_line();
         let total = self.state.total_lines();
@@ -978,13 +1316,17 @@ impl Render for TerminalView {
                         move |ev, _window, cx| {
                             let width = f32::from(ev.size.width);
                             let height = f32::from(ev.size.height);
+                            let origin = ev.bounds.origin;
                             this.update(cx, |view, _cx| {
+                                view.content_origin = origin;
                                 view.update_viewport(width, height);
                             });
                         }
                     })
-                    .child(
+                    .child({
+                        let image_overlays = self.collect_visible_images();
                         div()
+                            .relative()
                             .flex()
                             .flex_col()
                             .children(
@@ -999,8 +1341,20 @@ impl Render for TerminalView {
                                         }
                                     })
                                     .collect::<Vec<_>>(),
-                            ),
-                    ),
+                            )
+                            .children(image_overlays)
+                            .children(if bell_active {
+                                vec![div()
+                                    .absolute()
+                                    .top(px(0.0))
+                                    .left(px(0.0))
+                                    .size_full()
+                                    .bg(gpui::rgba(0xffffff18))
+                                    .into_any_element()]
+                            } else {
+                                vec![]
+                            })
+                    }),
             )
     }
 }

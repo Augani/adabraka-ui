@@ -1,5 +1,7 @@
 use crate::autosave::AutosaveManager;
 use crate::completion::{extract_symbols, CompletionItem, CompletionMenu, CompletionState};
+use crate::git_state::GitState;
+use crate::git_view::GitView;
 use crate::search_bar::SearchBar;
 use crate::status_bar::StatusBarView;
 use crate::terminal_view::TerminalView;
@@ -47,6 +49,9 @@ actions!(
         CompletionAccept,
         CompletionDismiss,
         TriggerCompletion,
+        ToggleGitView,
+        GitNextFile,
+        GitPrevFile,
     ]
 );
 
@@ -66,6 +71,7 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-b", ToggleSidebar, Some("ShioriApp")),
         KeyBinding::new("cmd-`", ToggleTerminal, Some("ShioriApp")),
         KeyBinding::new("cmd-shift-enter", ToggleTerminalFullscreen, Some("ShioriApp")),
+        KeyBinding::new("cmd-shift-g", ToggleGitView, Some("ShioriApp")),
         KeyBinding::new("ctrl-.", TriggerCompletion, Some("ShioriApp")),
         KeyBinding::new("up", CompletionUp, Some("ShioriApp")),
         KeyBinding::new("down", CompletionDown, Some("ShioriApp")),
@@ -106,6 +112,8 @@ pub struct AppState {
     last_symbol_update_line: usize,
     suppress_completion: bool,
     last_content_version: u64,
+    git_state: Entity<GitState>,
+    git_visible: bool,
 }
 
 struct TabMeta {
@@ -191,6 +199,7 @@ impl AppState {
 
         let resizable_state = ResizableState::new(cx);
         let terminal_resizable_state = ResizableState::new(cx);
+        let git_state = cx.new(|cx| GitState::new(cx));
 
         Self {
             focus_handle,
@@ -221,6 +230,8 @@ impl AppState {
             last_symbol_update_line: usize::MAX,
             suppress_completion: false,
             last_content_version: 0,
+            git_state,
+            git_visible: false,
         }
     }
 
@@ -969,10 +980,13 @@ impl AppState {
     pub fn open_folder(&mut self, path: PathBuf, cx: &mut Context<Self>) {
         let nodes = scan_directory(&path, 2);
         self.expanded_paths = vec![path.clone()];
+        let git_path = path.clone();
         self.workspace_root = Some(path);
         self.file_tree_nodes = nodes;
         self.sidebar_visible = true;
         self.selected_tree_path = None;
+        self.git_state
+            .update(cx, |s, cx| s.set_workspace(git_path, cx));
         cx.notify();
     }
 
@@ -1330,6 +1344,17 @@ impl Render for AppState {
 
         let terminal_visible = self.terminal_visible;
         let app_entity = cx.entity().clone();
+        let app_entity_git = cx.entity().clone();
+        let git_summary = {
+            let gs = self.git_state.read(cx);
+            if gs.repo_path.is_some() && gs.summary.changed_files > 0 {
+                Some(gs.summary.clone())
+            } else if gs.repo_path.is_some() {
+                Some(gs.summary.clone())
+            } else {
+                None
+            }
+        };
         let status = self
             .buffers
             .get(self.active_tab)
@@ -1339,6 +1364,13 @@ impl Render for AppState {
                     .on_toggle_terminal(move |window, cx| {
                         let _ = app_entity.update(cx, |this, cx| {
                             this.toggle_terminal(window, cx);
+                        });
+                    })
+                    .git_summary(git_summary)
+                    .on_toggle_git(move |_window, cx| {
+                        let _ = app_entity_git.update(cx, |this, cx| {
+                            this.git_visible = !this.git_visible;
+                            cx.notify();
                         });
                     })
             });
@@ -1384,7 +1416,13 @@ impl Render for AppState {
                 .into_any_element()
         };
 
-        let main_content = if self.terminal_fullscreen {
+        let main_content = if self.git_visible {
+            div()
+                .flex_1()
+                .overflow_hidden()
+                .child(GitView::new(self.git_state.clone()))
+                .into_any_element()
+        } else if self.terminal_fullscreen {
             let terminal_tab_bar = self.render_terminal_tab_bar(cx);
             let active_terminal = self.terminals.get(self.active_terminal).cloned();
             div()
@@ -1544,6 +1582,20 @@ impl Render for AppState {
             .on_action(cx.listener(|this, _: &NewTerminal, window, cx| {
                 this.new_terminal(window, cx);
             }))
+            .on_action(cx.listener(|this, _: &ToggleGitView, _, cx| {
+                this.git_visible = !this.git_visible;
+                cx.notify();
+            }))
+            .on_action(cx.listener(|this, _: &GitNextFile, _, cx| {
+                if this.git_visible {
+                    this.git_state.update(cx, |s, cx| s.select_next_file(cx));
+                }
+            }))
+            .on_action(cx.listener(|this, _: &GitPrevFile, _, cx| {
+                if this.git_visible {
+                    this.git_state.update(cx, |s, cx| s.select_prev_file(cx));
+                }
+            }))
             .on_action(cx.listener(|this, _: &TriggerCompletion, _, cx| {
                 this.trigger_completion(cx);
             }))
@@ -1571,6 +1623,9 @@ impl Render for AppState {
             .on_action(cx.listener(|this, _: &CompletionDismiss, _, cx| {
                 if this.completion_state.read(cx).is_visible() {
                     this.completion_dismiss(cx);
+                } else if this.git_visible {
+                    this.git_visible = false;
+                    cx.notify();
                 } else {
                     cx.propagate();
                 }

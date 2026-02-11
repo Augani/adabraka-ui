@@ -252,7 +252,7 @@ impl Language {
         }
     }
 
-    fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
+    pub fn tree_sitter_language(&self) -> Option<tree_sitter::Language> {
         match self {
             #[cfg(feature = "tree-sitter-rust")]
             Language::Rust => Some(tree_sitter_rust::LANGUAGE.into()),
@@ -304,7 +304,7 @@ impl Language {
         }
     }
 
-    fn highlight_query_source(&self) -> Option<&'static str> {
+    pub fn highlight_query_source(&self) -> Option<&'static str> {
         match self {
             #[cfg(feature = "tree-sitter-rust")]
             Language::Rust => Some(tree_sitter_rust::HIGHLIGHTS_QUERY),
@@ -357,7 +357,7 @@ impl Language {
     }
 }
 
-fn highlight_color_for_capture(capture_name: &str) -> Hsla {
+pub fn highlight_color_for_capture(capture_name: &str) -> Hsla {
     match capture_name {
         "keyword"
         | "keyword.control"

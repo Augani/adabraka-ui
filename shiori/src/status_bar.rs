@@ -1,3 +1,4 @@
+use crate::git_service::GitSummary;
 use adabraka_ui::components::editor::{EditorState, Language};
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::theme::use_theme;
@@ -14,6 +15,8 @@ pub struct StatusBarView {
     pub line_count: usize,
     pub terminal_open: bool,
     pub on_toggle_terminal: Option<Arc<dyn Fn(&mut Window, &mut App) + Send + Sync>>,
+    pub git_summary: Option<GitSummary>,
+    pub on_toggle_git: Option<Arc<dyn Fn(&mut Window, &mut App) + Send + Sync>>,
 }
 
 impl StatusBarView {
@@ -27,6 +30,8 @@ impl StatusBarView {
             line_count: state.line_count(),
             terminal_open: false,
             on_toggle_terminal: None,
+            git_summary: None,
+            on_toggle_git: None,
         }
     }
 
@@ -42,6 +47,19 @@ impl StatusBarView {
         self.on_toggle_terminal = Some(Arc::new(handler));
         self
     }
+
+    pub fn git_summary(mut self, summary: Option<GitSummary>) -> Self {
+        self.git_summary = summary;
+        self
+    }
+
+    pub fn on_toggle_git(
+        mut self,
+        handler: impl Fn(&mut Window, &mut App) + Send + Sync + 'static,
+    ) -> Self {
+        self.on_toggle_git = Some(Arc::new(handler));
+        self
+    }
 }
 
 impl RenderOnce for StatusBarView {
@@ -54,6 +72,8 @@ impl RenderOnce for StatusBarView {
         } else {
             muted_fg
         };
+        let green = gpui::hsla(0.33, 0.7, 0.5, 1.0);
+        let red = theme.tokens.destructive;
 
         div()
             .w_full()
@@ -83,6 +103,59 @@ impl RenderOnce for StatusBarView {
                     .gap(px(16.0))
                     .items_center()
                     .child("UTF-8")
+                    .when_some(self.git_summary.as_ref(), |el, summary| {
+                        let additions = summary.additions;
+                        let deletions = summary.deletions;
+                        let changed = summary.changed_files;
+                        let branch = summary.branch.clone();
+                        let handler = self.on_toggle_git.clone();
+
+                        el.child({
+                            let btn = div()
+                                .id("git-status-btn")
+                                .flex()
+                                .items_center()
+                                .gap(px(6.0))
+                                .px(px(6.0))
+                                .h(px(22.0))
+                                .rounded(px(4.0))
+                                .cursor_pointer()
+                                .hover(|s| s.bg(theme.tokens.muted.opacity(0.8)))
+                                .child(Icon::new("git-branch").size(px(12.0)).color(muted_fg))
+                                .child(div().text_size(px(11.0)).text_color(muted_fg).child(branch))
+                                .when(additions > 0, |el| {
+                                    el.child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(green)
+                                            .child(format!("+{}", additions)),
+                                    )
+                                })
+                                .when(deletions > 0, |el| {
+                                    el.child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(red)
+                                            .child(format!("-{}", deletions)),
+                                    )
+                                })
+                                .when(changed > 0, |el| {
+                                    el.child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(muted_fg)
+                                            .child(format!("{}F", changed)),
+                                    )
+                                });
+                            if let Some(handler) = handler {
+                                btn.on_click(move |_, window, cx| {
+                                    handler(window, cx);
+                                })
+                            } else {
+                                btn
+                            }
+                        })
+                    })
                     .child(self.language.display_name())
                     .child({
                         let btn = div()

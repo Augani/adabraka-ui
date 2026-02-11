@@ -168,6 +168,14 @@ pub enum ParsedSegment {
     AutoWrap(bool),
     InsertMode(bool),
     ApplicationCursorKeys(bool),
+    SetG0Charset(u8),
+    SetG1Charset(u8),
+    ShiftIn,
+    ShiftOut,
+    SyncUpdate(bool),
+    SetHyperlink(Option<String>),
+    SetClipboard(String),
+    Notification(String, Option<String>),
     Reset,
 }
 
@@ -341,6 +349,14 @@ impl AnsiParser {
                 self.flush_text(text_buffer, segments);
                 segments.push(ParsedSegment::CarriageReturn);
             }
+            0x0E => {
+                self.flush_text(text_buffer, segments);
+                segments.push(ParsedSegment::ShiftOut);
+            }
+            0x0F => {
+                self.flush_text(text_buffer, segments);
+                segments.push(ParsedSegment::ShiftIn);
+            }
             0x00..=0x1F => {}
             0x20..=0x7F => {
                 text_buffer.push(byte as char);
@@ -424,13 +440,25 @@ impl AnsiParser {
         &mut self,
         byte: u8,
         _text_buffer: &mut String,
-        _segments: &mut Vec<ParsedSegment>,
+        segments: &mut Vec<ParsedSegment>,
     ) {
         match byte {
             b' '..=b'/' => {
                 self.intermediate.push(byte);
             }
             0x30..=0x7E => {
+                if !self.intermediate.is_empty() {
+                    let designator = self.intermediate[0];
+                    match designator {
+                        b'(' => {
+                            segments.push(ParsedSegment::SetG0Charset(byte));
+                        }
+                        b')' => {
+                            segments.push(ParsedSegment::SetG1Charset(byte));
+                        }
+                        _ => {}
+                    }
+                }
                 self.state = ParserState::Ground;
             }
             _ => {
@@ -574,6 +602,39 @@ impl AnsiParser {
             match cmd {
                 "0" | "1" | "2" => {
                     segments.push(ParsedSegment::SetTitle(arg.to_string()));
+                }
+                "8" => {
+                    if let Some(url_start) = arg.find(';') {
+                        let url = &arg[url_start + 1..];
+                        if url.is_empty() {
+                            segments.push(ParsedSegment::SetHyperlink(None));
+                        } else {
+                            segments.push(ParsedSegment::SetHyperlink(Some(url.to_string())));
+                        }
+                    }
+                }
+                "9" => {
+                    segments.push(ParsedSegment::Notification(arg.to_string(), None));
+                }
+                "52" => {
+                    if let Some(data_start) = arg.find(';') {
+                        let base64_data = &arg[data_start + 1..];
+                        if !base64_data.is_empty() && base64_data != "?" {
+                            if let Ok(decoded) = base64_decode(base64_data) {
+                                if let Ok(text) = String::from_utf8(decoded) {
+                                    segments.push(ParsedSegment::SetClipboard(text));
+                                }
+                            }
+                        }
+                    }
+                }
+                "777" => {
+                    let parts: Vec<&str> = arg.splitn(3, ';').collect();
+                    if parts.len() >= 2 && parts[0] == "notify" {
+                        let title = parts[1].to_string();
+                        let body = parts.get(2).map(|s| s.to_string());
+                        segments.push(ParsedSegment::Notification(title, body));
+                    }
                 }
                 _ => {}
             }
@@ -730,6 +791,9 @@ impl AnsiParser {
                 2004 => {
                     segments.push(ParsedSegment::BracketedPasteMode(enabled));
                 }
+                2026 => {
+                    segments.push(ParsedSegment::SyncUpdate(enabled));
+                }
                 _ => {}
             }
         }
@@ -832,6 +896,40 @@ impl AnsiParser {
             _ => None,
         }
     }
+}
+
+fn base64_decode(input: &str) -> Result<Vec<u8>, ()> {
+    const DECODE_TABLE: [i8; 128] = [
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+        -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 62, -1, -1,
+        -1, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, -1, -1, -1, -1, -1, -1, -1, 0, 1, 2, 3, 4,
+        5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, -1, -1, -1,
+        -1, -1, -1, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45,
+        46, 47, 48, 49, 50, 51, -1, -1, -1, -1, -1,
+    ];
+
+    let input = input.trim_end_matches('=');
+    let mut output = Vec::with_capacity(input.len() * 3 / 4);
+    let mut buffer = 0u32;
+    let mut bits = 0;
+
+    for &byte in input.as_bytes() {
+        if byte >= 128 {
+            return Err(());
+        }
+        let val = DECODE_TABLE[byte as usize];
+        if val < 0 {
+            continue;
+        }
+        buffer = (buffer << 6) | (val as u32);
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            output.push((buffer >> bits) as u8);
+            buffer &= (1 << bits) - 1;
+        }
+    }
+    Ok(output)
 }
 
 pub fn color_from_256(n: usize) -> Rgba {

@@ -1,7 +1,7 @@
 use gpui::{
     div, px, App, ClipboardItem, Context, FocusHandle, Focusable, InteractiveElement, IntoElement,
     KeyDownEvent, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Render,
-    ScrollWheelEvent, StatefulInteractiveElement, Styled, Timer, Window,
+    ScrollWheelEvent, StatefulInteractiveElement, Styled, Subscription, Timer, Window,
 };
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
@@ -10,7 +10,7 @@ use adabraka_ui::theme::use_theme;
 
 use crate::ansi_parser::{AnsiParser, ClearMode, ParsedSegment};
 use crate::pty_service::{key_codes, PtyService};
-use crate::terminal_state::{CursorStyle, TerminalLine, TerminalState};
+use crate::terminal_state::{Charset, CursorStyle, TerminalLine, TerminalState};
 
 const LINE_HEIGHT: f32 = 18.0;
 const CHAR_WIDTH: f32 = 8.6;
@@ -32,6 +32,13 @@ pub struct TerminalView {
     viewport_width: f32,
     polling_started: bool,
     last_resize: Option<(usize, usize)>,
+    #[allow(dead_code)]
+    focus_subscriptions: Vec<Subscription>,
+    pending_clipboard: Option<String>,
+    pending_notification: Option<(String, Option<String>)>,
+    last_click_time: Instant,
+    last_click_pos: Option<(usize, usize)>,
+    click_count: u8,
 }
 
 impl TerminalView {
@@ -51,11 +58,12 @@ impl TerminalView {
     }
 
     pub fn new(cx: &mut Context<Self>) -> Self {
+        let focus_handle = cx.focus_handle();
         Self {
             state: TerminalState::default(),
             parser: AnsiParser::new(),
             pty: None,
-            focus_handle: cx.focus_handle(),
+            focus_handle,
             cursor_blink: true,
             cursor_blink_state: true,
             last_blink_time: Instant::now(),
@@ -66,6 +74,12 @@ impl TerminalView {
             viewport_width: 800.0,
             polling_started: false,
             last_resize: None,
+            focus_subscriptions: Vec::new(),
+            pending_clipboard: None,
+            pending_notification: None,
+            last_click_time: Instant::now(),
+            last_click_pos: None,
+            click_count: 0,
         }
     }
 
@@ -102,6 +116,14 @@ impl TerminalView {
         pty.start().map_err(|e| e.to_string())?;
         self.pty = Some(pty);
         self.state.set_running(true);
+
+        let focus_in_sub = cx.on_focus_in(&self.focus_handle, window, |this, _, _cx| {
+            this.send_focus_in();
+        });
+        let focus_out_sub = cx.on_focus_out(&self.focus_handle, window, |this, _, _, _cx| {
+            this.send_focus_out();
+        });
+        self.focus_subscriptions = vec![focus_in_sub, focus_out_sub];
 
         self.polling_started = true;
         cx.spawn_in(window, async move |this, cx| loop {
@@ -214,6 +236,30 @@ impl TerminalView {
             ParsedSegment::InsertMode(enabled) => self.state.set_insert_mode(enabled),
             ParsedSegment::ApplicationCursorKeys(enabled) => {
                 self.state.set_application_cursor_keys(enabled)
+            }
+            ParsedSegment::SetG0Charset(c) => {
+                let charset = match c {
+                    b'0' => Charset::DecSpecialGraphics,
+                    _ => Charset::Ascii,
+                };
+                self.state.set_g0_charset(charset);
+            }
+            ParsedSegment::SetG1Charset(c) => {
+                let charset = match c {
+                    b'0' => Charset::DecSpecialGraphics,
+                    _ => Charset::Ascii,
+                };
+                self.state.set_g1_charset(charset);
+            }
+            ParsedSegment::ShiftIn => self.state.shift_in(),
+            ParsedSegment::ShiftOut => self.state.shift_out(),
+            ParsedSegment::SyncUpdate(_) => {}
+            ParsedSegment::SetHyperlink(url) => self.state.set_hyperlink(url),
+            ParsedSegment::SetClipboard(text) => {
+                self.pending_clipboard = Some(text);
+            }
+            ParsedSegment::Notification(title, body) => {
+                self.pending_notification = Some((title, body));
             }
             ParsedSegment::Reset => self.state.reset(),
         }
@@ -416,11 +462,97 @@ impl TerminalView {
 
         if event.button == MouseButton::Left {
             let (line, col) = self.position_from_mouse(event.position);
-            self.selection_start = Some((line, col));
-            self.selection_end = Some((line, col));
-            self.is_selecting = true;
+
+            if event.modifiers.platform {
+                if let Some(url) = self.hyperlink_at(line, col) {
+                    let _ = open::that(&url);
+                    return;
+                }
+            }
+
+            let now = Instant::now();
+            let same_pos = self.last_click_pos == Some((line, col));
+            let quick_click = now.duration_since(self.last_click_time) < Duration::from_millis(400);
+
+            if same_pos && quick_click {
+                self.click_count = (self.click_count % 3) + 1;
+            } else {
+                self.click_count = 1;
+            }
+
+            self.last_click_time = now;
+            self.last_click_pos = Some((line, col));
+
+            match self.click_count {
+                2 => {
+                    let (start, end) = self.word_bounds_at(line, col);
+                    self.selection_start = Some((line, start));
+                    self.selection_end = Some((line, end));
+                    self.is_selecting = false;
+                }
+                3 => {
+                    let line_len = self.state.line(line).map(|l| l.len()).unwrap_or(0);
+                    self.selection_start = Some((line, 0));
+                    self.selection_end = Some((line, line_len));
+                    self.is_selecting = false;
+                }
+                _ => {
+                    self.selection_start = Some((line, col));
+                    self.selection_end = Some((line, col));
+                    self.is_selecting = true;
+                }
+            }
             cx.notify();
         }
+    }
+
+    fn hyperlink_at(&self, line_idx: usize, col: usize) -> Option<String> {
+        let line = self.state.line(line_idx)?;
+        let cell = line.get(col)?;
+        cell.hyperlink.clone()
+    }
+
+    fn word_bounds_at(&self, line_idx: usize, col: usize) -> (usize, usize) {
+        let line = match self.state.line(line_idx) {
+            Some(l) => l,
+            None => return (col, col),
+        };
+
+        let chars: Vec<char> = line.cells.iter().map(|c| c.char).collect();
+        if col >= chars.len() {
+            return (col, col);
+        }
+
+        let is_word_char = |c: char| c.is_alphanumeric() || c == '_';
+        let target_is_word = is_word_char(chars[col]);
+
+        let mut start = col;
+        while start > 0 {
+            let prev = chars[start - 1];
+            if target_is_word {
+                if !is_word_char(prev) {
+                    break;
+                }
+            } else if prev.is_whitespace() != chars[col].is_whitespace() {
+                break;
+            }
+            start -= 1;
+        }
+
+        let mut end = col;
+        while end < chars.len() {
+            let curr = chars[end];
+            if target_is_word {
+                if !is_word_char(curr) {
+                    break;
+                }
+            } else if curr.is_whitespace() != chars[col].is_whitespace() {
+                break;
+            }
+            end += 1;
+        }
+
+        (start, end)
     }
 
     pub fn handle_mouse_move(
@@ -583,6 +715,18 @@ impl TerminalView {
         self.last_blink_time = Instant::now();
     }
 
+    pub fn send_focus_in(&mut self) {
+        if self.state.focus_tracking() {
+            self.send_input(b"\x1b[I");
+        }
+    }
+
+    pub fn send_focus_out(&mut self) {
+        if self.state.focus_tracking() {
+            self.send_input(b"\x1b[O");
+        }
+    }
+
     fn render_line(
         &self,
         idx: usize,
@@ -616,16 +760,18 @@ impl TerminalView {
         let mut current_text = String::new();
         let mut current_style: Option<&crate::terminal_state::CellStyle> = None;
         let mut current_selected = false;
+        let mut current_has_link = false;
 
         for col in 0..cols {
             let cell = line.get(col);
             let is_cursor_pos = show_cursor && col == cursor_col;
             let is_selected = has_selection && self.is_position_selected(idx, col);
+            let has_link = cell.map(|c| c.hyperlink.is_some()).unwrap_or(false);
 
             if is_cursor_pos {
                 if !current_text.is_empty() {
                     let style = current_style.cloned().unwrap_or_default();
-                    spans.push(self.make_span(&current_text, &style, current_selected, &theme, &selection_bg));
+                    spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
                     current_text.clear();
                 }
 
@@ -655,25 +801,29 @@ impl TerminalView {
                 spans.push(cursor_span.into_any_element());
                 current_style = cell.map(|c| &c.style);
                 current_selected = is_selected;
+                current_has_link = has_link;
             } else if let Some(cell) = cell {
+                let cell_has_link = cell.hyperlink.is_some();
                 let needs_flush = current_style.map(|s| s != &cell.style).unwrap_or(true)
-                    || is_selected != current_selected;
+                    || is_selected != current_selected
+                    || cell_has_link != current_has_link;
 
                 if needs_flush && !current_text.is_empty() {
                     let style = current_style.cloned().unwrap_or_default();
-                    spans.push(self.make_span(&current_text, &style, current_selected, &theme, &selection_bg));
+                    spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
                     current_text.clear();
                 }
 
                 current_style = Some(&cell.style);
                 current_selected = is_selected;
+                current_has_link = cell_has_link;
                 current_text.push(cell.char);
             }
         }
 
         if !current_text.is_empty() {
             let style = current_style.cloned().unwrap_or_default();
-            spans.push(self.make_span(&current_text, &style, current_selected, &theme, &selection_bg));
+            spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
         }
 
         if show_cursor && cursor_col >= cols {
@@ -695,6 +845,7 @@ impl TerminalView {
         text: &str,
         style: &crate::terminal_state::CellStyle,
         selected: bool,
+        has_hyperlink: bool,
         _theme: &adabraka_ui::theme::Theme,
         selection_bg: &gpui::Hsla,
     ) -> gpui::AnyElement {
@@ -717,8 +868,12 @@ impl TerminalView {
             el = el.italic();
         }
 
-        if style.underline {
+        if style.underline || has_hyperlink {
             el = el.underline();
+        }
+
+        if style.strikethrough {
+            el = el.line_through();
         }
 
         el.child(text.to_string()).into_any_element()
@@ -740,6 +895,14 @@ impl Focusable for TerminalView {
 impl Render for TerminalView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         self.process_output();
+
+        if let Some(text) = self.pending_clipboard.take() {
+            cx.write_to_clipboard(ClipboardItem::new_string(text));
+        }
+
+        if let Some((_title, _body)) = self.pending_notification.take() {
+            // TODO: Show native notification when GPUI supports it
+        }
 
         if self.is_running() && !self.polling_started {
             self.polling_started = true;

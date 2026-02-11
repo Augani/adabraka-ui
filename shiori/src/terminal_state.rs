@@ -86,6 +86,7 @@ pub struct TerminalCell {
     pub char: char,
     pub style: CellStyle,
     pub width: u8,
+    pub hyperlink: Option<String>,
 }
 
 impl Default for TerminalCell {
@@ -94,6 +95,7 @@ impl Default for TerminalCell {
             char: ' ',
             style: CellStyle::default(),
             width: 1,
+            hyperlink: None,
         }
     }
 }
@@ -105,7 +107,17 @@ impl TerminalCell {
         } else {
             unicode_width::UnicodeWidthChar::width(char).unwrap_or(1) as u8
         };
-        Self { char, style, width }
+        Self {
+            char,
+            style,
+            width,
+            hyperlink: None,
+        }
+    }
+
+    pub fn with_hyperlink(mut self, url: Option<String>) -> Self {
+        self.hyperlink = url;
+        self
     }
 }
 
@@ -173,6 +185,7 @@ impl TerminalLine {
                 char: ' ',
                 style: style.clone(),
                 width: 1,
+                hyperlink: None,
             };
         }
     }
@@ -191,6 +204,7 @@ impl TerminalLine {
                 char: ' ',
                 style: style.clone(),
                 width: 1,
+                hyperlink: None,
             };
         }
     }
@@ -233,6 +247,7 @@ impl TerminalLine {
                 char: ' ',
                 style: style.clone(),
                 width: 1,
+                hyperlink: None,
             };
         }
     }
@@ -242,6 +257,56 @@ impl TerminalLine {
 pub struct CursorPosition {
     pub row: usize,
     pub col: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Charset {
+    Ascii,
+    DecSpecialGraphics,
+}
+
+impl Default for Charset {
+    fn default() -> Self {
+        Self::Ascii
+    }
+}
+
+impl Charset {
+    pub fn translate(&self, c: char) -> char {
+        match self {
+            Charset::Ascii => c,
+            Charset::DecSpecialGraphics => match c {
+                'j' => '┘',
+                'k' => '┐',
+                'l' => '┌',
+                'm' => '└',
+                'n' => '┼',
+                'q' => '─',
+                't' => '├',
+                'u' => '┤',
+                'v' => '┴',
+                'w' => '┬',
+                'x' => '│',
+                'a' => '▒',
+                'f' => '°',
+                'g' => '±',
+                'h' => '░',
+                'i' => '⎺',
+                'o' => '⎻',
+                'p' => '⎼',
+                'r' => '⎽',
+                's' => '⎺',
+                '`' => '◆',
+                '~' => '·',
+                'y' => '≤',
+                'z' => '≥',
+                '{' => 'π',
+                '|' => '≠',
+                '}' => '£',
+                _ => c,
+            },
+        }
+    }
 }
 
 impl CursorPosition {
@@ -273,6 +338,9 @@ struct SavedCursor {
     style: CellStyle,
     origin_mode: bool,
     autowrap: bool,
+    g0_charset: Charset,
+    g1_charset: Charset,
+    active_charset: u8,
 }
 
 #[derive(Clone, Debug)]
@@ -308,6 +376,11 @@ pub struct TerminalState {
     user_scrolled: bool,
 
     tabs: Vec<usize>,
+
+    g0_charset: Charset,
+    g1_charset: Charset,
+    active_charset: u8,
+    current_hyperlink: Option<String>,
 }
 
 #[derive(Clone, Debug)]
@@ -362,6 +435,10 @@ impl TerminalState {
             application_cursor_keys: false,
             user_scrolled: false,
             tabs,
+            g0_charset: Charset::Ascii,
+            g1_charset: Charset::Ascii,
+            active_charset: 0,
+            current_hyperlink: None,
         }
     }
 
@@ -466,6 +543,10 @@ impl TerminalState {
         self.mouse_tracking = enabled;
     }
 
+    pub fn focus_tracking(&self) -> bool {
+        self.focus_tracking
+    }
+
     pub fn set_focus_tracking(&mut self, enabled: bool) {
         self.focus_tracking = enabled;
     }
@@ -476,6 +557,38 @@ impl TerminalState {
 
     pub fn set_application_cursor_keys(&mut self, enabled: bool) {
         self.application_cursor_keys = enabled;
+    }
+
+    pub fn set_g0_charset(&mut self, charset: Charset) {
+        self.g0_charset = charset;
+    }
+
+    pub fn set_g1_charset(&mut self, charset: Charset) {
+        self.g1_charset = charset;
+    }
+
+    pub fn shift_in(&mut self) {
+        self.active_charset = 0;
+    }
+
+    pub fn shift_out(&mut self) {
+        self.active_charset = 1;
+    }
+
+    fn current_charset(&self) -> Charset {
+        if self.active_charset == 0 {
+            self.g0_charset
+        } else {
+            self.g1_charset
+        }
+    }
+
+    pub fn set_hyperlink(&mut self, url: Option<String>) {
+        self.current_hyperlink = url;
+    }
+
+    pub fn current_hyperlink(&self) -> Option<&str> {
+        self.current_hyperlink.as_deref()
     }
 
     pub fn line(&self, index: usize) -> Option<&TerminalLine> {
@@ -525,9 +638,11 @@ impl TerminalState {
             self.current_line_mut().insert_cells(col, 1);
         }
 
+        let translated = self.current_charset().translate(c);
         let style = self.current_style.clone();
         let col = self.cursor.col;
-        let cell = TerminalCell::new(c, style);
+        let cell =
+            TerminalCell::new(translated, style).with_hyperlink(self.current_hyperlink.clone());
         let width = cell.width as usize;
 
         let line = self.current_line_mut();
@@ -541,6 +656,7 @@ impl TerminalState {
                         char: ' ',
                         style: CellStyle::default(),
                         width: 0,
+                        hyperlink: None,
                     },
                 );
             }
@@ -739,6 +855,9 @@ impl TerminalState {
             style: self.current_style.clone(),
             origin_mode: self.origin_mode,
             autowrap: self.autowrap,
+            g0_charset: self.g0_charset,
+            g1_charset: self.g1_charset,
+            active_charset: self.active_charset,
         });
     }
 
@@ -748,6 +867,9 @@ impl TerminalState {
             self.current_style = saved.style.clone();
             self.origin_mode = saved.origin_mode;
             self.autowrap = saved.autowrap;
+            self.g0_charset = saved.g0_charset;
+            self.g1_charset = saved.g1_charset;
+            self.active_charset = saved.active_charset;
         }
     }
 
@@ -1003,5 +1125,9 @@ impl TerminalState {
         self.mouse_tracking = false;
         self.focus_tracking = false;
         self.user_scrolled = false;
+        self.g0_charset = Charset::Ascii;
+        self.g1_charset = Charset::Ascii;
+        self.active_charset = 0;
+        self.current_hyperlink = None;
     }
 }

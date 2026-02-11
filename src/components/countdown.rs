@@ -257,28 +257,31 @@ impl CountdownState {
             return;
         }
 
-        cx.spawn(async |this, cx| {
-            cx.background_executor().timer(Duration::from_secs(1)).await;
+        cx.spawn(
+            async | this,
+            cx | {
+                cx.background_executor().timer(Duration::from_secs(1)).await;
 
-            _ = this.update(cx, |state, cx| {
-                if state.running {
-                    if !state.count_up {
-                        if let Some(target) = state.target_time {
-                            if SystemTime::now() >= target {
-                                state.completed = true;
-                                state.running = false;
+                _ = this.update(cx, |state, cx| {
+                    if state.running {
+                        if !state.count_up {
+                            if let Some(target) = state.target_time {
+                                if SystemTime::now() >= target {
+                                    state.completed = true;
+                                    state.running = false;
+                                }
                             }
                         }
-                    }
 
-                    if state.running {
-                        state.schedule_tick(cx);
-                    }
+                        if state.running {
+                            state.schedule_tick(cx);
+                        }
 
-                    cx.notify();
-                }
-            });
-        })
+                        cx.notify();
+                    }
+                });
+            },
+        )
         .detach();
     }
 }
@@ -436,7 +439,7 @@ impl RenderOnce for Countdown {
 
         let mut elements: Vec<AnyElement> = Vec::new();
 
-        if self.format.show_days && (units.days > 0 || self.format.show_days) {
+        if self.format.show_days {
             elements.push(
                 self.render_unit(units.days, "days", &theme)
                     .into_any_element(),

@@ -5238,6 +5238,7 @@ dependencies = [
  "adabraka-gpui",
  "adabraka-ui",
  "flume",
+ "open",
  "portable-pty",
  "smol",
  "thiserror 2.0.17",

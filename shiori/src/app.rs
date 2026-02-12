@@ -180,15 +180,7 @@ impl AppState {
         let focus_handle = cx.focus_handle();
         let completion_state = cx.new(|cx| CompletionState::new(cx));
 
-        let completion_for_check = completion_state.clone();
-        let buffer = cx.new(|cx| {
-            let mut state = EditorState::new(cx);
-            state.set_overlay_active_check(move |cx| completion_for_check.read(cx).is_visible());
-            state
-        });
         let goto_line_input = cx.new(|cx| InputState::new(cx));
-
-        cx.observe(&buffer, Self::on_buffer_changed).detach();
 
         let app_entity = cx.entity().clone();
         let search_bar = cx.new(|cx| {
@@ -201,9 +193,8 @@ impl AppState {
             bar
         });
 
-        let mut buffer_index = HashMap::new();
-        buffer_index.insert(buffer.entity_id(), 0);
-        let tab_meta = vec![Self::build_tab_meta(&buffer, 0, cx)];
+        let buffer_index = HashMap::new();
+        let tab_meta = Vec::new();
 
         let resizable_state = ResizableState::new(cx);
         let terminal_resizable_state = ResizableState::new(cx);
@@ -211,7 +202,7 @@ impl AppState {
 
         Self {
             focus_handle,
-            buffers: vec![buffer],
+            buffers: Vec::new(),
             buffer_index,
             active_tab: 0,
             autosave: AutosaveManager::new(1),
@@ -358,8 +349,12 @@ impl AppState {
             if is_image_file(&path) {
                 self.open_image_tab(path, cx);
             } else {
+                let completion_check = self.completion_state.clone();
                 let buffer = cx.new(|cx| {
                     let mut state = EditorState::new(cx);
+                    state.set_overlay_active_check(move |cx| {
+                        completion_check.read(cx).is_visible()
+                    });
                     state.load_file(&path, cx);
                     state
                 });
@@ -589,7 +584,7 @@ impl AppState {
     }
 
     fn close_active_tab(&mut self, cx: &mut Context<Self>) {
-        if self.buffers.len() <= 1 {
+        if self.buffers.is_empty() {
             return;
         }
         let idx = self.active_tab;
@@ -623,7 +618,12 @@ impl AppState {
     }
 
     fn new_file(&mut self, cx: &mut Context<Self>) {
-        let buffer = cx.new(|cx| EditorState::new(cx));
+        let completion_check = self.completion_state.clone();
+        let buffer = cx.new(|cx| {
+            let mut state = EditorState::new(cx);
+            state.set_overlay_active_check(move |cx| completion_check.read(cx).is_visible());
+            state
+        });
         cx.observe(&buffer, Self::on_buffer_changed).detach();
         self.add_buffer(buffer, cx);
         self.clamp_tab_scroll();
@@ -682,7 +682,7 @@ impl AppState {
     }
 
     fn close_tab_at(&mut self, idx: usize, cx: &mut Context<Self>) {
-        if self.buffers.len() <= 1 {
+        if self.buffers.is_empty() {
             return;
         }
         self.autosave.cancel(idx);
@@ -765,7 +765,7 @@ impl AppState {
                                     .get(idx)
                                     .map(|meta| meta.title.clone())
                                     .unwrap_or_else(|| SharedString::from("Untitled"));
-                                let can_close = self.buffers.len() > 1;
+                                let can_close = true;
                                 let active_bg = theme.tokens.background;
 
                                 div()
@@ -1334,6 +1334,81 @@ impl AppState {
             )
     }
 
+    fn render_welcome(&self, theme: &Theme) -> impl IntoElement {
+        use adabraka_ui::animations::{easings, presets};
+        use adabraka_ui::components::gradient_text::GradientText;
+
+        let title = div()
+            .id("welcome-title")
+            .child(
+                GradientText::new("Shiori")
+                    .text_size(px(48.0))
+                    .font_weight(FontWeight::BOLD)
+                    .start_color(theme.tokens.primary)
+                    .end_color(theme.tokens.accent),
+            )
+            .with_animation(
+                "welcome-title-anim",
+                Animation::new(Duration::from_millis(600))
+                    .with_easing(easings::ease_out_cubic),
+                |el, delta| {
+                    let offset = (1.0 - delta) * 20.0;
+                    el.opacity(delta).mt(px(-offset))
+                },
+            );
+
+        let subtitle = div()
+            .id("welcome-subtitle")
+            .text_size(px(14.0))
+            .text_color(theme.tokens.muted_foreground)
+            .child("A lightweight code editor")
+            .with_animation(
+                "welcome-subtitle-anim",
+                Animation::new(Duration::from_millis(800))
+                    .with_easing(easings::ease_out_cubic),
+                |el, delta| {
+                    let delay_frac = 0.3;
+                    let t = ((delta - delay_frac) / (1.0 - delay_frac)).clamp(0.0, 1.0);
+                    el.opacity(t)
+                },
+            );
+
+        let shortcuts = div()
+            .id("welcome-shortcuts")
+            .mt(px(24.0))
+            .flex()
+            .flex_col()
+            .gap(px(8.0))
+            .items_center()
+            .text_size(px(12.0))
+            .text_color(theme.tokens.muted_foreground.opacity(0.7))
+            .child("Cmd+O  Open file")
+            .child("Cmd+Shift+O  Open folder")
+            .child("Cmd+N  New file")
+            .with_animation(
+                "welcome-shortcuts-anim",
+                Animation::new(Duration::from_millis(1000))
+                    .with_easing(easings::ease_out_cubic),
+                |el, delta| {
+                    let delay_frac = 0.5;
+                    let t = ((delta - delay_frac) / (1.0 - delay_frac)).clamp(0.0, 1.0);
+                    let offset = (1.0 - t) * 12.0;
+                    el.opacity(t).mt(px(24.0 + offset))
+                },
+            );
+
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .items_center()
+            .justify_center()
+            .gap(px(16.0))
+            .child(title)
+            .child(subtitle)
+            .child(shortcuts)
+    }
+
     fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let folder_name = self
@@ -1500,6 +1575,7 @@ impl Render for AppState {
                 .syntax_color_fn(move |name| syn.color_for_capture(name))
         };
 
+        let has_tabs = !self.buffers.is_empty();
         let active_is_image = self.tab_meta.get(self.active_tab).map(|m| m.is_image).unwrap_or(false);
         let active_image_path = if active_is_image {
             self.tab_meta.get(self.active_tab).and_then(|m| m.file_path.clone())
@@ -1507,15 +1583,43 @@ impl Render for AppState {
             None
         };
 
+        let right_pane_content: AnyElement = if !has_tabs {
+            self.render_welcome(&theme).into_any_element()
+        } else if let Some(image_path) = &active_image_path {
+            Self::render_image_preview(image_path, &theme).into_any_element()
+        } else if let Some(buffer) = self.buffers.get(self.active_tab) {
+            build_editor(buffer, cx).into_any_element()
+        } else {
+            self.render_welcome(&theme).into_any_element()
+        };
+
+        let tab_bar_row = if !self.terminal_fullscreen {
+            let row = div()
+                .w_full()
+                .h(px(36.0))
+                .flex()
+                .items_center()
+                .bg(theme.tokens.muted.opacity(0.3))
+                .border_b_1()
+                .border_color(theme.tokens.border);
+            if has_tabs {
+                Some(row.child(self.render_tab_bar(cx)).child(self.render_theme_button(cx)))
+            } else {
+                Some(row.child(div().flex_1()).child(self.render_theme_button(cx)))
+            }
+        } else {
+            None
+        };
+
+        let right_pane = div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .children(tab_bar_row)
+            .child(div().flex_1().overflow_hidden().child(right_pane_content));
+
         let editor_area = if self.sidebar_visible {
             let sidebar = self.render_sidebar(cx);
-            let editor_el: Option<AnyElement> = if let Some(image_path) = &active_image_path {
-                Some(Self::render_image_preview(image_path, &theme).into_any_element())
-            } else {
-                self.buffers.get(self.active_tab).map(|buffer| {
-                    build_editor(buffer, cx).into_any_element()
-                })
-            };
             div()
                 .size_full()
                 .child(
@@ -1527,27 +1631,11 @@ impl Render for AppState {
                                 .max_size(px(500.0))
                                 .child(sidebar),
                         )
-                        .child(
-                            resizable_panel().child(
-                                div()
-                                    .size_full()
-                                    .children(editor_el),
-                            ),
-                        ),
+                        .child(resizable_panel().child(right_pane)),
                 )
                 .into_any_element()
         } else {
-            let editor_el: Option<AnyElement> = if let Some(image_path) = &active_image_path {
-                Some(Self::render_image_preview(image_path, &theme).into_any_element())
-            } else {
-                self.buffers.get(self.active_tab).map(|buffer| {
-                    build_editor(buffer, cx).into_any_element()
-                })
-            };
-            div()
-                .size_full()
-                .children(editor_el)
-                .into_any_element()
+            right_pane.into_any_element()
         };
 
         let main_content = if self.git_visible {
@@ -1805,20 +1893,6 @@ impl Render for AppState {
             .flex()
             .flex_col()
             .bg(theme.tokens.background)
-            .when(!self.terminal_fullscreen, |el| {
-                el.child(
-                    div()
-                        .w_full()
-                        .h(px(36.0))
-                        .flex()
-                        .items_center()
-                        .bg(theme.tokens.muted.opacity(0.3))
-                        .border_b_1()
-                        .border_color(theme.tokens.border)
-                        .child(self.render_tab_bar(cx))
-                        .child(self.render_theme_button(cx)),
-                )
-            })
             .when(self.theme_selector_open && !self.terminal_fullscreen, |el| {
                 el.child(self.render_theme_panel(cx))
             })

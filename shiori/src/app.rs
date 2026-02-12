@@ -114,7 +114,6 @@ pub struct AppState {
     last_content_version: u64,
     git_state: Entity<GitState>,
     git_visible: bool,
-    ide_theme_selector_open: bool,
 }
 
 struct TabMeta {
@@ -241,7 +240,6 @@ impl AppState {
             last_content_version: 0,
             git_state,
             git_visible: false,
-            ide_theme_selector_open: false,
         }
     }
 
@@ -946,7 +944,18 @@ impl AppState {
                         el.hover(|s| s.bg(theme.tokens.muted.opacity(0.8)))
                     })
                     .on_click(cx.listener(move |this, _, _, cx| {
+                        let ide = if variant == adabraka_ui::theme::ThemeVariant::Light {
+                            crate::ide_theme::shiori_light()
+                        } else {
+                            crate::ide_theme::shiori_dark()
+                        };
+                        crate::ide_theme::install_ide_theme(ide);
                         install_theme(cx, chosen.clone());
+                        for terminal in &this.terminals {
+                            terminal.update(cx, |tv, _cx| {
+                                tv.apply_ide_theme();
+                            });
+                        }
                         this.theme_selector_open = false;
                         cx.notify();
                     }))
@@ -954,94 +963,7 @@ impl AppState {
             }))
     }
 
-    fn render_ide_theme_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = use_theme();
-        let muted_fg = theme.tokens.muted_foreground;
 
-        div()
-            .id("ide-theme-anchor")
-            .h_full()
-            .flex()
-            .flex_shrink_0()
-            .items_center()
-            .px(px(8.0))
-            .border_l_1()
-            .border_color(theme.tokens.border.opacity(0.5))
-            .cursor_pointer()
-            .hover(|s| s.bg(theme.tokens.muted.opacity(0.5)))
-            .on_click(cx.listener(|this, _, _, cx| {
-                this.ide_theme_selector_open = !this.ide_theme_selector_open;
-                cx.notify();
-            }))
-            .child(Icon::new("palette").size(px(14.0)).color(muted_fg))
-    }
-
-    fn render_ide_theme_panel(&self, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = use_theme();
-        let all = crate::ide_theme::all_ide_themes();
-        let current_name = crate::ide_theme::use_ide_theme().name;
-
-        div()
-            .w_full()
-            .flex()
-            .flex_wrap()
-            .gap(px(6.0))
-            .px(px(12.0))
-            .py(px(8.0))
-            .bg(theme.tokens.muted.opacity(0.3))
-            .border_b_1()
-            .border_color(theme.tokens.border)
-            .child(
-                div()
-                    .text_size(px(11.0))
-                    .text_color(theme.tokens.muted_foreground)
-                    .mr(px(4.0))
-                    .child("IDE:"),
-            )
-            .children(all.into_iter().enumerate().map(|(i, t)| {
-                let name = t.name;
-                let is_current = name == current_name;
-                let pill_bg = if is_current {
-                    theme.tokens.primary
-                } else {
-                    theme.tokens.muted
-                };
-                let pill_fg = if is_current {
-                    theme.tokens.primary_foreground
-                } else {
-                    theme.tokens.foreground
-                };
-
-                div()
-                    .id(ElementId::Name(format!("ide-theme-{}", i).into()))
-                    .flex()
-                    .items_center()
-                    .px(px(10.0))
-                    .py(px(4.0))
-                    .rounded(px(12.0))
-                    .text_size(px(12.0))
-                    .bg(pill_bg)
-                    .text_color(pill_fg)
-                    .cursor_pointer()
-                    .when(!is_current, |el| {
-                        el.hover(|s| s.bg(theme.tokens.muted.opacity(0.8)))
-                    })
-                    .on_click(cx.listener(move |this, _, _, cx| {
-                        let themes = crate::ide_theme::all_ide_themes();
-                        if let Some(chosen) = themes.into_iter().nth(i) {
-                            crate::ide_theme::install_ide_theme(chosen);
-                        }
-                        for terminal in &this.terminals {
-                            terminal.update(cx, |tv, _cx| {
-                                tv.apply_ide_theme();
-                            });
-                        }
-                        this.ide_theme_selector_open = false;
-                        cx.notify();
-                    }))
-                    .child(name)
-            }))
-    }
 
     fn render_goto_line(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
@@ -1894,15 +1816,11 @@ impl Render for AppState {
                         .border_b_1()
                         .border_color(theme.tokens.border)
                         .child(self.render_tab_bar(cx))
-                        .child(self.render_ide_theme_button(cx))
                         .child(self.render_theme_button(cx)),
                 )
             })
             .when(self.theme_selector_open && !self.terminal_fullscreen, |el| {
                 el.child(self.render_theme_panel(cx))
-            })
-            .when(self.ide_theme_selector_open && !self.terminal_fullscreen, |el| {
-                el.child(self.render_ide_theme_panel(cx))
             })
             .when(search_visible && !self.terminal_fullscreen, |el| {
                 el.child(self.search_bar.clone())

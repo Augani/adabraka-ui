@@ -76,12 +76,7 @@ pub fn install_ide_theme(theme: IdeTheme) {
 }
 
 pub fn all_ide_themes() -> Vec<IdeTheme> {
-    vec![
-        shiori_dark(),
-        shiori_midnight(),
-        shiori_light(),
-        shiori_warm(),
-    ]
+    vec![shiori_dark(), shiori_light()]
 }
 
 fn rgba_from_hex(hex: u32) -> Rgba {
@@ -97,7 +92,7 @@ fn hsla(h: f32, s: f32, l: f32, a: f32) -> Hsla {
 
 pub fn shiori_dark() -> IdeTheme {
     IdeTheme {
-        name: "Shiori Dark",
+        name: "Dark",
         editor: EditorColors {
             cursor: hsla(0.58, 0.90, 0.65, 1.0),
             selection: hsla(0.62, 0.50, 0.40, 0.35),
@@ -108,26 +103,26 @@ pub fn shiori_dark() -> IdeTheme {
             search_match_active: hsla(0.07, 0.90, 0.55, 0.45),
         },
         syntax: SyntaxColors {
-            keyword: hsla(0.77, 0.75, 0.70, 1.0),
-            type_name: hsla(0.47, 0.60, 0.65, 1.0),
-            function: hsla(0.58, 0.65, 0.70, 1.0),
-            string: hsla(0.25, 0.55, 0.60, 1.0),
-            number: hsla(0.08, 0.75, 0.65, 1.0),
-            comment: hsla(0.63, 0.16, 0.42, 1.0),
-            operator: hsla(0.55, 0.50, 0.70, 1.0),
-            variable: hsla(0.0, 0.0, 0.85, 1.0),
-            constant: hsla(0.08, 0.75, 0.65, 1.0),
-            property: hsla(0.55, 0.50, 0.70, 1.0),
-            punctuation: hsla(0.0, 0.0, 0.55, 1.0),
-            attribute: hsla(0.12, 0.60, 0.65, 1.0),
-            namespace: hsla(0.08, 0.50, 0.70, 1.0),
-            tag: hsla(0.0, 0.65, 0.65, 1.0),
-            heading: hsla(0.58, 0.65, 0.80, 1.0),
-            emphasis: hsla(0.25, 0.55, 0.70, 1.0),
-            link: hsla(0.55, 0.60, 0.65, 1.0),
-            literal: hsla(0.25, 0.55, 0.60, 1.0),
-            embedded: hsla(0.0, 0.0, 0.80, 1.0),
-            default_fg: hsla(0.0, 0.0, 0.85, 1.0),
+            keyword: hsla(0.77, 0.80, 0.76, 1.0),
+            type_name: hsla(0.47, 0.65, 0.72, 1.0),
+            function: hsla(0.58, 0.70, 0.76, 1.0),
+            string: hsla(0.25, 0.60, 0.68, 1.0),
+            number: hsla(0.08, 0.80, 0.72, 1.0),
+            comment: hsla(0.63, 0.20, 0.55, 1.0),
+            operator: hsla(0.55, 0.55, 0.76, 1.0),
+            variable: hsla(0.0, 0.0, 0.90, 1.0),
+            constant: hsla(0.08, 0.80, 0.72, 1.0),
+            property: hsla(0.55, 0.55, 0.76, 1.0),
+            punctuation: hsla(0.0, 0.0, 0.65, 1.0),
+            attribute: hsla(0.12, 0.65, 0.72, 1.0),
+            namespace: hsla(0.08, 0.55, 0.76, 1.0),
+            tag: hsla(0.0, 0.70, 0.72, 1.0),
+            heading: hsla(0.58, 0.70, 0.82, 1.0),
+            emphasis: hsla(0.25, 0.60, 0.76, 1.0),
+            link: hsla(0.55, 0.65, 0.72, 1.0),
+            literal: hsla(0.25, 0.60, 0.68, 1.0),
+            embedded: hsla(0.0, 0.0, 0.88, 1.0),
+            default_fg: hsla(0.0, 0.0, 0.90, 1.0),
         },
         terminal: TerminalColors {
             palette: [
@@ -170,227 +165,77 @@ pub fn shiori_dark() -> IdeTheme {
     }
 }
 
-pub fn shiori_midnight() -> IdeTheme {
-    IdeTheme {
-        name: "Shiori Midnight",
-        editor: EditorColors {
-            cursor: hsla(0.33, 0.90, 0.55, 1.0),
-            selection: hsla(0.58, 0.60, 0.40, 0.30),
-            line_number: hsla(0.0, 0.0, 0.30, 1.0),
-            line_number_active: hsla(0.0, 0.0, 0.60, 1.0),
-            gutter_bg: hsla(0.63, 0.20, 0.06, 1.0),
-            search_match: hsla(0.15, 0.90, 0.50, 0.30),
-            search_match_active: hsla(0.07, 0.95, 0.55, 0.50),
-        },
-        syntax: SyntaxColors {
-            keyword: hsla(0.95, 0.70, 0.68, 1.0),
-            type_name: hsla(0.55, 0.70, 0.68, 1.0),
-            function: hsla(0.72, 0.70, 0.75, 1.0),
-            string: hsla(0.30, 0.55, 0.60, 1.0),
-            number: hsla(0.55, 0.70, 0.75, 1.0),
-            comment: hsla(0.0, 0.0, 0.38, 1.0),
-            operator: hsla(0.55, 0.60, 0.70, 1.0),
-            variable: hsla(0.0, 0.0, 0.88, 1.0),
-            constant: hsla(0.55, 0.70, 0.75, 1.0),
-            property: hsla(0.58, 0.50, 0.68, 1.0),
-            punctuation: hsla(0.0, 0.0, 0.50, 1.0),
-            attribute: hsla(0.10, 0.70, 0.68, 1.0),
-            namespace: hsla(0.95, 0.50, 0.70, 1.0),
-            tag: hsla(0.33, 0.65, 0.60, 1.0),
-            heading: hsla(0.58, 0.70, 0.80, 1.0),
-            emphasis: hsla(0.30, 0.55, 0.70, 1.0),
-            link: hsla(0.55, 0.65, 0.65, 1.0),
-            literal: hsla(0.30, 0.55, 0.60, 1.0),
-            embedded: hsla(0.0, 0.0, 0.82, 1.0),
-            default_fg: hsla(0.0, 0.0, 0.88, 1.0),
-        },
-        terminal: TerminalColors {
-            palette: [
-                rgba_from_hex(0x0d1117),
-                rgba_from_hex(0xff7b72),
-                rgba_from_hex(0x7ee787),
-                rgba_from_hex(0xd29922),
-                rgba_from_hex(0x79c0ff),
-                rgba_from_hex(0xd2a8ff),
-                rgba_from_hex(0xa5d6ff),
-                rgba_from_hex(0xc9d1d9),
-                rgba_from_hex(0x484f58),
-                rgba_from_hex(0xff7b72),
-                rgba_from_hex(0x7ee787),
-                rgba_from_hex(0xd29922),
-                rgba_from_hex(0x79c0ff),
-                rgba_from_hex(0xd2a8ff),
-                rgba_from_hex(0xa5d6ff),
-                rgba_from_hex(0xf0f6fc),
-            ],
-            fg: rgba_from_hex(0xc9d1d9),
-            bg: Rgba {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.0,
-            },
-            cursor_color: hsla(0.33, 0.90, 0.55, 1.0),
-            selection_color: hsla(0.58, 0.6, 0.5, 0.35),
-        },
-        chrome: ChromeColors {
-            bg: hsla(0.61, 0.20, 0.07, 1.0),
-            header_bg: hsla(0.61, 0.20, 0.05, 1.0),
-            header_border: hsla(0.61, 0.15, 0.15, 1.0),
-            accent: hsla(0.33, 0.80, 0.65, 1.0),
-            dim: hsla(0.61, 0.10, 0.40, 1.0),
-            bright: hsla(0.0, 0.0, 0.85, 1.0),
-            footer_bg: hsla(0.61, 0.20, 0.05, 1.0),
-        },
-    }
-}
-
 pub fn shiori_light() -> IdeTheme {
     IdeTheme {
-        name: "Shiori Light",
+        name: "Light",
         editor: EditorColors {
-            cursor: hsla(0.58, 0.90, 0.45, 1.0),
-            selection: hsla(0.58, 0.50, 0.70, 0.30),
-            line_number: hsla(0.0, 0.0, 0.55, 1.0),
-            line_number_active: hsla(0.0, 0.0, 0.30, 1.0),
+            cursor: hsla(0.58, 0.95, 0.40, 1.0),
+            selection: hsla(0.58, 0.55, 0.75, 0.35),
+            line_number: hsla(0.0, 0.0, 0.50, 1.0),
+            line_number_active: hsla(0.0, 0.0, 0.25, 1.0),
             gutter_bg: hsla(0.0, 0.0, 0.96, 1.0),
             search_match: hsla(0.15, 0.90, 0.60, 0.30),
-            search_match_active: hsla(0.07, 0.95, 0.55, 0.45),
+            search_match_active: hsla(0.07, 0.95, 0.50, 0.50),
         },
         syntax: SyntaxColors {
-            keyword: hsla(0.77, 0.65, 0.45, 1.0),
-            type_name: hsla(0.47, 0.55, 0.40, 1.0),
-            function: hsla(0.58, 0.60, 0.42, 1.0),
-            string: hsla(0.25, 0.60, 0.38, 1.0),
-            number: hsla(0.08, 0.70, 0.45, 1.0),
-            comment: hsla(0.0, 0.0, 0.55, 1.0),
-            operator: hsla(0.55, 0.45, 0.42, 1.0),
-            variable: hsla(0.0, 0.0, 0.20, 1.0),
-            constant: hsla(0.08, 0.70, 0.45, 1.0),
-            property: hsla(0.55, 0.45, 0.42, 1.0),
-            punctuation: hsla(0.0, 0.0, 0.40, 1.0),
-            attribute: hsla(0.12, 0.55, 0.45, 1.0),
-            namespace: hsla(0.08, 0.45, 0.45, 1.0),
-            tag: hsla(0.0, 0.60, 0.45, 1.0),
-            heading: hsla(0.58, 0.60, 0.40, 1.0),
-            emphasis: hsla(0.25, 0.55, 0.42, 1.0),
-            link: hsla(0.55, 0.55, 0.42, 1.0),
-            literal: hsla(0.25, 0.60, 0.38, 1.0),
-            embedded: hsla(0.0, 0.0, 0.25, 1.0),
-            default_fg: hsla(0.0, 0.0, 0.20, 1.0),
+            keyword: hsla(0.83, 0.90, 0.28, 1.0),
+            type_name: hsla(0.47, 0.80, 0.26, 1.0),
+            function: hsla(0.58, 0.85, 0.32, 1.0),
+            string: hsla(0.30, 0.80, 0.24, 1.0),
+            number: hsla(0.05, 0.90, 0.36, 1.0),
+            comment: hsla(0.0, 0.0, 0.42, 1.0),
+            operator: hsla(0.55, 0.70, 0.30, 1.0),
+            variable: hsla(0.0, 0.0, 0.10, 1.0),
+            constant: hsla(0.05, 0.90, 0.36, 1.0),
+            property: hsla(0.55, 0.65, 0.30, 1.0),
+            punctuation: hsla(0.0, 0.0, 0.25, 1.0),
+            attribute: hsla(0.08, 0.80, 0.34, 1.0),
+            namespace: hsla(0.47, 0.70, 0.28, 1.0),
+            tag: hsla(0.0, 0.80, 0.35, 1.0),
+            heading: hsla(0.58, 0.80, 0.30, 1.0),
+            emphasis: hsla(0.83, 0.70, 0.34, 1.0),
+            link: hsla(0.58, 0.80, 0.35, 1.0),
+            literal: hsla(0.30, 0.80, 0.24, 1.0),
+            embedded: hsla(0.0, 0.0, 0.12, 1.0),
+            default_fg: hsla(0.0, 0.0, 0.10, 1.0),
         },
         terminal: TerminalColors {
             palette: [
-                rgba_from_hex(0xf5f5f5),
-                rgba_from_hex(0xd32f2f),
-                rgba_from_hex(0x388e3c),
-                rgba_from_hex(0xf57f17),
-                rgba_from_hex(0x1976d2),
-                rgba_from_hex(0x7b1fa2),
-                rgba_from_hex(0x0097a7),
-                rgba_from_hex(0x37474f),
-                rgba_from_hex(0x90a4ae),
-                rgba_from_hex(0xe53935),
-                rgba_from_hex(0x43a047),
-                rgba_from_hex(0xfb8c00),
-                rgba_from_hex(0x1e88e5),
-                rgba_from_hex(0x8e24aa),
-                rgba_from_hex(0x00acc1),
-                rgba_from_hex(0x263238),
+                rgba_from_hex(0xf8f8f8), // black (light bg)
+                rgba_from_hex(0xc41a16), // red
+                rgba_from_hex(0x007400), // green
+                rgba_from_hex(0x9c6500), // yellow/brown
+                rgba_from_hex(0x0451a5), // blue
+                rgba_from_hex(0xa626a4), // magenta
+                rgba_from_hex(0x0184bc), // cyan
+                rgba_from_hex(0x383a42), // white (dark fg)
+                rgba_from_hex(0x9da5b4), // bright black
+                rgba_from_hex(0xe45649), // bright red
+                rgba_from_hex(0x50a14f), // bright green
+                rgba_from_hex(0xc18401), // bright yellow
+                rgba_from_hex(0x4078f2), // bright blue
+                rgba_from_hex(0xa626a4), // bright magenta
+                rgba_from_hex(0x0997b3), // bright cyan
+                rgba_from_hex(0x1e2127), // bright white (darkest fg)
             ],
-            fg: rgba_from_hex(0x263238),
+            fg: rgba_from_hex(0x383a42),
             bg: Rgba {
                 r: 0.0,
                 g: 0.0,
                 b: 0.0,
                 a: 0.0,
             },
-            cursor_color: hsla(0.58, 0.90, 0.45, 1.0),
-            selection_color: hsla(0.58, 0.5, 0.6, 0.35),
+            cursor_color: hsla(0.58, 0.95, 0.40, 1.0),
+            selection_color: hsla(0.58, 0.5, 0.7, 0.35),
         },
         chrome: ChromeColors {
             bg: hsla(0.0, 0.0, 0.97, 1.0),
             header_bg: hsla(0.0, 0.0, 0.94, 1.0),
             header_border: hsla(0.0, 0.0, 0.85, 1.0),
-            accent: hsla(0.58, 0.70, 0.45, 1.0),
-            dim: hsla(0.0, 0.0, 0.55, 1.0),
-            bright: hsla(0.0, 0.0, 0.15, 1.0),
+            accent: hsla(0.58, 0.75, 0.42, 1.0),
+            dim: hsla(0.0, 0.0, 0.50, 1.0),
+            bright: hsla(0.0, 0.0, 0.10, 1.0),
             footer_bg: hsla(0.0, 0.0, 0.94, 1.0),
-        },
-    }
-}
-
-pub fn shiori_warm() -> IdeTheme {
-    IdeTheme {
-        name: "Shiori Warm",
-        editor: EditorColors {
-            cursor: hsla(0.08, 0.90, 0.60, 1.0),
-            selection: hsla(0.08, 0.40, 0.40, 0.30),
-            line_number: hsla(0.08, 0.15, 0.38, 1.0),
-            line_number_active: hsla(0.08, 0.25, 0.60, 1.0),
-            gutter_bg: hsla(0.06, 0.15, 0.12, 1.0),
-            search_match: hsla(0.13, 0.80, 0.50, 0.30),
-            search_match_active: hsla(0.07, 0.90, 0.55, 0.45),
-        },
-        syntax: SyntaxColors {
-            keyword: hsla(0.03, 0.70, 0.65, 1.0),
-            type_name: hsla(0.12, 0.60, 0.65, 1.0),
-            function: hsla(0.15, 0.65, 0.70, 1.0),
-            string: hsla(0.25, 0.50, 0.58, 1.0),
-            number: hsla(0.08, 0.75, 0.65, 1.0),
-            comment: hsla(0.08, 0.12, 0.42, 1.0),
-            operator: hsla(0.08, 0.45, 0.65, 1.0),
-            variable: hsla(0.08, 0.08, 0.82, 1.0),
-            constant: hsla(0.08, 0.75, 0.65, 1.0),
-            property: hsla(0.08, 0.45, 0.65, 1.0),
-            punctuation: hsla(0.08, 0.10, 0.52, 1.0),
-            attribute: hsla(0.12, 0.55, 0.62, 1.0),
-            namespace: hsla(0.03, 0.50, 0.65, 1.0),
-            tag: hsla(0.03, 0.60, 0.60, 1.0),
-            heading: hsla(0.08, 0.65, 0.75, 1.0),
-            emphasis: hsla(0.12, 0.55, 0.68, 1.0),
-            link: hsla(0.55, 0.55, 0.60, 1.0),
-            literal: hsla(0.25, 0.50, 0.58, 1.0),
-            embedded: hsla(0.08, 0.08, 0.78, 1.0),
-            default_fg: hsla(0.08, 0.08, 0.82, 1.0),
-        },
-        terminal: TerminalColors {
-            palette: [
-                rgba_from_hex(0x1d2021),
-                rgba_from_hex(0xcc241d),
-                rgba_from_hex(0x98971a),
-                rgba_from_hex(0xd79921),
-                rgba_from_hex(0x458588),
-                rgba_from_hex(0xb16286),
-                rgba_from_hex(0x689d6a),
-                rgba_from_hex(0xa89984),
-                rgba_from_hex(0x928374),
-                rgba_from_hex(0xfb4934),
-                rgba_from_hex(0xb8bb26),
-                rgba_from_hex(0xfabd2f),
-                rgba_from_hex(0x83a598),
-                rgba_from_hex(0xd3869b),
-                rgba_from_hex(0x8ec07c),
-                rgba_from_hex(0xebdbb2),
-            ],
-            fg: rgba_from_hex(0xebdbb2),
-            bg: Rgba {
-                r: 0.0,
-                g: 0.0,
-                b: 0.0,
-                a: 0.0,
-            },
-            cursor_color: hsla(0.08, 0.90, 0.60, 1.0),
-            selection_color: hsla(0.08, 0.5, 0.45, 0.4),
-        },
-        chrome: ChromeColors {
-            bg: hsla(0.06, 0.15, 0.13, 1.0),
-            header_bg: hsla(0.06, 0.18, 0.09, 1.0),
-            header_border: hsla(0.06, 0.12, 0.22, 1.0),
-            accent: hsla(0.08, 0.80, 0.60, 1.0),
-            dim: hsla(0.08, 0.12, 0.45, 1.0),
-            bright: hsla(0.10, 0.30, 0.82, 1.0),
-            footer_bg: hsla(0.06, 0.18, 0.09, 1.0),
         },
     }
 }

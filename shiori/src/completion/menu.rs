@@ -1,5 +1,6 @@
 use super::state::CompletionState;
 use super::SymbolKind;
+use adabraka_ui::components::editor::EditorState;
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::scrollable::scrollable_vertical;
 use adabraka_ui::theme::use_theme;
@@ -13,6 +14,7 @@ const MENU_WIDTH: f32 = 280.0;
 
 pub struct CompletionMenu {
     state: Entity<CompletionState>,
+    editor_state: Option<Entity<EditorState>>,
     on_accept: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
 }
 
@@ -20,8 +22,14 @@ impl CompletionMenu {
     pub fn new(state: Entity<CompletionState>) -> Self {
         Self {
             state,
+            editor_state: None,
             on_accept: None,
         }
+    }
+
+    pub fn editor_state(mut self, editor: Entity<EditorState>) -> Self {
+        self.editor_state = Some(editor);
+        self
     }
 
     pub fn on_accept(mut self, handler: impl Fn(&mut Window, &mut App) + 'static) -> Self {
@@ -36,6 +44,7 @@ impl IntoElement for CompletionMenu {
     fn into_element(self) -> Self::Element {
         CompletionMenuElement {
             state: self.state,
+            editor_state: self.editor_state,
             on_accept: self.on_accept,
         }
     }
@@ -43,6 +52,7 @@ impl IntoElement for CompletionMenu {
 
 pub struct CompletionMenuElement {
     state: Entity<CompletionState>,
+    editor_state: Option<Entity<EditorState>>,
     on_accept: Option<Rc<dyn Fn(&mut Window, &mut App)>>,
 }
 
@@ -87,7 +97,11 @@ impl Element for CompletionMenuElement {
         }
 
         let theme = use_theme();
-        let anchor = state.anchor_position();
+        let anchor = self
+            .editor_state
+            .as_ref()
+            .and_then(|es| es.read(cx).cursor_screen_position(px(20.0)))
+            .unwrap_or_else(|| state.anchor_position());
         let selected_idx = state.selected_display_index();
         let on_accept = self.on_accept.clone();
 

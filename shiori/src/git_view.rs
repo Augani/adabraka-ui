@@ -145,6 +145,8 @@ impl GitView {
             ("circle-dot", yellow)
         };
 
+        
+
         let filename = entry_path
             .rsplit('/')
             .next()

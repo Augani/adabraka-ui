@@ -754,7 +754,7 @@ impl TerminalState {
 
     pub fn newline(&mut self) {
         self.cursor.col = 0;
-        if self.cursor.row >= self.scroll_region_bottom {
+        if self.cursor.row == self.scroll_region_bottom {
             self.scroll_up_region();
         } else if self.cursor.row + 1 < self.rows {
             self.cursor.row += 1;
@@ -766,7 +766,7 @@ impl TerminalState {
     }
 
     pub fn line_feed(&mut self) {
-        if self.cursor.row >= self.scroll_region_bottom {
+        if self.cursor.row == self.scroll_region_bottom {
             self.scroll_up_region();
         } else if self.cursor.row + 1 < self.rows {
             self.cursor.row += 1;
@@ -778,7 +778,7 @@ impl TerminalState {
     }
 
     pub fn reverse_index(&mut self) {
-        if self.cursor.row <= self.scroll_region_top {
+        if self.cursor.row == self.scroll_region_top {
             self.scroll_down_region();
         } else if self.cursor.row > 0 {
             self.cursor.row -= 1;
@@ -806,19 +806,21 @@ impl TerminalState {
     }
 
     fn scroll_up_region(&mut self) {
-        if self.use_alt_screen {
-            let top = self.scroll_region_top;
-            let bottom = self.scroll_region_bottom;
-            if bottom > top && bottom < self.rows {
-                let idx = self.viewport_to_absolute(top);
-                if idx < self.lines.len() {
-                    self.lines.remove(idx);
-                    let insert_idx = self.viewport_to_absolute(bottom);
-                    self.lines.insert(
-                        insert_idx.min(self.lines.len()),
-                        TerminalLine::new(self.cols),
-                    );
-                }
+        let top = self.scroll_region_top;
+        let bottom = self.scroll_region_bottom;
+        if bottom <= top {
+            return;
+        }
+
+        if self.use_alt_screen || (top > 0 || bottom < self.rows.saturating_sub(1)) {
+            let remove_idx = self.viewport_to_absolute(top);
+            let insert_idx = self.viewport_to_absolute(bottom);
+            if remove_idx < self.lines.len() {
+                self.lines.remove(remove_idx);
+                self.lines.insert(
+                    insert_idx.min(self.lines.len()),
+                    TerminalLine::new(self.cols),
+                );
             }
         } else {
             self.lines.push(TerminalLine::new(self.cols));
@@ -834,15 +836,21 @@ impl TerminalState {
     }
 
     fn scroll_down_region(&mut self) {
+        let top = self.scroll_region_top;
         let bottom = self.scroll_region_bottom;
-        let insert_idx = self.viewport_to_absolute(self.scroll_region_top);
+        if bottom <= top {
+            return;
+        }
 
-        if insert_idx < self.lines.len() {
-            self.lines.insert(insert_idx, TerminalLine::new(self.cols));
-            let remove_idx = self.viewport_to_absolute(bottom + 1);
-            if remove_idx < self.lines.len() {
-                self.lines.remove(remove_idx);
-            }
+        let remove_idx = self.viewport_to_absolute(bottom);
+        let insert_idx = self.viewport_to_absolute(top);
+
+        if remove_idx < self.lines.len() {
+            self.lines.remove(remove_idx);
+            self.lines.insert(
+                insert_idx.min(self.lines.len()),
+                TerminalLine::new(self.cols),
+            );
         }
     }
 
@@ -1110,13 +1118,15 @@ impl TerminalState {
         }
 
         for _ in 0..count {
+            let remove_idx = self.viewport_to_absolute(self.scroll_region_bottom);
             let insert_idx = self.viewport_to_absolute(row);
-            self.lines.insert(insert_idx, TerminalLine::new(self.cols));
-
-            let remove_idx = self.viewport_to_absolute(self.scroll_region_bottom + 1);
             if remove_idx < self.lines.len() {
                 self.lines.remove(remove_idx);
             }
+            self.lines.insert(
+                insert_idx.min(self.lines.len()),
+                TerminalLine::new(self.cols),
+            );
         }
     }
 
@@ -1128,15 +1138,14 @@ impl TerminalState {
 
         for _ in 0..count {
             let remove_idx = self.viewport_to_absolute(row);
+            let insert_idx = self.viewport_to_absolute(self.scroll_region_bottom);
             if remove_idx < self.lines.len() {
                 self.lines.remove(remove_idx);
+                self.lines.insert(
+                    insert_idx.min(self.lines.len()),
+                    TerminalLine::new(self.cols),
+                );
             }
-
-            let insert_idx = self.viewport_to_absolute(self.scroll_region_bottom);
-            self.lines.insert(
-                insert_idx.min(self.lines.len()),
-                TerminalLine::new(self.cols),
-            );
         }
     }
 
@@ -1178,6 +1187,7 @@ impl TerminalState {
         }
 
         let cursor_abs = self.lines.len().saturating_sub(self.rows) + self.cursor.row;
+        let old_cursor_row = self.cursor.row;
 
         self.cols = cols;
         self.rows = rows;
@@ -1186,14 +1196,18 @@ impl TerminalState {
             line.resize(cols);
         }
 
-        while self.lines.len() < rows {
+        let target_cursor_row = old_cursor_row.min(rows.saturating_sub(1));
+        let needed_total = (cursor_abs + rows).saturating_sub(target_cursor_row);
+
+        while self.lines.len() > needed_total && self.lines.len() > cursor_abs + 1 {
+            self.lines.pop();
+        }
+
+        while self.lines.len() < needed_total {
             self.lines.push(TerminalLine::new(cols));
         }
 
-        let new_viewport_start = self.lines.len().saturating_sub(rows);
-        self.cursor.row = cursor_abs
-            .saturating_sub(new_viewport_start)
-            .min(rows.saturating_sub(1));
+        self.cursor.row = target_cursor_row;
         self.cursor.col = self.cursor.col.min(cols.saturating_sub(1));
 
         self.scroll_region_top = 0;
@@ -1295,7 +1309,7 @@ impl TerminalState {
         });
 
         for _ in 0..display_rows {
-            if self.cursor.row >= self.scroll_region_bottom {
+            if self.cursor.row == self.scroll_region_bottom {
                 self.scroll_up_region();
             } else if self.cursor.row + 1 < self.rows {
                 self.cursor.row += 1;

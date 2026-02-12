@@ -114,6 +114,7 @@ pub struct AppState {
     last_content_version: u64,
     git_state: Entity<GitState>,
     git_visible: bool,
+    ide_theme_selector_open: bool,
 }
 
 struct TabMeta {
@@ -121,6 +122,14 @@ struct TabMeta {
     file_name: Option<String>,
     modified: bool,
     title: SharedString,
+    is_image: bool,
+}
+
+fn is_image_file(path: &Path) -> bool {
+    matches!(
+        path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).as_deref(),
+        Some("png" | "jpg" | "jpeg" | "gif" | "svg" | "ico" | "webp" | "bmp" | "tiff" | "tif")
+    )
 }
 
 fn scan_directory(path: &Path, depth: usize) -> Vec<FileNode> {
@@ -232,6 +241,7 @@ impl AppState {
             last_content_version: 0,
             git_state,
             git_visible: false,
+            ide_theme_selector_open: false,
         }
     }
 
@@ -244,11 +254,13 @@ impl AppState {
             .map(|n| n.to_string_lossy().to_string());
         let modified = state.is_modified();
         let title = Self::compose_tab_title(file_name.as_deref(), idx, modified);
+        let is_image = file_path.as_ref().map(|p| is_image_file(p)).unwrap_or(false);
         TabMeta {
             file_path,
             file_name,
             modified,
             title,
+            is_image,
         }
     }
 
@@ -345,21 +357,46 @@ impl AppState {
 
     pub fn open_paths(&mut self, paths: Vec<PathBuf>, cx: &mut Context<Self>) {
         for path in paths {
-            let buffer = cx.new(|cx| {
-                let mut state = EditorState::new(cx);
-                state.load_file(&path, cx);
-                state
-            });
-            cx.observe(&buffer, Self::on_buffer_changed).detach();
-            self.add_buffer(buffer, cx);
+            if is_image_file(&path) {
+                self.open_image_tab(path, cx);
+            } else {
+                let buffer = cx.new(|cx| {
+                    let mut state = EditorState::new(cx);
+                    state.load_file(&path, cx);
+                    state
+                });
+                cx.observe(&buffer, Self::on_buffer_changed).detach();
+                self.add_buffer(buffer, cx);
+            }
         }
         self.clamp_tab_scroll();
         self.update_search_editor(cx);
         cx.notify();
     }
 
+    fn open_image_tab(&mut self, path: PathBuf, cx: &mut Context<Self>) {
+        let idx = self.buffers.len();
+        let buffer = cx.new(|cx| EditorState::new(cx));
+        let file_name = path.file_name().map(|n| n.to_string_lossy().to_string());
+        let title = Self::compose_tab_title(file_name.as_deref(), idx, false);
+        self.buffer_index.insert(buffer.entity_id(), idx);
+        self.tab_meta.push(TabMeta {
+            file_path: Some(path),
+            file_name,
+            modified: false,
+            title,
+            is_image: true,
+        });
+        self.buffers.push(buffer);
+        self.autosave.push();
+        self.active_tab = idx;
+    }
+
     fn on_buffer_changed(&mut self, buffer: Entity<EditorState>, cx: &mut Context<Self>) {
         if let Some(&idx) = self.buffer_index.get(&buffer.entity_id()) {
+            if self.tab_meta.get(idx).map(|m| m.is_image).unwrap_or(false) {
+                return;
+            }
             self.update_tab_meta_at(idx, cx);
             let buf = buffer.clone();
             let task = cx.spawn(async move |_, cx| {
@@ -917,6 +954,95 @@ impl AppState {
             }))
     }
 
+    fn render_ide_theme_button(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = use_theme();
+        let muted_fg = theme.tokens.muted_foreground;
+
+        div()
+            .id("ide-theme-anchor")
+            .h_full()
+            .flex()
+            .flex_shrink_0()
+            .items_center()
+            .px(px(8.0))
+            .border_l_1()
+            .border_color(theme.tokens.border.opacity(0.5))
+            .cursor_pointer()
+            .hover(|s| s.bg(theme.tokens.muted.opacity(0.5)))
+            .on_click(cx.listener(|this, _, _, cx| {
+                this.ide_theme_selector_open = !this.ide_theme_selector_open;
+                cx.notify();
+            }))
+            .child(Icon::new("palette").size(px(14.0)).color(muted_fg))
+    }
+
+    fn render_ide_theme_panel(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = use_theme();
+        let all = crate::ide_theme::all_ide_themes();
+        let current_name = crate::ide_theme::use_ide_theme().name;
+
+        div()
+            .w_full()
+            .flex()
+            .flex_wrap()
+            .gap(px(6.0))
+            .px(px(12.0))
+            .py(px(8.0))
+            .bg(theme.tokens.muted.opacity(0.3))
+            .border_b_1()
+            .border_color(theme.tokens.border)
+            .child(
+                div()
+                    .text_size(px(11.0))
+                    .text_color(theme.tokens.muted_foreground)
+                    .mr(px(4.0))
+                    .child("IDE:"),
+            )
+            .children(all.into_iter().enumerate().map(|(i, t)| {
+                let name = t.name;
+                let is_current = name == current_name;
+                let pill_bg = if is_current {
+                    theme.tokens.primary
+                } else {
+                    theme.tokens.muted
+                };
+                let pill_fg = if is_current {
+                    theme.tokens.primary_foreground
+                } else {
+                    theme.tokens.foreground
+                };
+
+                div()
+                    .id(ElementId::Name(format!("ide-theme-{}", i).into()))
+                    .flex()
+                    .items_center()
+                    .px(px(10.0))
+                    .py(px(4.0))
+                    .rounded(px(12.0))
+                    .text_size(px(12.0))
+                    .bg(pill_bg)
+                    .text_color(pill_fg)
+                    .cursor_pointer()
+                    .when(!is_current, |el| {
+                        el.hover(|s| s.bg(theme.tokens.muted.opacity(0.8)))
+                    })
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        let themes = crate::ide_theme::all_ide_themes();
+                        if let Some(chosen) = themes.into_iter().nth(i) {
+                            crate::ide_theme::install_ide_theme(chosen);
+                        }
+                        for terminal in &this.terminals {
+                            terminal.update(cx, |tv, _cx| {
+                                tv.apply_ide_theme();
+                            });
+                        }
+                        this.ide_theme_selector_open = false;
+                        cx.notify();
+                    }))
+                    .child(name)
+            }))
+    }
+
     fn render_goto_line(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let line_count = self
@@ -1224,6 +1350,68 @@ impl AppState {
         std::env::current_dir().unwrap_or_else(|_| PathBuf::from("/"))
     }
 
+    fn render_image_preview(path: &Path, theme: &Theme) -> Div {
+        let path_str: SharedString = path.to_string_lossy().into_owned().into();
+        let file_name = path
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default();
+        let file_size = std::fs::metadata(path)
+            .map(|m| {
+                let bytes = m.len();
+                if bytes < 1024 {
+                    format!("{} B", bytes)
+                } else if bytes < 1024 * 1024 {
+                    format!("{:.1} KB", bytes as f64 / 1024.0)
+                } else {
+                    format!("{:.1} MB", bytes as f64 / (1024.0 * 1024.0))
+                }
+            })
+            .unwrap_or_default();
+
+        div()
+            .size_full()
+            .flex()
+            .flex_col()
+            .items_center()
+            .justify_center()
+            .bg(theme.tokens.background)
+            .child(
+                div()
+                    .max_w(px(800.0))
+                    .max_h_full()
+                    .flex()
+                    .flex_col()
+                    .items_center()
+                    .gap(px(12.0))
+                    .p(px(24.0))
+                    .child(
+                        img(path_str)
+                            .max_w(px(760.0))
+                            .max_h(px(600.0))
+                            .object_fit(ObjectFit::Contain),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(12.0))
+                            .child(
+                                div()
+                                    .text_size(px(12.0))
+                                    .text_color(theme.tokens.foreground)
+                                    .child(file_name),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(11.0))
+                                    .text_color(theme.tokens.muted_foreground)
+                                    .child(file_size),
+                            ),
+                    ),
+            )
+    }
+
     fn render_sidebar(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = use_theme();
         let folder_name = self
@@ -1378,13 +1566,34 @@ impl Render for AppState {
         let search_visible = self.search_visible;
         let goto_visible = self.goto_line_visible;
 
+        let ide = crate::ide_theme::use_ide_theme();
+        let build_editor = |buffer: &Entity<EditorState>, cx: &mut App| {
+            let syn = ide.syntax.clone();
+            Editor::new(buffer)
+                .show_line_numbers(true, cx)
+                .show_border(false)
+                .cursor_color(ide.editor.cursor)
+                .selection_color(ide.editor.selection)
+                .search_match_colors(ide.editor.search_match, ide.editor.search_match_active)
+                .syntax_color_fn(move |name| syn.color_for_capture(name))
+        };
+
+        let active_is_image = self.tab_meta.get(self.active_tab).map(|m| m.is_image).unwrap_or(false);
+        let active_image_path = if active_is_image {
+            self.tab_meta.get(self.active_tab).and_then(|m| m.file_path.clone())
+        } else {
+            None
+        };
+
         let editor_area = if self.sidebar_visible {
             let sidebar = self.render_sidebar(cx);
-            let editor_el = self.buffers.get(self.active_tab).map(|buffer| {
-                Editor::new(buffer)
-                    .show_line_numbers(true, cx)
-                    .show_border(false)
-            });
+            let editor_el: Option<AnyElement> = if let Some(image_path) = &active_image_path {
+                Some(Self::render_image_preview(image_path, &theme).into_any_element())
+            } else {
+                self.buffers.get(self.active_tab).map(|buffer| {
+                    build_editor(buffer, cx).into_any_element()
+                })
+            };
             div()
                 .size_full()
                 .child(
@@ -1406,13 +1615,16 @@ impl Render for AppState {
                 )
                 .into_any_element()
         } else {
+            let editor_el: Option<AnyElement> = if let Some(image_path) = &active_image_path {
+                Some(Self::render_image_preview(image_path, &theme).into_any_element())
+            } else {
+                self.buffers.get(self.active_tab).map(|buffer| {
+                    build_editor(buffer, cx).into_any_element()
+                })
+            };
             div()
                 .size_full()
-                .children(self.buffers.get(self.active_tab).map(|buffer| {
-                    Editor::new(buffer)
-                        .show_line_numbers(true, cx)
-                        .show_border(false)
-                }))
+                .children(editor_el)
                 .into_any_element()
         };
 
@@ -1682,11 +1894,15 @@ impl Render for AppState {
                         .border_b_1()
                         .border_color(theme.tokens.border)
                         .child(self.render_tab_bar(cx))
+                        .child(self.render_ide_theme_button(cx))
                         .child(self.render_theme_button(cx)),
                 )
             })
             .when(self.theme_selector_open && !self.terminal_fullscreen, |el| {
                 el.child(self.render_theme_panel(cx))
+            })
+            .when(self.ide_theme_selector_open && !self.terminal_fullscreen, |el| {
+                el.child(self.render_ide_theme_panel(cx))
             })
             .when(search_visible && !self.terminal_fullscreen, |el| {
                 el.child(self.search_bar.clone())
@@ -1700,7 +1916,11 @@ impl Render for AppState {
             })
             .child({
                 let app_entity = cx.entity().clone();
-                CompletionMenu::new(self.completion_state.clone()).on_accept(move |_, cx| {
+                let mut menu = CompletionMenu::new(self.completion_state.clone());
+                if let Some(buffer) = self.buffers.get(self.active_tab) {
+                    menu = menu.editor_state(buffer.clone());
+                }
+                menu.on_accept(move |_, cx| {
                     let _ = app_entity.update(cx, |this, cx| {
                         this.apply_completion(cx);
                     });

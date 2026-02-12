@@ -47,6 +47,7 @@ pub struct TerminalView {
     bell_flash_time: Option<Instant>,
     content_origin: Point<Pixels>,
     char_width: f32,
+    pending_pty_resize: Option<(usize, usize, Instant)>,
 }
 
 impl TerminalView {
@@ -67,9 +68,12 @@ impl TerminalView {
 
     pub fn new(cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
+        let ide = crate::ide_theme::use_ide_theme();
+        let mut parser = AnsiParser::new();
+        parser.set_colors(ide.terminal.palette, ide.terminal.fg, ide.terminal.bg);
         Self {
             state: TerminalState::default(),
-            parser: AnsiParser::new(),
+            parser,
             pty: None,
             focus_handle,
             cursor_blink: true,
@@ -91,7 +95,13 @@ impl TerminalView {
             bell_flash_time: None,
             content_origin: point(px(0.0), px(0.0)),
             char_width: 0.0,
+            pending_pty_resize: None,
         }
+    }
+
+    pub fn apply_ide_theme(&mut self) {
+        let ide = crate::ide_theme::use_ide_theme();
+        self.parser.set_colors(ide.terminal.palette, ide.terminal.fg, ide.terminal.bg);
     }
 
     pub fn with_working_directory(mut self, path: PathBuf) -> Self {
@@ -147,6 +157,7 @@ impl TerminalView {
                         view.state.set_mouse_mode(1000, false);
                         return false;
                     }
+                    view.flush_pending_resize();
                     view.process_output();
                     cx.notify();
                     true
@@ -358,9 +369,21 @@ impl TerminalView {
 
         if self.last_resize != Some((cols, rows)) {
             self.last_resize = Some((cols, rows));
-            self.state.resize(cols, rows);
-            if let Some(pty) = &mut self.pty {
-                let _ = pty.resize(cols as u16, rows as u16);
+            self.pending_pty_resize = Some((cols, rows, Instant::now()));
+        }
+    }
+
+    fn flush_pending_resize(&mut self) {
+        if let Some((cols, rows, when)) = self.pending_pty_resize {
+            let elapsed = when.elapsed().as_millis();
+            if elapsed >= 500 {
+                self.pending_pty_resize = None;
+                if cols != self.state.cols() || rows != self.state.rows() {
+                    self.state.resize(cols, rows);
+                    if let Some(pty) = &mut self.pty {
+                        let _ = pty.resize(cols as u16, rows as u16);
+                    }
+                }
             }
         }
     }
@@ -903,7 +926,7 @@ impl TerminalView {
         let theme = use_theme();
         let cursor_bg = theme.tokens.primary;
         let cursor_fg = theme.tokens.background;
-        let selection_bg = gpui::hsla(0.58, 0.6, 0.5, 0.4);
+        let selection_bg = theme.tokens.primary.opacity(0.35);
 
         let has_selection = self.has_selection() && {
             let (start, end) = (self.selection_start.unwrap(), self.selection_end.unwrap());
@@ -1245,6 +1268,7 @@ impl Render for TerminalView {
                             view.state.set_mouse_mode(1000, false);
                             return false;
                         }
+                        view.flush_pending_resize();
                         view.process_output();
                         cx.notify();
                         true
@@ -1260,8 +1284,15 @@ impl Render for TerminalView {
             window.focus(&self.focus_handle);
         }
 
-        let _theme = use_theme();
-        let terminal_bg = gpui::rgb(0x1a1b26);
+        let theme = use_theme();
+        let terminal_bg = theme.tokens.background;
+        let header_bg = theme.tokens.muted.opacity(0.3);
+        let header_border = theme.tokens.border;
+        let accent = theme.tokens.primary;
+        let dim = theme.tokens.muted_foreground;
+        let dim_faded = dim.opacity(0.6);
+        let accent_faded = accent.opacity(0.7);
+        let bright = theme.tokens.foreground;
 
         let bell_active = self
             .bell_flash_time
@@ -1273,21 +1304,49 @@ impl Render for TerminalView {
 
         let cursor_line = self.cursor_absolute_line();
         let total = self.state.total_lines();
-        let rows = self.state.rows();
+        let display_rows = self.calculate_rows().max(self.state.rows());
         let scroll_offset = self.state.scroll_offset();
 
-        let viewport_start = total.saturating_sub(rows + scroll_offset);
+        let viewport_start = total.saturating_sub(display_rows + scroll_offset);
         let viewport_end = total.saturating_sub(scroll_offset);
+        let content_count = viewport_end - viewport_start;
+        let empty_above = display_rows.saturating_sub(content_count);
 
         self.update_cursor_blink();
 
-        let lines_to_render: Vec<_> = (viewport_start..viewport_end)
-            .map(|idx| {
-                let line = self.state.line(idx).cloned();
-                let is_cursor_line = idx == cursor_line;
-                (idx, line, is_cursor_line)
-            })
-            .collect();
+        let mut lines_to_render: Vec<(usize, Option<TerminalLine>, bool)> = Vec::with_capacity(display_rows);
+        for _ in 0..empty_above {
+            lines_to_render.push((0, None, false));
+        }
+        for idx in viewport_start..viewport_end {
+            let line = self.state.line(idx).cloned();
+            let is_cursor_line = idx == cursor_line;
+            lines_to_render.push((idx, line, is_cursor_line));
+        }
+
+        let terminal_title = self.title();
+        let is_running = self.is_running();
+
+        let wd = self.state.working_directory().clone();
+        let short_path = if let Ok(home) = std::env::var("HOME") {
+            let home_path = std::path::Path::new(&home);
+            if wd.starts_with(home_path) {
+                format!(
+                    "~{}",
+                    wd.strip_prefix(home_path)
+                        .unwrap_or(&wd)
+                        .to_string_lossy()
+                        .as_ref()
+                        .strip_prefix('/')
+                        .map(|s| format!("/{}", s))
+                        .unwrap_or_default()
+                )
+            } else {
+                wd.to_string_lossy().to_string()
+            }
+        } else {
+            wd.to_string_lossy().to_string()
+        };
 
         div()
             .id("terminal-view")
@@ -1305,6 +1364,79 @@ impl Render for TerminalView {
             .bg(terminal_bg)
             .flex()
             .flex_col()
+            .child(
+                div()
+                    .w_full()
+                    .h(px(28.0))
+                    .flex()
+                    .flex_shrink_0()
+                    .items_center()
+                    .justify_between()
+                    .px(px(12.0))
+                    .bg(header_bg)
+                    .border_b_1()
+                    .border_color(header_border)
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(8.0))
+                            .child(
+                                div()
+                                    .w(px(8.0))
+                                    .h(px(8.0))
+                                    .rounded(px(4.0))
+                                    .bg(if is_running {
+                                        gpui::rgb(0x9ece6a)
+                                    } else {
+                                        gpui::rgb(0x565f89)
+                                    }),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(11.0))
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .text_color(bright)
+                                    .child(terminal_title),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(11.0))
+                                    .text_color(dim)
+                                    .child("›"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(11.0))
+                                    .text_color(accent)
+                                    .child(short_path),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(12.0))
+                            .child(
+                                div()
+                                    .text_size(px(10.0))
+                                    .text_color(dim)
+                                    .child("zsh"),
+                            )
+                            .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap(px(4.0))
+                                    .child(
+                                        div()
+                                            .text_size(px(9.0))
+                                            .text_color(dim_faded)
+                                            .child(format!("{}×{}", self.state.cols(), self.state.rows())),
+                                    ),
+                            ),
+                    ),
+            )
             .child(
                 div()
                     .id("terminal-content")
@@ -1355,6 +1487,83 @@ impl Render for TerminalView {
                                 vec![]
                             })
                     }),
+            )
+            .child(
+                div()
+                    .w_full()
+                    .h(px(22.0))
+                    .flex()
+                    .flex_shrink_0()
+                    .items_center()
+                    .px(px(12.0))
+                    .bg(header_bg)
+                    .border_t_1()
+                    .border_color(header_border)
+                    .gap(px(16.0))
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(4.0))
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(accent_faded)
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .child("⌃C"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(dim_faded)
+                                    .child("interrupt"),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(4.0))
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(accent_faded)
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .child("⌃D"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(dim_faded)
+                                    .child("exit"),
+                            ),
+                    )
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(px(4.0))
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(accent_faded)
+                                    .font_weight(FontWeight::SEMIBOLD)
+                                    .child("⌃L"),
+                            )
+                            .child(
+                                div()
+                                    .text_size(px(9.0))
+                                    .text_color(dim_faded)
+                                    .child("clear"),
+                            ),
+                    )
+                    .child(div().flex_1())
+                    .child(
+                        div()
+                            .text_size(px(9.0))
+                            .text_color(gpui::hsla(0.63, 0.16, 0.46, 0.4))
+                            .child("Shiori Terminal"),
+                    ),
             )
     }
 }

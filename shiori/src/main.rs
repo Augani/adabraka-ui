@@ -6,6 +6,7 @@ mod diff_highlighter;
 mod git_service;
 mod git_state;
 mod git_view;
+pub mod ide_theme;
 mod pty_service;
 mod search_bar;
 mod status_bar;

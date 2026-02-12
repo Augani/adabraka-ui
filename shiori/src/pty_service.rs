@@ -1,6 +1,6 @@
 use portable_pty::{native_pty_system, CommandBuilder, PtyPair, PtySize};
 use std::io::{Read, Write};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use thiserror::Error;
@@ -114,7 +114,7 @@ impl PtyService {
         }
 
         if let Ok(home) = std::env::var("HOME") {
-            cmd.env("HOME", home);
+            cmd.env("HOME", &home);
         }
         if let Ok(path) = std::env::var("PATH") {
             cmd.env("PATH", path);
@@ -125,6 +125,8 @@ impl PtyService {
         if let Ok(shell_env) = std::env::var("SHELL") {
             cmd.env("SHELL", shell_env);
         }
+
+        setup_shell_prompt(&mut cmd, &shell);
 
         let _child = pty_pair
             .slave
@@ -267,6 +269,106 @@ fn get_default_shell() -> String {
         std::env::var("SHELL").unwrap_or_else(|_| "/bin/sh".to_string())
     }
 }
+
+fn setup_shell_prompt(cmd: &mut CommandBuilder, shell: &str) {
+    let dir = std::env::temp_dir().join("shiori_shell");
+    if std::fs::create_dir_all(&dir).is_err() {
+        return;
+    }
+
+    if shell.contains("zsh") {
+        setup_zsh_prompt(cmd, &dir);
+    } else if shell.contains("bash") {
+        setup_bash_prompt(cmd, &dir);
+    }
+}
+
+fn setup_zsh_prompt(cmd: &mut CommandBuilder, dir: &Path) {
+    let zshenv = dir.join(".zshenv");
+    let _ = std::fs::write(
+        &zshenv,
+        r#"# Shiori: source user's zshenv
+[[ -f "$HOME/.zshenv" ]] && ZDOTDIR="$HOME" source "$HOME/.zshenv"
+"#,
+    );
+
+    let zshrc = dir.join(".zshrc");
+    let _ = std::fs::write(&zshrc, ZSH_PROMPT_INIT);
+
+    cmd.env("ZDOTDIR", dir.to_string_lossy().as_ref());
+}
+
+fn setup_bash_prompt(cmd: &mut CommandBuilder, dir: &Path) {
+    let bashrc = dir.join(".bashrc");
+    let _ = std::fs::write(&bashrc, BASH_PROMPT_INIT);
+    cmd.env("SHIORI_BASH_INIT", bashrc.to_string_lossy().as_ref());
+}
+
+const ZSH_PROMPT_INIT: &str = r#"# Shiori Terminal - Custom Shell Theme
+# Source user's zshrc first
+_shiori_zdotdir="$ZDOTDIR"
+ZDOTDIR="$HOME"
+[[ -f "$HOME/.zshrc" ]] && source "$HOME/.zshrc"
+ZDOTDIR="$_shiori_zdotdir"
+unset _shiori_zdotdir
+
+# ── Shiori Prompt ──────────────────────────────────────────
+autoload -Uz vcs_info
+precmd_functions+=(vcs_info)
+
+zstyle ':vcs_info:git:*' formats '%b'
+zstyle ':vcs_info:*' enable git
+
+setopt PROMPT_SUBST
+
+_shiori_git_info() {
+  if [[ -n "$vcs_info_msg_0_" ]]; then
+    local branch="$vcs_info_msg_0_"
+    local git_status=""
+    local dirty=$(command git status --porcelain 2>/dev/null | head -1)
+    if [[ -n "$dirty" ]]; then
+      git_status=" %F{#e0af68}✦%f"
+    fi
+    echo " %F{#565f89}on%f %F{#bb9af7}⎇ ${branch}%f${git_status}"
+  fi
+}
+
+PROMPT=$'%F{#565f89}╭─%f %F{#7aa2f7}%~%f$(_shiori_git_info)\n%F{#565f89}╰─%f%(?.%F{#7dcfff}.%F{#f7768e})❯%f '
+RPROMPT=''
+"#;
+
+const BASH_PROMPT_INIT: &str = r#"# Shiori Terminal - Custom Shell Theme
+# Source user's bashrc first
+[[ -f "$HOME/.bashrc" ]] && source "$HOME/.bashrc"
+
+# ── Shiori Prompt ──────────────────────────────────────────
+__shiori_prompt() {
+  local exit_code=$?
+  local dim='\[\e[38;2;86;95;137m\]'
+  local blue='\[\e[38;2;122;162;247m\]'
+  local purple='\[\e[38;2;187;154;247m\]'
+  local yellow='\[\e[38;2;224;175;104m\]'
+  local cyan='\[\e[38;2;125;207;255m\]'
+  local red='\[\e[38;2;247;118;142m\]'
+  local reset='\[\e[0m\]'
+
+  local git_info=""
+  local branch=$(git branch --show-current 2>/dev/null)
+  if [[ -n "$branch" ]]; then
+    local dirty=$(git status --porcelain 2>/dev/null | head -1)
+    local status_icon=""
+    [[ -n "$dirty" ]] && status_icon=" ${yellow}✦${reset}"
+    git_info=" ${dim}on${reset} ${purple}⎇ ${branch}${reset}${status_icon}"
+  fi
+
+  local arrow=$cyan
+  [[ $exit_code -ne 0 ]] && arrow=$red
+
+  PS1="\n${dim}╭─${reset} ${blue}\w${reset}${git_info}\n${dim}╰─${reset}${arrow}❯${reset} "
+}
+
+PROMPT_COMMAND=__shiori_prompt
+"#;
 
 pub mod key_codes {
     pub const ENTER: &[u8] = b"\r";

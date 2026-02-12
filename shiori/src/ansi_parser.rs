@@ -227,10 +227,11 @@ pub struct AnsiParser {
     params: Vec<u16>,
     is_sub_param: Vec<bool>,
     intermediate: Vec<u8>,
-    osc_string: String,
+    osc_string: Vec<u8>,
     current_style: CellStyle,
     default_fg: Rgba,
     default_bg: Rgba,
+    ansi_palette: Option<[Rgba; 16]>,
     utf8_buffer: Vec<u8>,
     utf8_remaining: usize,
     private_marker: Option<u8>,
@@ -252,16 +253,40 @@ impl AnsiParser {
             params: Vec::with_capacity(16),
             is_sub_param: Vec::with_capacity(16),
             intermediate: Vec::with_capacity(4),
-            osc_string: String::new(),
+            osc_string: Vec::new(),
             current_style: CellStyle::default(),
             default_fg: DEFAULT_FG,
             default_bg: DEFAULT_BG,
+            ansi_palette: None,
             utf8_buffer: Vec::with_capacity(4),
             utf8_remaining: 0,
             private_marker: None,
             apc_string: Vec::new(),
             kitty_chunks: Vec::new(),
             kitty_params: String::new(),
+        }
+    }
+
+    pub fn set_colors(&mut self, palette: [Rgba; 16], fg: Rgba, bg: Rgba) {
+        self.ansi_palette = Some(palette);
+        self.default_fg = fg;
+        self.default_bg = bg;
+        self.current_style.foreground = fg;
+        self.current_style.background = bg;
+    }
+
+    fn ansi_color(&self, idx: usize) -> Rgba {
+        if let Some(ref palette) = self.ansi_palette {
+            palette[idx]
+        } else {
+            ANSI_COLORS[idx]
+        }
+    }
+
+    fn color_from_256_themed(&self, n: usize) -> Rgba {
+        match n {
+            0..=15 => self.ansi_color(n),
+            _ => color_from_256(n),
         }
     }
 
@@ -629,13 +654,9 @@ impl AnsiParser {
                 self.state = ParserState::Ground;
                 self.execute_osc(segments);
             }
-            0x9C => {
-                self.execute_osc(segments);
-                self.state = ParserState::Ground;
-            }
             _ => {
-                if byte >= 0x20 && byte <= 0x7E {
-                    self.osc_string.push(byte as char);
+                if self.osc_string.len() < 4096 {
+                    self.osc_string.push(byte);
                 }
             }
         }
@@ -643,7 +664,7 @@ impl AnsiParser {
 
     fn handle_dcs(&mut self, byte: u8) {
         match byte {
-            0x1B | 0x9C => {
+            0x1B => {
                 self.state = ParserState::Ground;
             }
             _ => {}
@@ -659,10 +680,6 @@ impl AnsiParser {
             0x1B => {
                 self.execute_apc(segments);
                 self.state = ParserState::Escape;
-            }
-            0x9C => {
-                self.execute_apc(segments);
-                self.state = ParserState::Ground;
             }
             _ => {
                 if self.apc_string.len() < 16 * 1024 * 1024 {
@@ -817,9 +834,10 @@ impl AnsiParser {
     }
 
     fn execute_osc(&mut self, segments: &mut Vec<ParsedSegment>) {
-        if let Some(idx) = self.osc_string.find(';') {
-            let cmd = &self.osc_string[..idx];
-            let arg = &self.osc_string[idx + 1..];
+        let osc = String::from_utf8_lossy(&self.osc_string).into_owned();
+        if let Some(idx) = osc.find(';') {
+            let cmd = &osc[..idx];
+            let arg = &osc[idx + 1..];
             match cmd {
                 "0" | "1" | "2" => {
                     segments.push(ParsedSegment::SetTitle(arg.to_string()));
@@ -1129,7 +1147,7 @@ impl AnsiParser {
                 28 => self.current_style.hidden = false,
                 29 => self.current_style.strikethrough = false,
                 30..=37 => {
-                    self.current_style.foreground = ANSI_COLORS[code - 30];
+                    self.current_style.foreground = self.ansi_color(code - 30);
                 }
                 38 => {
                     if let Some(color) = self.parse_extended_color(&mut i) {
@@ -1140,7 +1158,7 @@ impl AnsiParser {
                     self.current_style.foreground = self.default_fg;
                 }
                 40..=47 => {
-                    self.current_style.background = ANSI_COLORS[code - 40];
+                    self.current_style.background = self.ansi_color(code - 40);
                 }
                 48 => {
                     if let Some(color) = self.parse_extended_color(&mut i) {
@@ -1159,10 +1177,10 @@ impl AnsiParser {
                     self.current_style.underline_color = None;
                 }
                 90..=97 => {
-                    self.current_style.foreground = ANSI_COLORS[code - 90 + 8];
+                    self.current_style.foreground = self.ansi_color(code - 90 + 8);
                 }
                 100..=107 => {
-                    self.current_style.background = ANSI_COLORS[code - 100 + 8];
+                    self.current_style.background = self.ansi_color(code - 100 + 8);
                 }
                 _ => {}
             }
@@ -1243,7 +1261,7 @@ impl AnsiParser {
                 }
                 let n = self.params[*i + 2] as usize;
                 *i += 2;
-                Some(color_from_256(n))
+                Some(self.color_from_256_themed(n))
             }
             _ => None,
         }

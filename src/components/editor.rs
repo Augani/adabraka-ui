@@ -477,6 +477,13 @@ pub struct EditorState {
     current_match_idx: Option<usize>,
     search_case_sensitive: bool,
     search_use_regex: bool,
+
+    pub cursor_color_override: Option<Hsla>,
+    pub selection_color_override: Option<Hsla>,
+    pub line_number_color_override: Option<Hsla>,
+    pub gutter_bg_override: Option<Hsla>,
+    pub search_match_color_overrides: Option<(Hsla, Hsla)>,
+    pub syntax_color_fn: Option<Box<dyn Fn(&str) -> Hsla>>,
 }
 
 impl EditorState {
@@ -519,6 +526,12 @@ impl EditorState {
             current_match_idx: None,
             search_case_sensitive: false,
             search_use_regex: false,
+            cursor_color_override: None,
+            selection_color_override: None,
+            line_number_color_override: None,
+            gutter_bg_override: None,
+            search_match_color_overrides: None,
+            syntax_color_fn: None,
         }
     }
 
@@ -596,8 +609,7 @@ impl EditorState {
         };
         let padding_top = px(12.0);
 
-        let scroll_offset = self.scroll_handle.offset();
-        let cursor_y = bounds.top() + padding_top + line_height * (self.cursor.line as f32) + scroll_offset.y;
+        let cursor_y = bounds.top() + padding_top + line_height * (self.cursor.line as f32);
 
         let cursor_x = if let Some(layout) = self.line_layouts.get(&self.cursor.line) {
             let line_text = self.line_text(self.cursor.line);
@@ -2238,8 +2250,13 @@ impl Element for EditorElement {
             (state.cursor, state.selection, state.show_line_numbers, state.scroll_offset_x)
         };
 
+        let gutter_bg_color = self.state.read(cx).gutter_bg_override
+            .unwrap_or(theme.tokens.background);
+        let line_num_color = self.state.read(cx).line_number_color_override
+            .unwrap_or(theme.tokens.muted_foreground);
+
         if show_line_numbers {
-            let gutter_bg = Bounds {
+            let gutter_bounds = Bounds {
                 origin: bounds.origin,
                 size: Size {
                     width: gutter_width,
@@ -2247,9 +2264,9 @@ impl Element for EditorElement {
                 },
             };
             window.paint_quad(PaintQuad {
-                bounds: gutter_bg,
+                bounds: gutter_bounds,
                 corner_radii: Corners::default(),
-                background: theme.tokens.background.into(),
+                background: gutter_bg_color.into(),
                 border_widths: Edges::default(),
                 border_color: Hsla::transparent_black(),
                 border_style: BorderStyle::default(),
@@ -2275,7 +2292,7 @@ impl Element for EditorElement {
                 let line_num_run = TextRun {
                     len: line_num_text.len(),
                     font: text_style.font(),
-                    color: hsla(0.0, 0.0, 0.45, 1.0),
+                    color: line_num_color,
                     background_color: None,
                     underline: None,
                     strikethrough: None,
@@ -2349,6 +2366,9 @@ impl Element for EditorElement {
             }
         });
 
+        let sel_color = self.state.read(cx).selection_color_override
+            .unwrap_or(theme.tokens.primary.opacity(0.25));
+
         if let Some(selection) = &selection {
             let (start, end) = selection.range();
             for line_idx in start.line..=end.line {
@@ -2375,22 +2395,24 @@ impl Element for EditorElement {
 
                 window.paint_quad(fill(
                     Bounds::new(point(sel_x, line_y), size(sel_width, line_height)),
-                    rgba(0x4444ff40),
+                    sel_color,
                 ));
             }
         }
 
         {
             let state = self.state.read(cx);
+            let (search_normal, search_active) = state.search_match_color_overrides
+                .unwrap_or((rgba(0xFFD70040).into(), rgba(0xFF990060).into()));
             let current_match = state.current_match_idx;
             for (match_idx, &(match_start, match_end)) in state.search_matches.iter().enumerate() {
                 let start_pos = state.byte_offset_to_pos(match_start);
                 let end_pos = state.byte_offset_to_pos(match_end);
                 let is_current = current_match == Some(match_idx);
                 let color = if is_current {
-                    rgba(0xFF990060)
+                    search_active
                 } else {
-                    rgba(0xFFD70040)
+                    search_normal
                 };
 
                 for line_idx in start_pos.line..=end_pos.line {
@@ -2435,9 +2457,12 @@ impl Element for EditorElement {
                     bounds.left() + gutter_width - scroll_offset_x
                 };
 
+            let cursor_draw_color = self.state.read(cx).cursor_color_override
+                .unwrap_or(theme.tokens.primary);
+
             window.paint_quad(fill(
                 Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
-                rgb(0x0099ff),
+                cursor_draw_color,
             ));
         }
     }
@@ -2495,7 +2520,11 @@ impl EditorElement {
                 let node = capture.node;
                 let start_byte = node.start_byte();
                 let end_byte = node.end_byte();
-                let color = highlight_color_for_capture(capture_name);
+                let color = if let Some(ref color_fn) = state.syntax_color_fn {
+                    color_fn(capture_name)
+                } else {
+                    highlight_color_for_capture(capture_name)
+                };
 
                 let start_line = state.rope.byte_to_line(start_byte);
                 let end_line = state
@@ -2618,6 +2647,12 @@ pub struct Editor {
     max_lines: Option<usize>,
     show_border: bool,
     style: StyleRefinement,
+    cursor_color: Option<Hsla>,
+    selection_color: Option<Hsla>,
+    line_number_color: Option<Hsla>,
+    gutter_bg: Option<Hsla>,
+    search_match_colors: Option<(Hsla, Hsla)>,
+    syntax_color_fn: Option<Box<dyn Fn(&str) -> Hsla>>,
 }
 
 impl Editor {
@@ -2628,6 +2663,12 @@ impl Editor {
             max_lines: None,
             show_border: true,
             style: StyleRefinement::default(),
+            cursor_color: None,
+            selection_color: None,
+            line_number_color: None,
+            gutter_bg: None,
+            search_match_colors: None,
+            syntax_color_fn: None,
         }
     }
 
@@ -2661,6 +2702,36 @@ impl Editor {
         self
     }
 
+    pub fn cursor_color(mut self, color: Hsla) -> Self {
+        self.cursor_color = Some(color);
+        self
+    }
+
+    pub fn selection_color(mut self, color: Hsla) -> Self {
+        self.selection_color = Some(color);
+        self
+    }
+
+    pub fn line_number_color(mut self, color: Hsla) -> Self {
+        self.line_number_color = Some(color);
+        self
+    }
+
+    pub fn gutter_bg(mut self, color: Hsla) -> Self {
+        self.gutter_bg = Some(color);
+        self
+    }
+
+    pub fn search_match_colors(mut self, normal: Hsla, active: Hsla) -> Self {
+        self.search_match_colors = Some((normal, active));
+        self
+    }
+
+    pub fn syntax_color_fn(mut self, f: impl Fn(&str) -> Hsla + 'static) -> Self {
+        self.syntax_color_fn = Some(Box::new(f));
+        self
+    }
+
     pub fn get_content(&self, cx: &App) -> String {
         self.state.read(cx).content()
     }
@@ -2673,7 +2744,16 @@ impl Styled for Editor {
 }
 
 impl RenderOnce for Editor {
-    fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+    fn render(mut self, window: &mut Window, cx: &mut App) -> impl IntoElement {
+        let syn_fn = self.syntax_color_fn.take();
+        self.state.update(cx, |state, _| {
+            state.cursor_color_override = self.cursor_color;
+            state.selection_color_override = self.selection_color;
+            state.line_number_color_override = self.line_number_color;
+            state.gutter_bg_override = self.gutter_bg;
+            state.search_match_color_overrides = self.search_match_colors;
+            state.syntax_color_fn = syn_fn;
+        });
         let theme = use_theme();
         let min_height = self.min_lines.map(|lines| px(lines as f32 * 20.0));
         let max_height = self.max_lines.map(|lines| px(lines as f32 * 20.0));

@@ -9,7 +9,7 @@ path = "src/main.rs"
 
 [dependencies]
 adabraka-ui = { path = "..", features = ["editor-languages"] }
-gpui = { package = "adabraka-gpui", version = "0.3", path = "../../adabraka-gpui/crates/gpui" }
+gpui = { package = "adabraka-gpui", version = "0.4", path = "../../adabraka-gpui/crates/gpui" }
 smol = "2.0.2"
 portable-pty = "0.8"
 flume = "0.11"

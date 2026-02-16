@@ -214,9 +214,7 @@ impl RenderOnce for ViewRouter {
             let exit_id = ElementId::Name(format!("{}-exit-{}", id, version).into());
             let enter_id = ElementId::Name(format!("{}-enter-{}", id, version).into());
 
-            container = container.child(
-                render_exit(old, exit_id, transition, duration),
-            );
+            container = container.child(render_exit(old, exit_id, transition, duration));
 
             container = container.when_some(current_content, |this, new| {
                 this.child(render_enter(new, enter_id, transition, duration))
@@ -272,18 +270,10 @@ fn anim(duration: Duration) -> Animation {
 fn apply_exit(el: Div, delta: f32, transition: PageTransition) -> Div {
     let progress = delta;
     match transition {
-        PageTransition::SlideLeft => el
-            .left(px(-300.0 * progress))
-            .opacity(1.0 - progress),
-        PageTransition::SlideRight => el
-            .left(px(300.0 * progress))
-            .opacity(1.0 - progress),
-        PageTransition::SlideUp => el
-            .top(px(-300.0 * progress))
-            .opacity(1.0 - progress),
-        PageTransition::SlideDown => el
-            .top(px(300.0 * progress))
-            .opacity(1.0 - progress),
+        PageTransition::SlideLeft => el.left(px(-300.0 * progress)).opacity(1.0 - progress),
+        PageTransition::SlideRight => el.left(px(300.0 * progress)).opacity(1.0 - progress),
+        PageTransition::SlideUp => el.top(px(-300.0 * progress)).opacity(1.0 - progress),
+        PageTransition::SlideDown => el.top(px(300.0 * progress)).opacity(1.0 - progress),
         PageTransition::Fade => el.opacity(1.0 - progress),
         PageTransition::None => el,
     }
@@ -292,18 +282,10 @@ fn apply_exit(el: Div, delta: f32, transition: PageTransition) -> Div {
 fn apply_enter(el: Div, delta: f32, transition: PageTransition) -> Div {
     let progress = delta;
     match transition {
-        PageTransition::SlideLeft => el
-            .left(px(300.0 * (1.0 - progress)))
-            .opacity(progress),
-        PageTransition::SlideRight => el
-            .left(px(-300.0 * (1.0 - progress)))
-            .opacity(progress),
-        PageTransition::SlideUp => el
-            .top(px(300.0 * (1.0 - progress)))
-            .opacity(progress),
-        PageTransition::SlideDown => el
-            .top(px(-300.0 * (1.0 - progress)))
-            .opacity(progress),
+        PageTransition::SlideLeft => el.left(px(300.0 * (1.0 - progress))).opacity(progress),
+        PageTransition::SlideRight => el.left(px(-300.0 * (1.0 - progress))).opacity(progress),
+        PageTransition::SlideUp => el.top(px(300.0 * (1.0 - progress))).opacity(progress),
+        PageTransition::SlideDown => el.top(px(-300.0 * (1.0 - progress))).opacity(progress),
         PageTransition::Fade => el.opacity(progress),
         PageTransition::None => el,
     }

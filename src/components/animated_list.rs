@@ -104,7 +104,9 @@ impl AnimatedListState {
             cx.spawn(async move |this, cx| {
                 cx.background_executor().timer(exit_dur).await;
                 _ = this.update(cx, |state, cx| {
-                    state.phases.retain(|(_, phase)| *phase != ItemPhase::Exiting);
+                    state
+                        .phases
+                        .retain(|(_, phase)| *phase != ItemPhase::Exiting);
                     cx.notify();
                 });
             })
@@ -203,9 +205,7 @@ impl RenderOnce for AnimatedList {
                         div()
                             .child(element)
                             .with_animation(
-                                ElementId::Name(
-                                    format!("al-enter-{}-{}", key, version).into(),
-                                ),
+                                ElementId::Name(format!("al-enter-{}-{}", key, version).into()),
                                 Animation::new(enter_dur).with_easing(easings::ease_out_cubic),
                                 move |el, delta| {
                                     el.opacity(delta)
@@ -217,13 +217,14 @@ impl RenderOnce for AnimatedList {
                         div()
                             .child(element)
                             .with_animation(
-                                ElementId::Name(
-                                    format!("al-exit-{}-{}", key, version).into(),
-                                ),
+                                ElementId::Name(format!("al-exit-{}-{}", key, version).into()),
                                 Animation::new(exit_dur).with_easing(easings::ease_in_cubic),
                                 move |el, delta| {
-                                    el.opacity(1.0 - delta)
-                                        .mt(lerp_pixels(px(0.0), slide_offset, delta))
+                                    el.opacity(1.0 - delta).mt(lerp_pixels(
+                                        px(0.0),
+                                        slide_offset,
+                                        delta,
+                                    ))
                                 },
                             )
                             .into_any_element()

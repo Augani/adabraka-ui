@@ -185,7 +185,7 @@ pub enum ParsedSegment {
     FocusTracking(bool),
     OriginMode(bool),
     AutoWrap(bool),
-    InsertMode(bool),
+
     ApplicationCursorKeys(bool),
     SetG0Charset(u8),
     SetG1Charset(u8),
@@ -404,7 +404,7 @@ impl AnsiParser {
                 self.flush_text(text_buffer, segments);
                 segments.push(ParsedSegment::Tab);
             }
-            0x0A | 0x0B | 0x0C => {
+            0x0A..=0x0C => {
                 self.flush_text(text_buffer, segments);
                 segments.push(ParsedSegment::LineFeed);
             }
@@ -630,11 +630,9 @@ impl AnsiParser {
                 self.intermediate.push(byte);
             }
             b'@'..=b'~' => {
-                if !self.intermediate.is_empty() && self.intermediate[0] == b' ' {
-                    if byte == b'q' {
-                        let style = self.params.first().copied().unwrap_or(0) as u8;
-                        segments.push(ParsedSegment::CursorStyle(style));
-                    }
+                if !self.intermediate.is_empty() && self.intermediate[0] == b' ' && byte == b'q' {
+                    let style = self.params.first().copied().unwrap_or(0) as u8;
+                    segments.push(ParsedSegment::CursorStyle(style));
                 }
                 self.state = ParserState::Ground;
             }
@@ -663,11 +661,8 @@ impl AnsiParser {
     }
 
     fn handle_dcs(&mut self, byte: u8) {
-        match byte {
-            0x1B => {
-                self.state = ParserState::Ground;
-            }
-            _ => {}
+        if byte == 0x1B {
+            self.state = ParserState::Ground;
         }
     }
 

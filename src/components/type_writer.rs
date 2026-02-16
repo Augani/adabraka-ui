@@ -163,12 +163,11 @@ impl RenderOnce for TypeWriter {
             .flex_row()
             .text_color(theme.tokens.foreground)
             .child(text)
-            .when(self.show_cursor && (is_typing || !state.is_complete()), |el| {
-                el.child(
-                    div()
-                        .id(self.id)
-                        .child(cursor_str)
-                        .with_animation(
+            .when(
+                self.show_cursor && (is_typing || !state.is_complete()),
+                |el| {
+                    el.child(
+                        div().id(self.id).child(cursor_str).with_animation(
                             "cursor-blink",
                             Animation::new(Duration::from_millis(530))
                                 .repeat()
@@ -181,7 +180,8 @@ impl RenderOnce for TypeWriter {
                                 }
                             },
                         ),
-                )
-            })
+                    )
+                },
+            )
     }
 }

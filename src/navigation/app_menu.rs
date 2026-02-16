@@ -67,6 +67,7 @@ impl AppMenu {
     pub fn build(self) -> Menu {
         Menu {
             name: self.name,
+            icon: None,
             items: self.items,
         }
     }

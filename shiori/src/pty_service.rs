@@ -16,8 +16,6 @@ pub enum PtyError {
     SpawnFailed(String),
     #[error("Failed to write to PTY: {0}")]
     WriteFailed(String),
-    #[error("Failed to read from PTY: {0}")]
-    ReadFailed(String),
     #[error("Failed to resize PTY: {0}")]
     ResizeFailed(String),
     #[error("PTY not running")]
@@ -65,18 +63,6 @@ impl PtyService {
 
     pub fn is_running(&self) -> bool {
         self.is_running.lock().map(|guard| *guard).unwrap_or(false)
-    }
-
-    pub fn output_receiver(&self) -> &flume::Receiver<Vec<u8>> {
-        &self.output_receiver
-    }
-
-    pub fn working_directory(&self) -> &PathBuf {
-        &self.working_directory
-    }
-
-    pub fn set_working_directory(&mut self, path: PathBuf) {
-        self.working_directory = path;
     }
 
     pub fn start(&mut self) -> Result<(), PtyError> {
@@ -203,10 +189,6 @@ impl PtyService {
         } else {
             Err(PtyError::NotRunning)
         }
-    }
-
-    pub fn write_str(&mut self, s: &str) -> Result<(), PtyError> {
-        self.write(s.as_bytes())
     }
 
     pub fn resize(&mut self, cols: u16, rows: u16) -> Result<(), PtyError> {
@@ -386,9 +368,4 @@ pub mod key_codes {
     pub const END: &[u8] = b"\x1b[F";
     pub const PAGE_UP: &[u8] = b"\x1b[5~";
     pub const PAGE_DOWN: &[u8] = b"\x1b[6~";
-
-    pub const CTRL_C: &[u8] = b"\x03";
-    pub const CTRL_D: &[u8] = b"\x04";
-    pub const CTRL_Z: &[u8] = b"\x1a";
-    pub const CTRL_L: &[u8] = b"\x0c";
 }

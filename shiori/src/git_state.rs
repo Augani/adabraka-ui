@@ -1,6 +1,6 @@
 use crate::diff_highlighter::{compute_line_highlights, HighlightRun};
 use crate::git_service::{
-    DiffLine, DiffLineKind, FileStatusKind, FileDiff, GitFileEntry, GitService, GitSummary,
+    DiffLine, DiffLineKind, FileDiff, FileStatusKind, GitFileEntry, GitService, GitSummary,
 };
 use adabraka_ui::components::editor::{EditorState, Language};
 use adabraka_ui::components::resizable::ResizableState;
@@ -65,23 +65,6 @@ impl GitState {
             old_line_highlights: Vec::new(),
             new_line_highlights: Vec::new(),
         }
-    }
-
-    #[allow(dead_code)]
-    pub fn toggle_diff_view_mode(&mut self, cx: &mut Context<Self>) {
-        self.diff_view_mode = match self.diff_view_mode {
-            DiffViewMode::Split => DiffViewMode::Unified,
-            DiffViewMode::Unified => DiffViewMode::Split,
-        };
-        if let Some(diff) = &self.active_diff {
-            self.aligned_rows = Self::build_aligned_rows(
-                diff,
-                self.diff_view_mode,
-                &self.old_line_highlights,
-                &self.new_line_highlights,
-            );
-        }
-        cx.notify();
     }
 
     pub fn set_diff_view_mode(&mut self, mode: DiffViewMode, cx: &mut Context<Self>) {
@@ -293,8 +276,7 @@ impl GitState {
                         state.file_entries = entries;
                         state.summary = summary;
                         if state.selected_file_index >= state.file_entries.len() {
-                            state.selected_file_index =
-                                state.file_entries.len().saturating_sub(1);
+                            state.selected_file_index = state.file_entries.len().saturating_sub(1);
                         }
                         state.load_selected_diff(cx);
                     }
@@ -383,9 +365,7 @@ impl GitState {
                 let _ = this.update(cx, |state, cx| {
                     if let Some((diff_opt, old_content, new_content)) = result {
                         if let Some(diff) = diff_opt {
-                            let lang = Language::from_path(
-                                &std::path::Path::new(&diff.path),
-                            );
+                            let lang = Language::from_path(&std::path::Path::new(&diff.path));
                             let old_highlights = old_content
                                 .as_deref()
                                 .map(|c| compute_line_highlights(c, lang))
@@ -426,9 +406,7 @@ impl GitState {
     ) -> Vec<DiffRow> {
         match mode {
             DiffViewMode::Split => Self::build_split_rows(diff, old_highlights, new_highlights),
-            DiffViewMode::Unified => {
-                Self::build_unified_rows(diff, old_highlights, new_highlights)
-            }
+            DiffViewMode::Unified => Self::build_unified_rows(diff, old_highlights, new_highlights),
         }
     }
 
@@ -575,151 +553,6 @@ impl GitState {
                 let _ = this.update(cx, |state, cx| {
                     if let Err(e) = result {
                         state.error_message = Some(format!("Stage/unstage failed: {}", e));
-                    }
-                    state.refresh(cx);
-                });
-            });
-        })
-        .detach();
-    }
-
-    pub fn stage_hunk(&mut self, hunk_idx: usize, cx: &mut Context<Self>) {
-        let entry = match self.file_entries.get(self.selected_file_index) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-        if entry.staged {
-            return;
-        }
-
-        let repo_path = match &self.repo_path {
-            Some(p) => p.clone(),
-            None => return,
-        };
-
-        let path = entry.path.clone();
-
-        cx.spawn(async move |this, cx| {
-            let p = repo_path.clone();
-            let file_path = path.clone();
-            let result = smol::unblock(move || {
-                let repo = GitService::open(&p)?;
-                GitService::stage_hunk(&repo, &file_path, hunk_idx)
-            })
-            .await;
-
-            let _ = cx.update(|cx| {
-                let _ = this.update(cx, |state, cx| {
-                    if let Err(e) = result {
-                        state.error_message = Some(format!("Stage hunk failed: {}", e));
-                    }
-                    state.refresh(cx);
-                });
-            });
-        })
-        .detach();
-    }
-
-    #[allow(dead_code)]
-    pub fn discard_hunk(&mut self, hunk_idx: usize, cx: &mut Context<Self>) {
-        let entry = match self.file_entries.get(self.selected_file_index) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-        if entry.staged {
-            return;
-        }
-
-        let repo_path = match &self.repo_path {
-            Some(p) => p.clone(),
-            None => return,
-        };
-
-        let path = entry.path.clone();
-
-        cx.spawn(async move |this, cx| {
-            let p = repo_path.clone();
-            let file_path = path.clone();
-            let result = smol::unblock(move || {
-                let repo = GitService::open(&p)?;
-                GitService::discard_hunk(&repo, &file_path, hunk_idx)
-            })
-            .await;
-
-            let _ = cx.update(|cx| {
-                let _ = this.update(cx, |state, cx| {
-                    if let Err(e) = result {
-                        state.error_message = Some(format!("Discard hunk failed: {}", e));
-                    }
-                    state.refresh(cx);
-                });
-            });
-        })
-        .detach();
-    }
-
-    #[allow(dead_code)]
-    pub fn stage_all_file(&mut self, cx: &mut Context<Self>) {
-        let entry = match self.file_entries.get(self.selected_file_index) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-
-        let repo_path = match &self.repo_path {
-            Some(p) => p.clone(),
-            None => return,
-        };
-
-        let path = entry.path.clone();
-
-        cx.spawn(async move |this, cx| {
-            let p = repo_path.clone();
-            let file_path = path.clone();
-            let result = smol::unblock(move || {
-                let repo = GitService::open(&p)?;
-                GitService::stage_file(&repo, &file_path)
-            })
-            .await;
-
-            let _ = cx.update(|cx| {
-                let _ = this.update(cx, |state, cx| {
-                    if let Err(e) = result {
-                        state.error_message = Some(format!("Stage file failed: {}", e));
-                    }
-                    state.refresh(cx);
-                });
-            });
-        })
-        .detach();
-    }
-
-    #[allow(dead_code)]
-    pub fn discard_all_file(&mut self, cx: &mut Context<Self>) {
-        let entry = match self.file_entries.get(self.selected_file_index) {
-            Some(e) => e.clone(),
-            None => return,
-        };
-
-        let repo_path = match &self.repo_path {
-            Some(p) => p.clone(),
-            None => return,
-        };
-
-        let path = entry.path.clone();
-
-        cx.spawn(async move |this, cx| {
-            let p = repo_path.clone();
-            let file_path = path.clone();
-            let result = smol::unblock(move || {
-                let repo = GitService::open(&p)?;
-                GitService::discard_file(&repo, &file_path)
-            })
-            .await;
-
-            let _ = cx.update(|cx| {
-                let _ = this.update(cx, |state, cx| {
-                    if let Err(e) = result {
-                        state.error_message = Some(format!("Discard file failed: {}", e));
                     }
                     state.refresh(cx);
                 });

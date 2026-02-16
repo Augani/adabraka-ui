@@ -167,10 +167,7 @@ impl RenderOnce for SharedElementTransition {
                         let curr_w = lerp_pixels(source.width, target.width, delta);
                         let curr_h = lerp_pixels(source.height, target.height, delta);
 
-                        el.left(curr_x)
-                            .top(curr_y)
-                            .w(curr_w)
-                            .h(curr_h)
+                        el.left(curr_x).top(curr_y).w(curr_w).h(curr_h)
                     },
                 )
                 .into_any_element()

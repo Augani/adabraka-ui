@@ -100,29 +100,24 @@ impl FileNode {
         self.path.extension().and_then(|e| e.to_str())
     }
 
-    fn icon(&self) -> IconSource {
+    pub fn file_icon(&self, is_expanded: bool) -> IconSource {
         match self.kind {
-            FileNodeKind::Directory => IconSource::Named("folder".into()),
+            FileNodeKind::Directory => {
+                if is_expanded {
+                    IconSource::Named("folder-open".into())
+                } else {
+                    IconSource::Named("folder".into())
+                }
+            }
             FileNodeKind::Symlink => IconSource::Named("link".into()),
             FileNodeKind::File => match self.extension() {
-                Some("rs") => IconSource::Named("file-code".into()),
-                Some("js") | Some("ts") | Some("jsx") | Some("tsx") => {
-                    IconSource::Named("file-code".into())
-                }
-                Some("py") => IconSource::Named("file-code".into()),
-                Some("go") | Some("java") | Some("c") | Some("cpp") | Some("h") => {
-                    IconSource::Named("file-code".into())
-                }
-                Some("html") | Some("css") | Some("scss") | Some("sass") => {
-                    IconSource::Named("file-code".into())
-                }
                 Some("json") | Some("yaml") | Some("yml") | Some("toml") | Some("xml") => {
                     IconSource::Named("file-json".into())
                 }
-                Some("md") | Some("txt") | Some("doc") | Some("docx") => {
+                Some("md") | Some("txt") | Some("doc") | Some("docx") | Some("pdf") => {
                     IconSource::Named("file-text".into())
                 }
-                Some("pdf") => IconSource::Named("file-text".into()),
+                Some("sh") | Some("bash") | Some("zsh") => IconSource::Named("hash".into()),
                 Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg")
                 | Some("ico") | Some("webp") => IconSource::Named("image".into()),
                 Some("mp3") | Some("wav") | Some("ogg") | Some("flac") => {
@@ -134,32 +129,31 @@ impl FileNode {
                 Some("zip") | Some("tar") | Some("gz") | Some("rar") | Some("7z") => {
                     IconSource::Named("archive".into())
                 }
-                Some("sh") | Some("bash") | Some("zsh") => IconSource::Named("terminal".into()),
-                Some("gitignore") | Some("env") => IconSource::Named("settings".into()),
-                _ => IconSource::Named("file".into()),
+                _ => IconSource::Named("file-code".into()),
             },
         }
     }
 
-    fn icon_color(&self, theme: &crate::theme::Theme) -> Hsla {
+    pub fn file_icon_color(&self, theme: &crate::theme::Theme) -> Hsla {
         match self.kind {
-            FileNodeKind::Directory => rgb(0xf59e0b).into(),
+            FileNodeKind::Directory => rgb(0x60a5fa).into(),
             FileNodeKind::Symlink => theme.tokens.muted_foreground,
             FileNodeKind::File => match self.extension() {
-                Some("rs") => rgb(0xdea584).into(),
-                Some("js") | Some("jsx") => rgb(0xf7df1e).into(),
-                Some("ts") | Some("tsx") => rgb(0x3178c6).into(),
-                Some("py") => rgb(0x3776ab).into(),
-                Some("go") => rgb(0x00add8).into(),
-                Some("java") => rgb(0xb07219).into(),
-                Some("html") => rgb(0xe34c26).into(),
-                Some("css") | Some("scss") | Some("sass") => rgb(0x563d7c).into(),
-                Some("json") => rgb(0x292929).into(),
-                Some("md") => rgb(0x083fa1).into(),
-                Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg") => {
-                    rgb(0x22c55e).into()
+                Some("json") | Some("yaml") | Some("yml") | Some("toml") | Some("xml") => {
+                    rgb(0xfbbf24).into()
                 }
-                _ => theme.tokens.muted_foreground,
+                Some("md") | Some("txt") | Some("doc") | Some("docx") | Some("pdf") => {
+                    rgb(0xa78bfa).into()
+                }
+                Some("sh") | Some("bash") | Some("zsh") => rgb(0x4ade80).into(),
+                Some("png") | Some("jpg") | Some("jpeg") | Some("gif") | Some("svg")
+                | Some("ico") | Some("webp") => rgb(0x22c55e).into(),
+                Some("mp3") | Some("wav") | Some("ogg") | Some("flac") => rgb(0xf472b6).into(),
+                Some("mp4") | Some("mov") | Some("avi") | Some("webm") => rgb(0xf472b6).into(),
+                Some("zip") | Some("tar") | Some("gz") | Some("rar") | Some("7z") => {
+                    rgb(0xfbbf24).into()
+                }
+                _ => rgb(0x9ca3af).into(),
             },
         }
     }
@@ -352,7 +346,7 @@ impl RenderOnce for FileTree {
             .flex()
             .flex_col()
             .w_full()
-            .bg(theme.tokens.background)
+            .bg(gpui::transparent_black())
             .map(|mut this| {
                 this.style().refine(&user_style);
                 this
@@ -366,8 +360,8 @@ impl RenderOnce for FileTree {
                 let node = flat_node.node;
                 let path = node.path.clone();
 
-                let icon_color = node.icon_color(&theme);
-                let node_icon = node.icon();
+                let icon_color = node.file_icon_color(&theme);
+                let node_icon = node.file_icon(is_expanded);
 
                 div()
                     .id(SharedString::from(path.to_string_lossy().to_string()))
@@ -375,8 +369,10 @@ impl RenderOnce for FileTree {
                     .h(px(ROW_HEIGHT))
                     .flex()
                     .items_center()
+                    .mx(px(8.0))
                     .px(px(8.0))
                     .pl(indent + px(8.0))
+                    .rounded(px(8.0))
                     .cursor_pointer()
                     .bg(if is_selected {
                         theme.tokens.accent

@@ -134,29 +134,26 @@ impl ConfettiState {
             return;
         }
 
-        cx.spawn(
-            async | this,
-            cx | {
-                cx.background_executor()
-                    .timer(Duration::from_millis(16))
-                    .await;
+        cx.spawn(async |this, cx| {
+            cx.background_executor()
+                .timer(Duration::from_millis(16))
+                .await;
 
-                _ = this.update(cx, |state, cx| {
-                    if !state.is_active {
-                        return;
-                    }
+            _ = this.update(cx, |state, cx| {
+                if !state.is_active {
+                    return;
+                }
 
-                    let dt = 1.0 / 60.0;
-                    state.update_particles(dt);
+                let dt = 1.0 / 60.0;
+                state.update_particles(dt);
 
-                    if state.is_active {
-                        state.schedule_tick(cx);
-                    }
+                if state.is_active {
+                    state.schedule_tick(cx);
+                }
 
-                    cx.notify();
-                });
-            },
-        )
+                cx.notify();
+            });
+        })
         .detach();
     }
 }

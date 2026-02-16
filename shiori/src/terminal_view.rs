@@ -1,6 +1,6 @@
 use gpui::{
-    div, img, point, px, App, ClipboardItem, Context, Font, FontStyle, FontWeight, FocusHandle,
-    Focusable, Image, ImageFormat, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
+    div, img, point, px, App, ClipboardItem, Context, FocusHandle, Focusable, Font, FontStyle,
+    FontWeight, Image, ImageFormat, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
     MouseDownEvent, MouseMoveEvent, MouseUpEvent, ObjectFit, ParentElement, Pixels, Point, Render,
     ScrollWheelEvent, SharedString, StatefulInteractiveElement, Styled, StyledImage, Subscription,
     Timer, Window,
@@ -9,7 +9,7 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use adabraka_ui::theme::use_theme;
+use crate::ide_theme::use_ide_theme;
 
 use crate::ansi_parser::{AnsiParser, ClearMode, ImageDimension, ParsedSegment};
 use crate::pty_service::{key_codes, PtyService};
@@ -37,8 +37,7 @@ pub struct TerminalView {
     viewport_width: f32,
     polling_started: bool,
     last_resize: Option<(usize, usize)>,
-    #[allow(dead_code)]
-    focus_subscriptions: Vec<Subscription>,
+    _focus_subscriptions: Vec<Subscription>,
     pending_clipboard: Option<String>,
     pending_notification: Option<(String, Option<String>)>,
     last_click_time: Instant,
@@ -60,9 +59,7 @@ impl TerminalView {
                     .working_directory()
                     .file_name()
                     .map(|n| n.to_string_lossy().to_string())
-                    .unwrap_or_else(|| {
-                        self.state.working_directory().to_string_lossy().to_string()
-                    })
+                    .unwrap_or_else(|| self.state.working_directory().to_string_lossy().to_string())
             })
     }
 
@@ -86,7 +83,7 @@ impl TerminalView {
             viewport_width: 800.0,
             polling_started: false,
             last_resize: None,
-            focus_subscriptions: Vec::new(),
+            _focus_subscriptions: Vec::new(),
             pending_clipboard: None,
             pending_notification: None,
             last_click_time: Instant::now(),
@@ -101,16 +98,13 @@ impl TerminalView {
 
     pub fn apply_ide_theme(&mut self) {
         let ide = crate::ide_theme::use_ide_theme();
-        self.parser.set_colors(ide.terminal.palette, ide.terminal.fg, ide.terminal.bg);
+        self.parser
+            .set_colors(ide.terminal.palette, ide.terminal.fg, ide.terminal.bg);
     }
 
     pub fn with_working_directory(mut self, path: PathBuf) -> Self {
         self.state = self.state.with_working_directory(path);
         self
-    }
-
-    pub fn focus(&self, window: &mut Window) {
-        window.focus(&self.focus_handle);
     }
 
     pub fn is_running(&self) -> bool {
@@ -144,7 +138,7 @@ impl TerminalView {
         let focus_out_sub = cx.on_focus_out(&self.focus_handle, window, |this, _, _, _cx| {
             this.send_focus_out();
         });
-        self.focus_subscriptions = vec![focus_in_sub, focus_out_sub];
+        self._focus_subscriptions = vec![focus_in_sub, focus_out_sub];
 
         self.polling_started = true;
         cx.spawn_in(window, async move |this, cx| loop {
@@ -242,7 +236,9 @@ impl TerminalView {
             ParsedSegment::DeleteChars(n) => self.state.delete_chars(n),
             ParsedSegment::ScrollUp(n) => self.state.scroll_up_n(n),
             ParsedSegment::ScrollDown(n) => self.state.scroll_down_n(n),
-            ParsedSegment::SetScrollRegion(top, bottom) => self.state.set_scroll_region(top, bottom),
+            ParsedSegment::SetScrollRegion(top, bottom) => {
+                self.state.set_scroll_region(top, bottom)
+            }
             ParsedSegment::ResetScrollRegion => self.state.reset_scroll_region(),
             ParsedSegment::SetTitle(title) => self.state.set_title(Some(title)),
             ParsedSegment::Bell => {
@@ -260,7 +256,7 @@ impl TerminalView {
             ParsedSegment::FocusTracking(enabled) => self.state.set_focus_tracking(enabled),
             ParsedSegment::OriginMode(enabled) => self.state.set_origin_mode(enabled),
             ParsedSegment::AutoWrap(enabled) => self.state.set_autowrap(enabled),
-            ParsedSegment::InsertMode(enabled) => self.state.set_insert_mode(enabled),
+
             ParsedSegment::ApplicationCursorKeys(enabled) => {
                 self.state.set_application_cursor_keys(enabled)
             }
@@ -419,51 +415,138 @@ impl TerminalView {
 
         let app_cursor = self.state.application_cursor_keys();
         let handled = match key {
-            "enter" => { self.send_input(key_codes::ENTER); true }
-            "tab" => { self.send_input(key_codes::TAB); true }
-            "backspace" => { self.send_input(key_codes::BACKSPACE); true }
-            "escape" => { self.send_input(key_codes::ESCAPE); true }
-            "delete" => { self.send_input(key_codes::DELETE); true }
+            "enter" => {
+                self.send_input(key_codes::ENTER);
+                true
+            }
+            "tab" => {
+                self.send_input(key_codes::TAB);
+                true
+            }
+            "backspace" => {
+                self.send_input(key_codes::BACKSPACE);
+                true
+            }
+            "escape" => {
+                self.send_input(key_codes::ESCAPE);
+                true
+            }
+            "delete" => {
+                self.send_input(key_codes::DELETE);
+                true
+            }
             "up" => {
-                if app_cursor { self.send_input(b"\x1bOA"); } else { self.send_input(key_codes::UP); }
+                if app_cursor {
+                    self.send_input(b"\x1bOA");
+                } else {
+                    self.send_input(key_codes::UP);
+                }
                 true
             }
             "down" => {
-                if app_cursor { self.send_input(b"\x1bOB"); } else { self.send_input(key_codes::DOWN); }
+                if app_cursor {
+                    self.send_input(b"\x1bOB");
+                } else {
+                    self.send_input(key_codes::DOWN);
+                }
                 true
             }
             "right" => {
-                if app_cursor { self.send_input(b"\x1bOC"); } else { self.send_input(key_codes::RIGHT); }
+                if app_cursor {
+                    self.send_input(b"\x1bOC");
+                } else {
+                    self.send_input(key_codes::RIGHT);
+                }
                 true
             }
             "left" => {
-                if app_cursor { self.send_input(b"\x1bOD"); } else { self.send_input(key_codes::LEFT); }
+                if app_cursor {
+                    self.send_input(b"\x1bOD");
+                } else {
+                    self.send_input(key_codes::LEFT);
+                }
                 true
             }
             "home" => {
-                if app_cursor { self.send_input(b"\x1bOH"); } else { self.send_input(key_codes::HOME); }
+                if app_cursor {
+                    self.send_input(b"\x1bOH");
+                } else {
+                    self.send_input(key_codes::HOME);
+                }
                 true
             }
             "end" => {
-                if app_cursor { self.send_input(b"\x1bOF"); } else { self.send_input(key_codes::END); }
+                if app_cursor {
+                    self.send_input(b"\x1bOF");
+                } else {
+                    self.send_input(key_codes::END);
+                }
                 true
             }
-            "pageup" => { self.send_input(key_codes::PAGE_UP); true }
-            "pagedown" => { self.send_input(key_codes::PAGE_DOWN); true }
-            "insert" => { self.send_input(b"\x1b[2~"); true }
-            "f1" => { self.send_input(b"\x1bOP"); true }
-            "f2" => { self.send_input(b"\x1bOQ"); true }
-            "f3" => { self.send_input(b"\x1bOR"); true }
-            "f4" => { self.send_input(b"\x1bOS"); true }
-            "f5" => { self.send_input(b"\x1b[15~"); true }
-            "f6" => { self.send_input(b"\x1b[17~"); true }
-            "f7" => { self.send_input(b"\x1b[18~"); true }
-            "f8" => { self.send_input(b"\x1b[19~"); true }
-            "f9" => { self.send_input(b"\x1b[20~"); true }
-            "f10" => { self.send_input(b"\x1b[21~"); true }
-            "f11" => { self.send_input(b"\x1b[23~"); true }
-            "f12" => { self.send_input(b"\x1b[24~"); true }
-            "space" => { self.send_input(b" "); true }
+            "pageup" => {
+                self.send_input(key_codes::PAGE_UP);
+                true
+            }
+            "pagedown" => {
+                self.send_input(key_codes::PAGE_DOWN);
+                true
+            }
+            "insert" => {
+                self.send_input(b"\x1b[2~");
+                true
+            }
+            "f1" => {
+                self.send_input(b"\x1bOP");
+                true
+            }
+            "f2" => {
+                self.send_input(b"\x1bOQ");
+                true
+            }
+            "f3" => {
+                self.send_input(b"\x1bOR");
+                true
+            }
+            "f4" => {
+                self.send_input(b"\x1bOS");
+                true
+            }
+            "f5" => {
+                self.send_input(b"\x1b[15~");
+                true
+            }
+            "f6" => {
+                self.send_input(b"\x1b[17~");
+                true
+            }
+            "f7" => {
+                self.send_input(b"\x1b[18~");
+                true
+            }
+            "f8" => {
+                self.send_input(b"\x1b[19~");
+                true
+            }
+            "f9" => {
+                self.send_input(b"\x1b[20~");
+                true
+            }
+            "f10" => {
+                self.send_input(b"\x1b[21~");
+                true
+            }
+            "f11" => {
+                self.send_input(b"\x1b[23~");
+                true
+            }
+            "f12" => {
+                self.send_input(b"\x1b[24~");
+                true
+            }
+            "space" => {
+                self.send_input(b" ");
+                true
+            }
             _ => false,
         };
 
@@ -848,7 +931,11 @@ impl TerminalView {
             }
         }
 
-        if result.is_empty() { None } else { Some(result) }
+        if result.is_empty() {
+            None
+        } else {
+            Some(result)
+        }
     }
 
     pub fn copy_selection(&self, cx: &mut Context<Self>) {
@@ -923,10 +1010,11 @@ impl TerminalView {
             && self.state.cursor_visible()
             && self.state.is_at_bottom();
 
-        let theme = use_theme();
-        let cursor_bg = theme.tokens.primary;
-        let cursor_fg = theme.tokens.background;
-        let selection_bg = theme.tokens.primary.opacity(0.35);
+        let ide = use_ide_theme();
+        let chrome = ide.chrome;
+        let cursor_bg = chrome.accent;
+        let cursor_fg = chrome.bg;
+        let selection_bg = chrome.accent.opacity(0.35);
 
         let has_selection = self.has_selection() && {
             let (start, end) = (self.selection_start.unwrap(), self.selection_end.unwrap());
@@ -953,7 +1041,13 @@ impl TerminalView {
                     ImageCellKind::Anchor(_) | ImageCellKind::Continuation(_) => {
                         if !current_text.is_empty() {
                             let style = current_style.cloned().unwrap_or_default();
-                            spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
+                            spans.push(self.make_span(
+                                &current_text,
+                                &style,
+                                current_selected,
+                                current_has_link,
+                                &selection_bg,
+                            ));
                             current_text.clear();
                         }
                         current_text.push(' ');
@@ -973,32 +1067,38 @@ impl TerminalView {
             if is_cursor_pos {
                 if !current_text.is_empty() {
                     let style = current_style.cloned().unwrap_or_default();
-                    spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
+                    spans.push(self.make_span(
+                        &current_text,
+                        &style,
+                        current_selected,
+                        current_has_link,
+                        &selection_bg,
+                    ));
                     current_text.clear();
                 }
 
                 let c = cell.map(|c| c.char).unwrap_or(' ');
                 let cursor_span = match self.state.cursor_style() {
-                    CursorStyle::Block => {
-                        div()
-                            .bg(cursor_bg)
-                            .text_color(cursor_fg)
-                            .child(c.to_string())
-                    }
-                    CursorStyle::Underline => {
-                        div()
-                            .border_b_2()
-                            .border_color(cursor_bg)
-                            .text_color(cell.map(|c| c.style.effective_fg()).unwrap_or(theme.tokens.foreground.into()))
-                            .child(c.to_string())
-                    }
-                    CursorStyle::Bar => {
-                        div()
-                            .border_l_2()
-                            .border_color(cursor_bg)
-                            .text_color(cell.map(|c| c.style.effective_fg()).unwrap_or(theme.tokens.foreground.into()))
-                            .child(c.to_string())
-                    }
+                    CursorStyle::Block => div()
+                        .bg(cursor_bg)
+                        .text_color(cursor_fg)
+                        .child(c.to_string()),
+                    CursorStyle::Underline => div()
+                        .border_b_2()
+                        .border_color(cursor_bg)
+                        .text_color(
+                            cell.map(|c| c.style.effective_fg())
+                                .unwrap_or(chrome.bright.into()),
+                        )
+                        .child(c.to_string()),
+                    CursorStyle::Bar => div()
+                        .border_l_2()
+                        .border_color(cursor_bg)
+                        .text_color(
+                            cell.map(|c| c.style.effective_fg())
+                                .unwrap_or(chrome.bright.into()),
+                        )
+                        .child(c.to_string()),
                 };
                 spans.push(cursor_span.into_any_element());
                 current_style = cell.map(|c| &c.style);
@@ -1012,7 +1112,13 @@ impl TerminalView {
 
                 if needs_flush && !current_text.is_empty() {
                     let style = current_style.cloned().unwrap_or_default();
-                    spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
+                    spans.push(self.make_span(
+                        &current_text,
+                        &style,
+                        current_selected,
+                        current_has_link,
+                        &selection_bg,
+                    ));
                     current_text.clear();
                 }
 
@@ -1025,7 +1131,13 @@ impl TerminalView {
 
         if !current_text.is_empty() {
             let style = current_style.cloned().unwrap_or_default();
-            spans.push(self.make_span(&current_text, &style, current_selected, current_has_link, &theme, &selection_bg));
+            spans.push(self.make_span(
+                &current_text,
+                &style,
+                current_selected,
+                current_has_link,
+                &selection_bg,
+            ));
         }
 
         if show_cursor && cursor_col >= cols {
@@ -1048,7 +1160,6 @@ impl TerminalView {
         style: &crate::terminal_state::CellStyle,
         selected: bool,
         has_hyperlink: bool,
-        _theme: &adabraka_ui::theme::Theme,
         selection_bg: &gpui::Hsla,
     ) -> gpui::AnyElement {
         let fg = style.effective_fg();
@@ -1107,7 +1218,8 @@ impl TerminalView {
             self.char_width(),
         );
 
-        self.state.place_image(gpui_image, display_cols, display_rows);
+        self.state
+            .place_image(gpui_image, display_cols, display_rows);
     }
 
     fn collect_visible_images(&self) -> Vec<gpui::AnyElement> {
@@ -1284,15 +1396,15 @@ impl Render for TerminalView {
             window.focus(&self.focus_handle);
         }
 
-        let theme = use_theme();
-        let terminal_bg = theme.tokens.background;
-        let header_bg = theme.tokens.muted.opacity(0.3);
-        let header_border = theme.tokens.border;
-        let accent = theme.tokens.primary;
-        let dim = theme.tokens.muted_foreground;
+        let chrome = use_ide_theme().chrome;
+        let terminal_bg = chrome.editor_bg;
+        let header_bg = chrome.dim.opacity(0.3);
+        let header_border = chrome.header_border;
+        let accent = chrome.accent;
+        let dim = chrome.text_secondary;
         let dim_faded = dim.opacity(0.6);
         let accent_faded = accent.opacity(0.7);
-        let bright = theme.tokens.foreground;
+        let bright = chrome.bright;
 
         let bell_active = self
             .bell_flash_time
@@ -1314,7 +1426,8 @@ impl Render for TerminalView {
 
         self.update_cursor_blink();
 
-        let mut lines_to_render: Vec<(usize, Option<TerminalLine>, bool)> = Vec::with_capacity(display_rows);
+        let mut lines_to_render: Vec<(usize, Option<TerminalLine>, bool)> =
+            Vec::with_capacity(display_rows);
         for _ in 0..empty_above {
             lines_to_render.push((0, None, false));
         }
@@ -1399,12 +1512,7 @@ impl Render for TerminalView {
                                     .text_color(bright)
                                     .child(terminal_title),
                             )
-                            .child(
-                                div()
-                                    .text_size(px(11.0))
-                                    .text_color(dim)
-                                    .child("›"),
-                            )
+                            .child(div().text_size(px(11.0)).text_color(dim).child("›"))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -1417,23 +1525,18 @@ impl Render for TerminalView {
                             .flex()
                             .items_center()
                             .gap(px(12.0))
+                            .child(div().text_size(px(10.0)).text_color(dim).child("zsh"))
                             .child(
-                                div()
-                                    .text_size(px(10.0))
-                                    .text_color(dim)
-                                    .child("zsh"),
-                            )
-                            .child(
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .gap(px(4.0))
-                                    .child(
-                                        div()
-                                            .text_size(px(9.0))
-                                            .text_color(dim_faded)
-                                            .child(format!("{}×{}", self.state.cols(), self.state.rows())),
-                                    ),
+                                div().flex().items_center().gap(px(4.0)).child(
+                                    div()
+                                        .text_size(px(9.0))
+                                        .text_color(dim_faded)
+                                        .child(format!(
+                                            "{}×{}",
+                                            self.state.cols(),
+                                            self.state.rows()
+                                        )),
+                                ),
                             ),
                     ),
             )
@@ -1531,12 +1634,7 @@ impl Render for TerminalView {
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .child("⌃D"),
                             )
-                            .child(
-                                div()
-                                    .text_size(px(9.0))
-                                    .text_color(dim_faded)
-                                    .child("exit"),
-                            ),
+                            .child(div().text_size(px(9.0)).text_color(dim_faded).child("exit")),
                     )
                     .child(
                         div()

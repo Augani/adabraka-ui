@@ -1,9 +1,9 @@
 use super::state::CompletionState;
 use super::SymbolKind;
+use crate::ide_theme::use_ide_theme;
 use adabraka_ui::components::editor::EditorState;
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::scrollable::scrollable_vertical;
-use adabraka_ui::theme::use_theme;
 use gpui::prelude::FluentBuilder as _;
 use gpui::*;
 use std::rc::Rc;
@@ -96,7 +96,7 @@ impl Element for CompletionMenuElement {
             return (layout_id, None);
         }
 
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
         let anchor = self
             .editor_state
             .as_ref()
@@ -124,9 +124,9 @@ impl Element for CompletionMenuElement {
                     .gap(px(8.0))
                     .px(px(8.0))
                     .cursor_pointer()
-                    .when(is_selected, |el| el.bg(theme.tokens.accent))
+                    .when(is_selected, |el| el.bg(chrome.accent))
                     .when(!is_selected, |el| {
-                        el.hover(|s| s.bg(theme.tokens.accent.opacity(0.5)))
+                        el.hover(|s| s.bg(chrome.accent.opacity(0.5)))
                     })
                     .on_mouse_down(MouseButton::Left, move |_, window, cx| {
                         state_for_click.update(cx, |s, cx| {
@@ -138,15 +138,15 @@ impl Element for CompletionMenuElement {
                             handler(window, cx);
                         }
                     })
-                    .child(render_kind_icon(kind, &theme))
+                    .child(render_kind_icon(kind, &chrome))
                     .child(
                         div()
                             .flex_1()
                             .text_size(px(13.0))
                             .text_color(if is_selected {
-                                theme.tokens.accent_foreground
+                                chrome.bright
                             } else {
-                                theme.tokens.popover_foreground
+                                chrome.bright
                             })
                             .overflow_x_hidden()
                             .text_ellipsis()
@@ -155,7 +155,7 @@ impl Element for CompletionMenuElement {
                     .child(
                         div()
                             .text_size(px(10.0))
-                            .text_color(theme.tokens.muted_foreground.opacity(0.7))
+                            .text_color(chrome.text_secondary.opacity(0.7))
                             .child(kind.label()),
                     )
             })
@@ -179,10 +179,10 @@ impl Element for CompletionMenuElement {
                         .mt(px(4.0))
                         .w(px(MENU_WIDTH))
                         .max_h(px(menu_height))
-                        .bg(theme.tokens.popover)
+                        .bg(chrome.panel_bg)
                         .border_1()
-                        .border_color(theme.tokens.border)
-                        .rounded(theme.tokens.radius_md)
+                        .border_color(chrome.header_border)
+                        .rounded(px(8.0))
                         .shadow_lg()
                         .overflow_hidden()
                         .on_key_down({
@@ -257,15 +257,15 @@ impl Element for CompletionMenuElement {
     }
 }
 
-fn render_kind_icon(kind: SymbolKind, theme: &adabraka_ui::theme::Theme) -> impl IntoElement {
+fn render_kind_icon(kind: SymbolKind, chrome: &crate::ide_theme::ChromeColors) -> impl IntoElement {
     let icon_color = match kind {
-        SymbolKind::Function | SymbolKind::Method => theme.tokens.primary,
-        SymbolKind::Variable | SymbolKind::Field => theme.tokens.secondary_foreground,
-        SymbolKind::Struct | SymbolKind::Class => theme.tokens.accent_foreground,
-        SymbolKind::Enum => theme.tokens.destructive,
-        SymbolKind::Const => theme.tokens.ring,
-        SymbolKind::Type => theme.tokens.primary,
-        SymbolKind::Module => theme.tokens.muted_foreground,
+        SymbolKind::Function | SymbolKind::Method => chrome.accent,
+        SymbolKind::Variable | SymbolKind::Field => chrome.bright,
+        SymbolKind::Struct | SymbolKind::Class => chrome.bright,
+        SymbolKind::Enum => chrome.diff_del_text,
+        SymbolKind::Const => chrome.accent,
+        SymbolKind::Type => chrome.accent,
+        SymbolKind::Module => chrome.text_secondary,
     };
 
     div()

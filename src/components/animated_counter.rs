@@ -53,7 +53,11 @@ impl AnimatedCounterState {
                     if state.version != version {
                         return;
                     }
-                    state.display_value = if is_last { state.target_value } else { interpolated };
+                    state.display_value = if is_last {
+                        state.target_value
+                    } else {
+                        interpolated
+                    };
                     cx.notify();
                 });
             }

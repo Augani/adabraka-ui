@@ -1,4 +1,4 @@
-use git2::{ApplyLocation, Diff, DiffFormat, DiffOptions, Repository, StatusOptions};
+use git2::{Diff, DiffFormat, DiffOptions, Repository, StatusOptions};
 use std::path::Path;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -35,15 +35,8 @@ pub struct DiffLine {
 }
 
 #[derive(Debug, Clone)]
-#[allow(dead_code)]
 pub struct DiffHunk {
-    pub header: String,
-    pub old_start: u32,
-    pub old_lines: u32,
-    pub new_start: u32,
-    pub new_lines: u32,
     pub lines: Vec<DiffLine>,
-    pub hunk_index: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -271,33 +264,15 @@ impl GitService {
         }
 
         let mut current_hunk_lines: Vec<DiffLine> = Vec::new();
-        let mut current_hunk_header = String::new();
-        let mut current_hunk_old_start = 0u32;
-        let mut current_hunk_old_lines = 0u32;
-        let mut current_hunk_new_start = 0u32;
-        let mut current_hunk_new_lines = 0u32;
-        let mut hunk_count = 0usize;
         let mut in_hunk = false;
 
         diff.print(DiffFormat::Patch, |_delta, hunk, line| {
-            if let Some(hunk) = hunk {
+            if hunk.is_some() {
                 if in_hunk {
                     file_diff.hunks.push(DiffHunk {
-                        header: current_hunk_header.clone(),
-                        old_start: current_hunk_old_start,
-                        old_lines: current_hunk_old_lines,
-                        new_start: current_hunk_new_start,
-                        new_lines: current_hunk_new_lines,
                         lines: std::mem::take(&mut current_hunk_lines),
-                        hunk_index: hunk_count,
                     });
-                    hunk_count += 1;
                 }
-                current_hunk_header = String::from_utf8_lossy(hunk.header()).trim().to_string();
-                current_hunk_old_start = hunk.old_start();
-                current_hunk_old_lines = hunk.old_lines();
-                current_hunk_new_start = hunk.new_start();
-                current_hunk_new_lines = hunk.new_lines();
                 in_hunk = true;
             }
 
@@ -332,13 +307,7 @@ impl GitService {
 
         if in_hunk {
             file_diff.hunks.push(DiffHunk {
-                header: current_hunk_header,
-                old_start: current_hunk_old_start,
-                old_lines: current_hunk_old_lines,
-                new_start: current_hunk_new_start,
-                new_lines: current_hunk_new_lines,
                 lines: current_hunk_lines,
-                hunk_index: hunk_count,
             });
         }
 
@@ -370,123 +339,6 @@ impl GitService {
                 index.write()?;
             }
         }
-        Ok(())
-    }
-
-    pub fn stage_hunk(repo: &Repository, path: &str, hunk_idx: usize) -> Result<(), git2::Error> {
-        let diff = Self::diff_workdir_for_path(repo, path)?;
-        let patch = git2::Patch::from_diff(&diff, 0)?;
-        if let Some(patch) = patch {
-            let hunk_diff = Self::build_single_hunk_patch(&patch, hunk_idx)?;
-            let diff = Diff::from_buffer(hunk_diff.as_bytes())?;
-            repo.apply(&diff, ApplyLocation::Index, None)?;
-        }
-        Ok(())
-    }
-
-    #[allow(dead_code)]
-    pub fn discard_hunk(repo: &Repository, path: &str, hunk_idx: usize) -> Result<(), git2::Error> {
-        let diff = Self::diff_workdir_for_path(repo, path)?;
-        let patch = git2::Patch::from_diff(&diff, 0)?;
-        if let Some(patch) = patch {
-            let hunk_diff = Self::build_single_hunk_patch(&patch, hunk_idx)?;
-            let mut reversed = String::new();
-            for line in hunk_diff.lines() {
-                if line.starts_with("--- ") {
-                    reversed.push_str(line);
-                    reversed.push('\n');
-                } else if line.starts_with("+++ ") {
-                    reversed.push_str(line);
-                    reversed.push('\n');
-                } else if line.starts_with('+') {
-                    reversed.push('-');
-                    reversed.push_str(&line[1..]);
-                    reversed.push('\n');
-                } else if line.starts_with('-') {
-                    reversed.push('+');
-                    reversed.push_str(&line[1..]);
-                    reversed.push('\n');
-                } else if line.starts_with("@@") {
-                    let reversed_header = Self::reverse_hunk_header(line);
-                    reversed.push_str(&reversed_header);
-                    reversed.push('\n');
-                } else {
-                    reversed.push_str(line);
-                    reversed.push('\n');
-                }
-            }
-            let diff = Diff::from_buffer(reversed.as_bytes())?;
-            repo.apply(&diff, ApplyLocation::WorkDir, None)?;
-        }
-        Ok(())
-    }
-
-    fn build_single_hunk_patch(
-        patch: &git2::Patch<'_>,
-        hunk_idx: usize,
-    ) -> Result<String, git2::Error> {
-        let delta = patch.delta();
-        let old_path = delta
-            .old_file()
-            .path()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_default();
-        let new_path = delta
-            .new_file()
-            .path()
-            .map(|p| p.to_string_lossy().to_string())
-            .unwrap_or_default();
-
-        let (hunk, _num_lines) = patch.hunk(hunk_idx)?;
-        let num_lines = patch.num_lines_in_hunk(hunk_idx)?;
-
-        let mut out = String::new();
-        out.push_str(&format!("--- a/{}\n", old_path));
-        out.push_str(&format!("+++ b/{}\n", new_path));
-        out.push_str(&String::from_utf8_lossy(hunk.header()));
-
-        for line_idx in 0..num_lines {
-            let line = patch.line_in_hunk(hunk_idx, line_idx)?;
-            match line.origin() {
-                '+' | '-' | ' ' => {
-                    out.push(line.origin());
-                    out.push_str(&String::from_utf8_lossy(line.content()));
-                }
-                _ => {
-                    out.push_str(&String::from_utf8_lossy(line.content()));
-                }
-            }
-        }
-
-        Ok(out)
-    }
-
-    #[allow(dead_code)]
-    fn reverse_hunk_header(header: &str) -> String {
-        let trimmed = header.trim();
-        if !trimmed.starts_with("@@") {
-            return header.to_string();
-        }
-
-        let inner = trimmed
-            .trim_start_matches("@@")
-            .trim_end_matches("@@")
-            .trim();
-        let parts: Vec<&str> = inner.split_whitespace().collect();
-        if parts.len() >= 2 {
-            format!("@@ {} {} @@", parts[1], parts[0])
-        } else {
-            header.to_string()
-        }
-    }
-
-    #[allow(dead_code)]
-    pub fn discard_file(repo: &Repository, path: &str) -> Result<(), git2::Error> {
-        let obj = repo.head()?.peel_to_tree()?.into_object();
-        repo.checkout_tree(
-            &obj,
-            Some(git2::build::CheckoutBuilder::new().path(path).force()),
-        )?;
         Ok(())
     }
 
@@ -527,15 +379,7 @@ impl GitService {
             .collect();
 
         if !lines.is_empty() {
-            hunks.push(DiffHunk {
-                header: String::new(),
-                old_start: 0,
-                old_lines: 0,
-                new_start: 1,
-                new_lines: lines.len() as u32,
-                lines,
-                hunk_index: 0,
-            });
+            hunks.push(DiffHunk { lines });
         }
 
         Ok(FileDiff {

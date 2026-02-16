@@ -1,7 +1,7 @@
 use adabraka_ui::components::editor::EditorState;
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::input::{Input, InputEvent, InputState};
-use adabraka_ui::theme::use_theme;
+use crate::ide_theme::use_ide_theme;
 use gpui::prelude::FluentBuilder as _;
 use gpui::*;
 use smol::Timer;
@@ -171,7 +171,7 @@ impl Focusable for SearchBar {
 
 impl Render for SearchBar {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
 
         let (match_count, current_idx, case_sensitive, use_regex) =
             if let Some(editor) = &self.editor {
@@ -200,28 +200,28 @@ impl Render for SearchBar {
 
         let show_replace = self.show_replace;
         let case_bg = if case_sensitive {
-            theme.tokens.primary.opacity(0.2)
+            chrome.accent.opacity(0.2)
         } else {
-            theme.tokens.muted.opacity(0.3)
+            chrome.dim.opacity(0.3)
         };
         let case_fg = if case_sensitive {
-            theme.tokens.primary
+            chrome.accent
         } else {
-            theme.tokens.muted_foreground
+            chrome.text_secondary
         };
         let regex_bg = if use_regex {
-            theme.tokens.primary.opacity(0.2)
+            chrome.accent.opacity(0.2)
         } else {
-            theme.tokens.muted.opacity(0.3)
+            chrome.dim.opacity(0.3)
         };
         let regex_fg = if use_regex {
-            theme.tokens.primary
+            chrome.accent
         } else {
-            theme.tokens.muted_foreground
+            chrome.text_secondary
         };
-        let btn_bg = theme.tokens.muted.opacity(0.3);
-        let btn_fg = theme.tokens.muted_foreground;
-        let hover_bg = theme.tokens.muted.opacity(0.5);
+        let btn_bg = chrome.dim.opacity(0.3);
+        let btn_fg = chrome.text_secondary;
+        let hover_bg = chrome.dim.opacity(0.5);
 
         div()
             .key_context("SearchBar")
@@ -231,9 +231,9 @@ impl Render for SearchBar {
             .w_full()
             .flex()
             .flex_col()
-            .bg(theme.tokens.muted.opacity(0.3))
+            .bg(chrome.dim.opacity(0.3))
             .border_b_1()
-            .border_color(theme.tokens.border)
+            .border_color(chrome.header_border)
             .px(px(12.0))
             .pt(px(8.0))
             .pb(px(12.0))
@@ -375,7 +375,7 @@ impl Render for SearchBar {
                     .child(
                         div()
                             .text_size(px(12.0))
-                            .text_color(theme.tokens.muted_foreground)
+                            .text_color(chrome.text_secondary)
                             .min_w(px(70.0))
                             .child(match_info),
                     )

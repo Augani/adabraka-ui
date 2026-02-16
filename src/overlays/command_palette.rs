@@ -275,6 +275,8 @@ impl Render for CommandPalette {
                     }
                 }),
             )
+            .on_scroll_wheel(|_, _, _| {})
+            .key_context("CommandPalette")
             .track_focus(&self.focus_handle)
             .on_action(cx.listener(|this, _: &NavigateUp, _window, cx| {
                 this.state.update(cx, |state, _cx| {

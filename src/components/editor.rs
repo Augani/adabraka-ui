@@ -1,4 +1,5 @@
 use crate::components::scrollable::scrollable_vertical;
+use crate::icon_config::resolve_icon_path;
 use crate::theme::use_theme;
 use gpui::{prelude::FluentBuilder as _, *};
 use regex::Regex;
@@ -8,6 +9,7 @@ use std::cmp::min;
 use std::collections::HashMap;
 use std::ops::Range;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::time::Duration;
 use tree_sitter::{
     InputEdit, Parser, Point as TSPoint, Query, QueryCursor, StreamingIterator, Tree,
@@ -162,6 +164,21 @@ enum EditOp {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FoldRange {
+    pub start_line: usize,
+    pub end_line: usize,
+}
+
+const AUTO_CLOSE_PAIRS: &[(char, char)] = &[
+    ('(', ')'),
+    ('[', ']'),
+    ('{', '}'),
+    ('"', '"'),
+    ('\'', '\''),
+    ('`', '`'),
+];
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Language {
     Rust,
     JavaScript,
@@ -260,7 +277,10 @@ impl Language {
             Language::JavaScript => Some(tree_sitter_javascript::LANGUAGE.into()),
             #[cfg(feature = "tree-sitter-typescript")]
             Language::TypeScript => Some(tree_sitter_typescript::LANGUAGE_TSX.into()),
-            #[cfg(all(feature = "tree-sitter-javascript", not(feature = "tree-sitter-typescript")))]
+            #[cfg(all(
+                feature = "tree-sitter-javascript",
+                not(feature = "tree-sitter-typescript")
+            ))]
             Language::TypeScript => Some(tree_sitter_javascript::LANGUAGE.into()),
             #[cfg(feature = "tree-sitter-python")]
             Language::Python => Some(tree_sitter_python::LANGUAGE.into()),
@@ -312,7 +332,10 @@ impl Language {
             Language::JavaScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY),
             #[cfg(feature = "tree-sitter-typescript")]
             Language::TypeScript => Some(tree_sitter_typescript::HIGHLIGHTS_QUERY),
-            #[cfg(all(feature = "tree-sitter-javascript", not(feature = "tree-sitter-typescript")))]
+            #[cfg(all(
+                feature = "tree-sitter-javascript",
+                not(feature = "tree-sitter-typescript")
+            ))]
             Language::TypeScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY),
             #[cfg(feature = "tree-sitter-python")]
             Language::Python => Some(tree_sitter_python::HIGHLIGHTS_QUERY),
@@ -379,16 +402,21 @@ pub fn highlight_color_for_capture(capture_name: &str) -> Hsla {
         | "include"
         | "exception" => hsla(0.77, 0.75, 0.70, 1.0),
 
-        "type" | "type.builtin" | "type.definition" | "type.qualifier"
-        | "storageclass" | "structure" => hsla(0.47, 0.60, 0.65, 1.0),
+        "type" | "type.builtin" | "type.definition" | "type.qualifier" | "storageclass"
+        | "structure" => hsla(0.47, 0.60, 0.65, 1.0),
 
         "function" | "function.call" | "function.method" | "function.builtin"
         | "function.macro" | "method" | "method.call" | "constructor" => {
             hsla(0.58, 0.65, 0.70, 1.0)
         }
 
-        "string" | "string.special" | "string.escape" | "string.regex"
-        | "string.special.url" | "string.special.path" | "character"
+        "string"
+        | "string.special"
+        | "string.escape"
+        | "string.regex"
+        | "string.special.url"
+        | "string.special.path"
+        | "character"
         | "character.special" => hsla(0.25, 0.55, 0.60, 1.0),
 
         "number" | "float" | "constant.numeric" => hsla(0.08, 0.75, 0.65, 1.0),
@@ -399,24 +427,24 @@ pub fn highlight_color_for_capture(capture_name: &str) -> Hsla {
 
         "operator" => hsla(0.55, 0.50, 0.70, 1.0),
 
-        "variable" | "variable.parameter" | "variable.builtin"
-        | "variable.member" | "parameter" | "field" => hsla(0.0, 0.0, 0.85, 1.0),
+        "variable" | "variable.parameter" | "variable.builtin" | "variable.member"
+        | "parameter" | "field" => hsla(0.0, 0.0, 0.85, 1.0),
 
-        "constant" | "constant.builtin" | "constant.macro" | "boolean"
-        | "define" | "symbol" => hsla(0.08, 0.75, 0.65, 1.0),
+        "constant" | "constant.builtin" | "constant.macro" | "boolean" | "define" | "symbol" => {
+            hsla(0.08, 0.75, 0.65, 1.0)
+        }
 
         "property" | "property.definition" => hsla(0.55, 0.50, 0.70, 1.0),
 
-        "punctuation" | "punctuation.bracket" | "punctuation.delimiter"
-        | "punctuation.special" => hsla(0.0, 0.0, 0.60, 1.0),
+        "punctuation" | "punctuation.bracket" | "punctuation.delimiter" | "punctuation.special" => {
+            hsla(0.0, 0.0, 0.60, 1.0)
+        }
 
         "attribute" | "label" | "annotation" | "decorator" => hsla(0.12, 0.60, 0.65, 1.0),
 
         "namespace" | "module" => hsla(0.08, 0.50, 0.70, 1.0),
 
-        "tag" | "tag.builtin" | "tag.delimiter" | "tag.attribute" => {
-            hsla(0.0, 0.65, 0.65, 1.0)
-        }
+        "tag" | "tag.builtin" | "tag.delimiter" | "tag.attribute" => hsla(0.0, 0.65, 0.65, 1.0),
 
         "text.title" | "markup.heading" | "text.strong" | "markup.bold" => {
             hsla(0.58, 0.65, 0.80, 1.0)
@@ -481,9 +509,20 @@ pub struct EditorState {
     pub cursor_color_override: Option<Hsla>,
     pub selection_color_override: Option<Hsla>,
     pub line_number_color_override: Option<Hsla>,
+    pub line_number_active_color_override: Option<Hsla>,
     pub gutter_bg_override: Option<Hsla>,
     pub search_match_color_overrides: Option<(Hsla, Hsla)>,
+    pub current_line_color_override: Option<Hsla>,
+    pub bracket_match_color_override: Option<Hsla>,
+    pub word_highlight_color_override: Option<Hsla>,
+    pub indent_guide_color_override: Option<Hsla>,
+    pub indent_guide_active_color_override: Option<Hsla>,
+    pub fold_marker_color_override: Option<Hsla>,
     pub syntax_color_fn: Option<Box<dyn Fn(&str) -> Hsla>>,
+
+    fold_ranges: Vec<FoldRange>,
+    folded: Vec<FoldRange>,
+    cached_display_lines: Option<Rc<Vec<usize>>>,
 }
 
 impl EditorState {
@@ -512,7 +551,7 @@ impl EditorState {
             is_selecting: false,
             dragging_h_scrollbar: false,
             last_mouse_pos: None,
-            last_mouse_gutter_width: px(60.0),
+            last_mouse_gutter_width: px(72.0),
             autoscroll_task: None,
             last_click_time: None,
             marked_range: None,
@@ -529,9 +568,19 @@ impl EditorState {
             cursor_color_override: None,
             selection_color_override: None,
             line_number_color_override: None,
+            line_number_active_color_override: None,
             gutter_bg_override: None,
             search_match_color_overrides: None,
+            current_line_color_override: None,
+            bracket_match_color_override: None,
+            word_highlight_color_override: None,
+            indent_guide_color_override: None,
+            indent_guide_active_color_override: None,
+            fold_marker_color_override: None,
             syntax_color_fn: None,
+            fold_ranges: Vec::new(),
+            folded: Vec::new(),
+            cached_display_lines: None,
         }
     }
 
@@ -600,10 +649,493 @@ impl EditorState {
         Some((word, word_start))
     }
 
+    pub fn find_matching_bracket(&self) -> Option<(Position, Position)> {
+        let line_text = self.line_text(self.cursor.line);
+        let col = self.cursor.col.min(line_text.len());
+        let bytes = line_text.as_bytes();
+
+        let check_positions: &[usize] = if col > 0 { &[col, col - 1] } else { &[col] };
+
+        for &check_col in check_positions {
+            if check_col >= bytes.len() {
+                continue;
+            }
+            let ch = bytes[check_col] as char;
+            let (opener, closer, forward) = match ch {
+                '(' => ('(', ')', true),
+                '[' => ('[', ']', true),
+                '{' => ('{', '}', true),
+                ')' => ('(', ')', false),
+                ']' => ('[', ']', false),
+                '}' => ('{', '}', false),
+                _ => continue,
+            };
+
+            let start_pos = Position::new(self.cursor.line, check_col);
+
+            if forward {
+                let mut depth = 1i32;
+                let mut scan_line = self.cursor.line;
+                let mut scan_col = check_col + 1;
+                let total = self.total_lines();
+                while scan_line < total {
+                    let scan_text = self.line_text(scan_line);
+                    let scan_bytes = scan_text.as_bytes();
+                    while scan_col < scan_bytes.len() {
+                        let sc = scan_bytes[scan_col] as char;
+                        if sc == opener {
+                            depth += 1;
+                        } else if sc == closer {
+                            depth -= 1;
+                            if depth == 0 {
+                                return Some((start_pos, Position::new(scan_line, scan_col)));
+                            }
+                        }
+                        scan_col += 1;
+                    }
+                    scan_line += 1;
+                    scan_col = 0;
+                }
+            } else {
+                let mut depth = 1i32;
+                let mut scan_line = self.cursor.line;
+                let mut scan_col = check_col as i64 - 1;
+                loop {
+                    if scan_col < 0 {
+                        if scan_line == 0 {
+                            break;
+                        }
+                        scan_line -= 1;
+                        let prev_text = self.line_text(scan_line);
+                        scan_col = prev_text.len() as i64 - 1;
+                        continue;
+                    }
+                    let scan_text = self.line_text(scan_line);
+                    let scan_bytes = scan_text.as_bytes();
+                    if (scan_col as usize) < scan_bytes.len() {
+                        let sc = scan_bytes[scan_col as usize] as char;
+                        if sc == closer {
+                            depth += 1;
+                        } else if sc == opener {
+                            depth -= 1;
+                            if depth == 0 {
+                                return Some((
+                                    Position::new(scan_line, scan_col as usize),
+                                    start_pos,
+                                ));
+                            }
+                        }
+                    }
+                    scan_col -= 1;
+                }
+            }
+        }
+        None
+    }
+
+    pub fn word_under_cursor_full(&self) -> Option<(String, usize, usize)> {
+        let line_text = self.line_text(self.cursor.line);
+        if line_text.is_empty() {
+            return None;
+        }
+        let bytes = line_text.as_bytes();
+        let col = self.cursor.col.min(bytes.len());
+
+        let mut word_start = col;
+        while word_start > 0
+            && (bytes[word_start - 1].is_ascii_alphanumeric() || bytes[word_start - 1] == b'_')
+        {
+            word_start -= 1;
+        }
+
+        let mut word_end = col;
+        while word_end < bytes.len()
+            && (bytes[word_end].is_ascii_alphanumeric() || bytes[word_end] == b'_')
+        {
+            word_end += 1;
+        }
+
+        if word_start == word_end {
+            return None;
+        }
+
+        let word = line_text[word_start..word_end].to_string();
+        if word.len() < 2 {
+            return None;
+        }
+        Some((word, word_start, word_end))
+    }
+
+    pub fn compute_fold_ranges(&mut self) {
+        let tree = match &self.syntax_tree {
+            Some(t) => t,
+            None => {
+                self.fold_ranges.clear();
+                return;
+            }
+        };
+
+        let mut ranges = Vec::new();
+        let mut tree_cursor = tree.root_node().walk();
+        let mut did_enter = true;
+
+        loop {
+            let node = tree_cursor.node();
+            if did_enter {
+                let kind = node.kind();
+                let start_line = node.start_position().row;
+                let end_line = node.end_position().row;
+                if end_line > start_line + 1 && Self::is_foldable_kind(kind) {
+                    ranges.push(FoldRange {
+                        start_line,
+                        end_line,
+                    });
+                }
+            }
+
+            if did_enter && tree_cursor.goto_first_child() {
+                did_enter = true;
+            } else if tree_cursor.goto_next_sibling() {
+                did_enter = true;
+            } else if tree_cursor.goto_parent() {
+                did_enter = false;
+            } else {
+                break;
+            }
+        }
+
+        ranges.sort_by_key(|r| r.start_line);
+        ranges.dedup_by_key(|r| r.start_line);
+        self.fold_ranges = ranges;
+
+        self.folded.retain(|f| {
+            self.fold_ranges
+                .iter()
+                .any(|r| r.start_line == f.start_line)
+        });
+
+        if self.folded.is_empty() {
+            self.cached_display_lines = None;
+        } else {
+            self.cached_display_lines = Some(Rc::new(self.compute_display_lines()));
+        }
+    }
+
+    fn is_foldable_kind(kind: &str) -> bool {
+        matches!(
+            kind,
+            "function_item"
+                | "impl_item"
+                | "struct_item"
+                | "enum_item"
+                | "block"
+                | "if_expression"
+                | "match_expression"
+                | "function_declaration"
+                | "class_declaration"
+                | "class_definition"
+                | "method_definition"
+                | "if_statement"
+                | "for_statement"
+                | "while_statement"
+                | "for_expression"
+                | "while_expression"
+                | "object"
+                | "array"
+                | "trait_item"
+                | "mod_item"
+                | "use_declaration"
+                | "const_item"
+                | "static_item"
+                | "macro_definition"
+                | "interface_declaration"
+                | "type_alias_declaration"
+                | "arrow_function"
+                | "function_expression"
+                | "try_statement"
+                | "switch_statement"
+                | "match_block"
+                | "closure_expression"
+                | "dictionary"
+                | "list"
+                | "tuple"
+        )
+    }
+
+    pub fn toggle_fold_at_line(&mut self, line: usize, cx: &mut Context<Self>) {
+        if let Some(idx) = self.folded.iter().position(|f| f.start_line == line) {
+            self.folded.remove(idx);
+        } else if let Some(range) = self.fold_ranges.iter().find(|r| r.start_line == line) {
+            self.folded.push(*range);
+        }
+        self.invalidate_folds();
+        self.clamp_scroll_after_fold();
+        cx.notify();
+    }
+
+    pub fn fold_all(&mut self, cx: &mut Context<Self>) {
+        self.folded = self.fold_ranges.clone();
+        self.invalidate_folds();
+        self.clamp_scroll_after_fold();
+        cx.notify();
+    }
+
+    pub fn unfold_all(&mut self, cx: &mut Context<Self>) {
+        self.folded.clear();
+        self.invalidate_folds();
+        self.clamp_scroll_after_fold();
+        cx.notify();
+    }
+
+    fn invalidate_folds(&mut self) {
+        self.line_layouts.clear();
+        if self.folded.is_empty() {
+            self.cached_display_lines = None;
+        } else {
+            self.cached_display_lines = Some(Rc::new(self.compute_display_lines()));
+        }
+    }
+
+    fn compute_display_lines(&self) -> Vec<usize> {
+        let total = self.total_lines();
+        let mut lines = Vec::with_capacity(total);
+        let mut skip_until: Option<usize> = None;
+        for line in 0..total {
+            if let Some(end) = skip_until {
+                if line <= end {
+                    continue;
+                }
+                skip_until = None;
+            }
+            lines.push(line);
+            if let Some(fold) = self.folded.iter().find(|f| f.start_line == line) {
+                skip_until = Some(fold.end_line);
+            }
+        }
+        lines
+    }
+
+    fn clamp_scroll_after_fold(&mut self) {
+        let line_height = px(20.0);
+        let padding_top = px(12.0);
+        let padding_bottom = px(12.0);
+        let display_count = self.display_line_count();
+        let content_height = padding_top + padding_bottom + line_height * display_count as f32;
+        let viewport_height = self.scroll_handle.bounds().size.height;
+
+        if viewport_height <= px(0.0) {
+            return;
+        }
+
+        let max_scroll = (content_height - viewport_height).max(px(0.0));
+        let offset = self.scroll_handle.offset();
+        let clamped_y = offset.y.max(-max_scroll).min(px(0.0));
+        if (clamped_y - offset.y).abs() > px(0.1) {
+            self.scroll_handle.set_offset(point(offset.x, clamped_y));
+        }
+    }
+
+    pub fn is_line_folded(&self, line: usize) -> bool {
+        self.folded
+            .iter()
+            .any(|f| line > f.start_line && line <= f.end_line)
+    }
+
+    pub fn display_lines(&self) -> Rc<Vec<usize>> {
+        if let Some(ref cached) = self.cached_display_lines {
+            return Rc::clone(cached);
+        }
+        Rc::new(self.compute_display_lines())
+    }
+
+    pub fn display_line_count(&self) -> usize {
+        if self.folded.is_empty() {
+            return self.total_lines();
+        }
+        if let Some(ref cached) = self.cached_display_lines {
+            return cached.len();
+        }
+        self.compute_display_lines().len()
+    }
+
+    pub fn buffer_line_to_display_row(&self, buffer_line: usize) -> Option<usize> {
+        let mut display_row = 0usize;
+        let mut skip_until: Option<usize> = None;
+        let total = self.total_lines();
+        for line in 0..total {
+            if let Some(end) = skip_until {
+                if line <= end {
+                    if line == buffer_line {
+                        return None;
+                    }
+                    continue;
+                }
+                skip_until = None;
+            }
+            if line == buffer_line {
+                return Some(display_row);
+            }
+            if let Some(fold) = self.folded.iter().find(|f| f.start_line == line) {
+                skip_until = Some(fold.end_line);
+            }
+            display_row += 1;
+        }
+        None
+    }
+
+    pub fn display_row_to_buffer_line(&self, display_row: usize) -> usize {
+        let mut current_display = 0usize;
+        let mut skip_until: Option<usize> = None;
+        let total = self.total_lines();
+        for line in 0..total {
+            if let Some(end) = skip_until {
+                if line <= end {
+                    continue;
+                }
+                skip_until = None;
+            }
+            if current_display == display_row {
+                return line;
+            }
+            if let Some(fold) = self.folded.iter().find(|f| f.start_line == line) {
+                skip_until = Some(fold.end_line);
+            }
+            current_display += 1;
+        }
+        total.saturating_sub(1)
+    }
+
+    pub fn fold_ranges(&self) -> &[FoldRange] {
+        &self.fold_ranges
+    }
+
+    pub fn folded_ranges(&self) -> &[FoldRange] {
+        &self.folded
+    }
+
+    pub fn scope_breadcrumbs(&self) -> Vec<(String, usize)> {
+        let tree = match &self.syntax_tree {
+            Some(t) => t,
+            None => return Vec::new(),
+        };
+
+        let byte_offset = self.pos_to_byte_offset(self.cursor);
+        let ts_point = self.byte_to_ts_point(byte_offset);
+        let mut node = match tree
+            .root_node()
+            .descendant_for_point_range(ts_point, ts_point)
+        {
+            Some(n) => n,
+            None => return Vec::new(),
+        };
+
+        let mut breadcrumbs = Vec::new();
+        loop {
+            let kind = node.kind();
+            if Self::is_scope_kind(kind) {
+                if let Some(name) = Self::extract_scope_name(&node, &self.rope) {
+                    let line = node.start_position().row;
+                    breadcrumbs.push((name, line));
+                }
+            }
+            match node.parent() {
+                Some(p) => node = p,
+                None => break,
+            }
+        }
+        breadcrumbs.reverse();
+        breadcrumbs
+    }
+
+    fn is_scope_kind(kind: &str) -> bool {
+        matches!(
+            kind,
+            "function_item"
+                | "impl_item"
+                | "struct_item"
+                | "enum_item"
+                | "trait_item"
+                | "mod_item"
+                | "function_declaration"
+                | "class_declaration"
+                | "class_definition"
+                | "method_definition"
+                | "interface_declaration"
+                | "module"
+                | "namespace_definition"
+        )
+    }
+
+    fn extract_scope_name(node: &tree_sitter::Node, rope: &Rope) -> Option<String> {
+        for i in 0..node.child_count() {
+            if let Some(child) = node.child(i) {
+                let kind = child.kind();
+                if kind == "name"
+                    || kind == "identifier"
+                    || kind == "type_identifier"
+                    || kind == "property_identifier"
+                {
+                    let start = child.start_byte();
+                    let end = child.end_byte().min(rope.len_bytes());
+                    if start < end {
+                        let name: String = rope.byte_slice(start..end).into();
+                        return Some(name);
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    fn closing_char_for(&self, ch: char) -> Option<char> {
+        for &(opener, closer) in AUTO_CLOSE_PAIRS {
+            if ch == opener {
+                if opener == closer {
+                    let line_text = self.line_text(self.cursor.line);
+                    let col = self.cursor.col.min(line_text.len());
+                    let before = &line_text[..col];
+                    let count = before.chars().filter(|&c| c == ch).count();
+                    if count % 2 != 0 {
+                        return None;
+                    }
+                }
+                return Some(closer);
+            }
+        }
+        None
+    }
+
+    fn should_skip_closing_char(&self, ch: char) -> bool {
+        let is_closer = AUTO_CLOSE_PAIRS.iter().any(|&(_, c)| c == ch);
+        if !is_closer {
+            return false;
+        }
+        let line_text = self.line_text(self.cursor.line);
+        let col = self.cursor.col;
+        if col < line_text.len() {
+            let next_ch = line_text[col..].chars().next();
+            return next_ch == Some(ch);
+        }
+        false
+    }
+
+    fn is_between_auto_close_pair(&self) -> bool {
+        let line_text = self.line_text(self.cursor.line);
+        let col = self.cursor.col;
+        if col == 0 || col >= line_text.len() {
+            return false;
+        }
+        let before = line_text.as_bytes()[col - 1];
+        let after = line_text.as_bytes()[col];
+        AUTO_CLOSE_PAIRS
+            .iter()
+            .any(|&(o, c)| before == o as u8 && after == c as u8)
+    }
+
     pub fn cursor_screen_position(&self, line_height: Pixels) -> Option<Point<Pixels>> {
         let bounds = self.last_bounds?;
         let gutter_width = if self.show_line_numbers {
-            px(60.0)
+            px(72.0)
         } else {
             px(12.0)
         };
@@ -624,7 +1156,12 @@ impl EditorState {
         Some(Point::new(cursor_x, cursor_y + line_height))
     }
 
-    pub fn apply_completion(&mut self, trigger_col: usize, insert_text: &str, cx: &mut Context<Self>) {
+    pub fn apply_completion(
+        &mut self,
+        trigger_col: usize,
+        insert_text: &str,
+        cx: &mut Context<Self>,
+    ) {
         if self.read_only {
             return;
         }
@@ -849,8 +1386,9 @@ impl EditorState {
         cx.spawn(async move |this, cx| {
             if let Ok(tree) = rx.recv().await {
                 let _ = cx.update(|cx| {
-                    this.update(cx, |state, cx| {
+                    let _ = this.update(cx, |state, cx| {
                         state.syntax_tree = tree;
+                        state.compute_fold_ranges();
                         state.line_layouts.clear();
                         cx.notify();
                     });
@@ -867,6 +1405,7 @@ impl EditorState {
             let _ = cx.update(|cx| {
                 entity.update(cx, |state, cx| {
                     state.update_syntax_tree_incremental_now();
+                    state.compute_fold_ranges();
                     state.line_layouts.clear();
                     cx.notify();
                 });
@@ -1341,18 +1880,23 @@ impl EditorState {
         if offset == 0 {
             return;
         }
+
+        let delete_pair = self.is_between_auto_close_pair();
         let del_start = offset - 1;
-        let old_end_position = self.byte_to_ts_point(offset);
-        let deleted: String = self.rope.byte_slice(del_start..offset).into();
+        let del_end = if delete_pair { offset + 1 } else { offset };
+        let del_end = del_end.min(self.rope.len_bytes());
+
+        let old_end_position = self.byte_to_ts_point(del_end);
+        let deleted: String = self.rope.byte_slice(del_start..del_end).into();
         self.undo_stack.push(EditOp::Delete {
             byte_offset: del_start,
             text: deleted,
         });
         self.redo_stack.clear();
-        self.rope.remove(del_start..offset);
+        self.rope.remove(del_start..del_end);
         self.mark_modified();
         self.cursor = self.byte_offset_to_pos(del_start);
-        self.update_syntax_tree_incremental(del_start, offset, del_start, old_end_position, cx);
+        self.update_syntax_tree_incremental(del_start, del_end, del_start, old_end_position, cx);
         self.line_layouts.clear();
         cx.notify();
     }
@@ -1424,7 +1968,39 @@ impl EditorState {
         if self.read_only {
             return;
         }
-        self.insert_text_at_cursor("\n", cx);
+
+        let line_text = self.line_text(self.cursor.line);
+        let before_cursor = &line_text[..self.cursor.col.min(line_text.len())];
+        let after_cursor = &line_text[self.cursor.col.min(line_text.len())..];
+
+        let base_indent = before_cursor.len() - before_cursor.trim_start().len();
+        let trimmed = before_cursor.trim_end();
+        let increase = matches!(trimmed.as_bytes().last(), Some(b'{' | b'(' | b'[' | b':'));
+
+        let indent_str = " ".repeat(base_indent);
+        let extra_indent = " ".repeat(self.tab_size);
+
+        let after_trimmed = after_cursor.trim_start();
+        let between_pair = increase
+            && !after_trimmed.is_empty()
+            && matches!(
+                (trimmed.as_bytes().last(), after_trimmed.as_bytes().first()),
+                (Some(b'{'), Some(b'}')) | (Some(b'('), Some(b')')) | (Some(b'['), Some(b']'))
+            );
+
+        if between_pair {
+            let text = format!("\n{}{}\n{}", indent_str, extra_indent, indent_str);
+            self.insert_text_at_cursor(&text, cx);
+            let target_line = self.cursor.line - 1;
+            let target_col = base_indent + self.tab_size;
+            self.cursor = Position::new(target_line, target_col);
+        } else if increase {
+            let text = format!("\n{}{}", indent_str, extra_indent);
+            self.insert_text_at_cursor(&text, cx);
+        } else {
+            let text = format!("\n{}", indent_str);
+            self.insert_text_at_cursor(&text, cx);
+        }
         self.ensure_cursor_visible(cx);
     }
 
@@ -1471,7 +2047,9 @@ impl EditorState {
     }
 
     pub fn selection_text(&self) -> Option<String> {
-        self.selection.as_ref().map(|sel| self.get_selection_text(sel))
+        self.selection
+            .as_ref()
+            .map(|sel| self.get_selection_text(sel))
             .filter(|s| !s.is_empty())
     }
 
@@ -1536,7 +2114,8 @@ impl EditorState {
 
         if !self.search_matches.is_empty() {
             let cursor_byte = self.pos_to_byte_offset(self.cursor);
-            let idx = self.search_matches
+            let idx = self
+                .search_matches
                 .iter()
                 .position(|(s, _)| *s >= cursor_byte)
                 .unwrap_or(0);
@@ -1634,6 +2213,11 @@ impl EditorState {
         self.find_all(&query, cx);
     }
 
+    pub fn invalidate_line_layouts(&mut self, cx: &mut Context<Self>) {
+        self.line_layouts.clear();
+        cx.notify();
+    }
+
     pub fn clear_search(&mut self, cx: &mut Context<Self>) {
         self.search_query.clear();
         self.search_matches.clear();
@@ -1662,7 +2246,9 @@ impl EditorState {
     }
 
     pub fn goto_line(&mut self, line: usize, cx: &mut Context<Self>) {
-        let target = line.saturating_sub(1).min(self.total_lines().saturating_sub(1));
+        let target = line
+            .saturating_sub(1)
+            .min(self.total_lines().saturating_sub(1));
         self.cursor = Position::new(target, 0);
         self.selection = None;
         self.ensure_cursor_visible(cx);
@@ -1701,11 +2287,18 @@ impl EditorState {
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
         let viewport_width = viewport_bounds.size.width;
-        let gutter_width = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+        let gutter_width = if self.show_line_numbers {
+            px(72.0)
+        } else {
+            px(12.0)
+        };
         let content_width = viewport_width - gutter_width;
         let offset = self.scroll_handle.offset();
         let mut new_offset_y = offset.y;
-        let cursor_y = padding_top + line_height * (self.cursor.line as f32);
+        let display_row = self
+            .buffer_line_to_display_row(self.cursor.line)
+            .unwrap_or(0);
+        let cursor_y = padding_top + line_height * (display_row as f32);
         let current_top = -offset.y;
         let current_bottom = current_top + viewport_height;
 
@@ -1739,7 +2332,11 @@ impl EditorState {
 
     pub fn scroll_horizontal(&mut self, delta: Pixels, cx: &mut Context<Self>) {
         let viewport_bounds = self.scroll_handle.bounds();
-        let gutter_width = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+        let gutter_width = if self.show_line_numbers {
+            px(72.0)
+        } else {
+            px(12.0)
+        };
         let content_width = viewport_bounds.size.width - gutter_width;
         let max_scroll = (self.max_line_width - content_width + px(40.0)).max(px(0.0));
 
@@ -1764,12 +2361,15 @@ impl EditorState {
     ) -> Position {
         let padding_top = px(12.0);
         let relative_y = mouse_pos.y - bounds.top() - padding_top;
-        let line_f = (relative_y / line_height).floor();
-        let line = if line_f < 0.0 {
+        let display_row_f = (relative_y / line_height).floor();
+        let display_lines = self.display_lines();
+        let display_count = display_lines.len();
+        let display_row = if display_row_f < 0.0 {
             0
         } else {
-            min(line_f as usize, self.total_lines().saturating_sub(1))
+            min(display_row_f as usize, display_count.saturating_sub(1))
         };
+        let line = display_lines.get(display_row).copied().unwrap_or(0);
 
         let relative_x = mouse_pos.x - bounds.left() - gutter_width;
         let col = if let Some(layout) = self.line_layouts.get(&line) {
@@ -1791,75 +2391,72 @@ impl EditorState {
     fn start_autoscroll(&mut self, cx: &mut Context<Self>) {
         let entity = cx.entity().clone();
         let line_height = px(20.0);
-        self.autoscroll_task = Some(cx.spawn(async move |_, cx| {
-            loop {
-                Timer::after(Duration::from_millis(50)).await;
-                let should_continue = cx
-                    .update(|cx| {
-                        entity.update(cx, |state, cx| {
-                            if !state.is_selecting {
-                                return false;
-                            }
-                            let Some(mouse_pos) = state.last_mouse_pos else {
-                                return true;
-                            };
-                            let Some(bounds) = state.last_bounds else {
-                                return true;
-                            };
+        self.autoscroll_task = Some(cx.spawn(async move |_, cx| loop {
+            Timer::after(Duration::from_millis(50)).await;
+            let should_continue = cx
+                .update(|cx| {
+                    entity.update(cx, |state, cx| {
+                        if !state.is_selecting {
+                            return false;
+                        }
+                        let Some(mouse_pos) = state.last_mouse_pos else {
+                            return true;
+                        };
+                        let Some(bounds) = state.last_bounds else {
+                            return true;
+                        };
 
-                            let viewport_bounds = state.scroll_handle.bounds();
-                            if viewport_bounds.size.height == px(0.0) {
-                                return true;
-                            }
-                            let viewport_top = viewport_bounds.top();
-                            let viewport_bottom = viewport_bounds.bottom();
-                            let mouse_y = mouse_pos.y;
-                            let edge_zone = line_height * 1.5;
-                            let mut scrolled = false;
+                        let viewport_bounds = state.scroll_handle.bounds();
+                        if viewport_bounds.size.height == px(0.0) {
+                            return true;
+                        }
+                        let viewport_top = viewport_bounds.top();
+                        let viewport_bottom = viewport_bounds.bottom();
+                        let mouse_y = mouse_pos.y;
+                        let edge_zone = line_height * 1.5;
+                        let mut scrolled = false;
 
-                            if mouse_y < viewport_top + edge_zone {
-                                let speed =
-                                    ((viewport_top + edge_zone - mouse_y) / edge_zone)
-                                        .max(0.5)
-                                        .min(5.0);
-                                let offset = state.scroll_handle.offset();
-                                let new_y = (offset.y + line_height * speed).min(px(0.0));
-                                state.scroll_handle.set_offset(point(offset.x, new_y));
-                                scrolled = true;
-                            } else if mouse_y > viewport_bottom - edge_zone {
-                                let speed = ((mouse_y - (viewport_bottom - edge_zone))
-                                    / edge_zone)
-                                    .max(0.5)
-                                    .min(5.0);
-                                let offset = state.scroll_handle.offset();
-                                let max_offset = state.scroll_handle.max_offset().height;
-                                let new_y =
-                                    (offset.y - line_height * speed).max(-max_offset);
-                                state.scroll_handle.set_offset(point(offset.x, new_y));
-                                scrolled = true;
-                            }
+                        if mouse_y < viewport_top + edge_zone {
+                            let speed = ((viewport_top + edge_zone - mouse_y) / edge_zone)
+                                .max(0.5)
+                                .min(5.0);
+                            let offset = state.scroll_handle.offset();
+                            let new_y = (offset.y + line_height * speed).min(px(0.0));
+                            state.scroll_handle.set_offset(point(offset.x, new_y));
+                            scrolled = true;
+                        } else if mouse_y > viewport_bottom - edge_zone {
+                            let speed = ((mouse_y - (viewport_bottom - edge_zone)) / edge_zone)
+                                .max(0.5)
+                                .min(5.0);
+                            let offset = state.scroll_handle.offset();
+                            let max_offset = state.scroll_handle.max_offset().height;
+                            let new_y = (offset.y - line_height * speed).max(-max_offset);
+                            state.scroll_handle.set_offset(point(offset.x, new_y));
+                            scrolled = true;
+                        }
 
-                            if scrolled {
-                                let gutter_width = state.last_mouse_gutter_width;
-                                let pos = state.position_for_mouse(
-                                    mouse_pos, bounds, gutter_width, line_height,
-                                );
-                                if let Some(ref mut sel) = state.selection {
-                                    sel.cursor = pos;
-                                } else {
-                                    state.selection =
-                                        Some(Selection::new(state.cursor, pos));
-                                }
-                                state.cursor = pos;
-                                cx.notify();
+                        if scrolled {
+                            let gutter_width = state.last_mouse_gutter_width;
+                            let pos = state.position_for_mouse(
+                                mouse_pos,
+                                bounds,
+                                gutter_width,
+                                line_height,
+                            );
+                            if let Some(ref mut sel) = state.selection {
+                                sel.cursor = pos;
+                            } else {
+                                state.selection = Some(Selection::new(state.cursor, pos));
                             }
-                            true
-                        })
+                            state.cursor = pos;
+                            cx.notify();
+                        }
+                        true
                     })
-                    .unwrap_or(false);
-                if !should_continue {
-                    break;
-                }
+                })
+                .unwrap_or(false);
+            if !should_continue {
+                break;
             }
         }));
     }
@@ -1873,6 +2470,21 @@ impl EditorState {
         _window: &Window,
         cx: &mut Context<Self>,
     ) {
+        let click_x = event.position.x - bounds.left();
+        let padding_top = px(12.0);
+        let display_row = ((event.position.y - bounds.top() - padding_top) / line_height)
+            .floor()
+            .max(0.0) as usize;
+        let dl = self.display_lines();
+        let click_line = dl.get(display_row).copied().unwrap_or(0);
+
+        if click_x >= gutter_width - px(16.0) && click_x <= gutter_width {
+            if self.fold_ranges.iter().any(|f| f.start_line == click_line) {
+                self.toggle_fold_at_line(click_line, cx);
+                return;
+            }
+        }
+
         let pos = self.position_for_mouse(event.position, bounds, gutter_width, line_height);
 
         let now = std::time::Instant::now();
@@ -1921,7 +2533,11 @@ impl EditorState {
         if self.dragging_h_scrollbar {
             let max_w = self.max_line_width;
             let vp = self.scroll_handle.bounds();
-            let gw = if self.show_line_numbers { px(60.0) } else { px(12.0) };
+            let gw = if self.show_line_numbers {
+                px(72.0)
+            } else {
+                px(12.0)
+            };
             let cw = vp.size.width - gw;
             let scroll_range = max_w - cw;
 
@@ -2053,6 +2669,26 @@ impl EntityInputHandler for EditorState {
             if start_pos != end_pos {
                 self.delete_selection_internal(Selection::new(start_pos, end_pos), cx);
             }
+
+            if new_text.len() == 1 && self.selection.is_none() {
+                let ch = new_text.chars().next().unwrap();
+
+                if let Some(closer) = self.closing_char_for(ch) {
+                    let pair_text = format!("{}{}", ch, closer);
+                    self.insert_text_at_cursor(&pair_text, cx);
+                    self.cursor.col = self.cursor.col.saturating_sub(1);
+                    self.marked_range = None;
+                    return;
+                }
+
+                if self.should_skip_closing_char(ch) {
+                    self.cursor.col += 1;
+                    self.marked_range = None;
+                    cx.notify();
+                    return;
+                }
+            }
+
             self.insert_text_at_cursor(new_text, cx);
         }
         self.marked_range = None;
@@ -2120,7 +2756,7 @@ impl EntityInputHandler for EditorState {
     ) -> Option<usize> {
         if let Some(bounds) = self.last_bounds {
             let gutter_width = if self.show_line_numbers {
-                px(60.0)
+                px(72.0)
             } else {
                 px(12.0)
             };
@@ -2178,12 +2814,19 @@ impl Element for EditorElement {
         let line_height = px(20.0);
         let padding_top = px(12.0);
         let padding_bottom = px(12.0);
-        let num_lines = self.state.read(cx).total_lines();
+        let num_lines = self.state.read(cx).display_line_count();
         let content_height = padding_top + padding_bottom + (line_height * num_lines as f32);
+        let viewport_height = self.state.read(cx).scroll_handle.bounds().size.height;
+        let overscroll = if viewport_height > line_height * 5.0 {
+            viewport_height / 2.0
+        } else {
+            px(100.0)
+        };
+        let final_height = content_height + overscroll;
 
         let mut layout_style = gpui::Style::default();
         layout_style.size.width = relative(1.).into();
-        layout_style.size.height = content_height.into();
+        layout_style.size.height = final_height.into();
 
         (window.request_layout(layout_style, [], cx), ())
     }
@@ -2200,7 +2843,7 @@ impl Element for EditorElement {
         let show_line_numbers = self.state.read(cx).show_line_numbers;
         PrepaintState {
             gutter_width: if show_line_numbers {
-                px(60.0)
+                px(72.0)
             } else {
                 px(12.0)
             },
@@ -2238,22 +2881,73 @@ impl Element for EditorElement {
         let scroll_offset = self.state.read(cx).scroll_handle.offset();
         let viewport_height = self.state.read(cx).scroll_handle.bounds().size.height;
 
-        let first_visible_line = ((-scroll_offset.y - padding_top) / line_height)
+        let display_lines_vec = self.state.read(cx).display_lines();
+        let display_count = display_lines_vec.len();
+        let buf_to_disp =
+            |line: usize| -> Option<usize> { display_lines_vec.binary_search(&line).ok() };
+
+        let first_visible_display_row = ((-scroll_offset.y - padding_top) / line_height)
             .floor()
             .max(0.0) as usize;
-        let visible_lines = ((viewport_height / line_height).ceil() as usize + 2).max(1);
-        let total = self.state.read(cx).total_lines();
-        let last_visible_line = min(first_visible_line + visible_lines, total);
+        let visible_rows = ((viewport_height / line_height).ceil() as usize + 2).max(1);
+        let last_visible_display_row = min(first_visible_display_row + visible_rows, display_count);
+
+        let visible_buffer_lines = if first_visible_display_row < display_count
+            && last_visible_display_row <= display_count
+        {
+            &display_lines_vec[first_visible_display_row..last_visible_display_row]
+        } else {
+            &[]
+        };
 
         let (cursor, selection, show_line_numbers, scroll_offset_x) = {
             let state = self.state.read(cx);
-            (state.cursor, state.selection, state.show_line_numbers, state.scroll_offset_x)
+            (
+                state.cursor,
+                state.selection,
+                state.show_line_numbers,
+                state.scroll_offset_x,
+            )
         };
 
-        let gutter_bg_color = self.state.read(cx).gutter_bg_override
-            .unwrap_or(theme.tokens.background);
-        let line_num_color = self.state.read(cx).line_number_color_override
-            .unwrap_or(theme.tokens.muted_foreground);
+        let (
+            gutter_bg_color,
+            line_num_color,
+            line_num_active_color,
+            current_line_color,
+            bracket_match_color,
+            word_highlight_color,
+            indent_guide_color,
+            indent_guide_active_color,
+            fold_marker_color,
+            tab_size,
+            folded_ranges,
+            fold_ranges,
+        ) = {
+            let s = self.state.read(cx);
+            (
+                s.gutter_bg_override.unwrap_or(theme.tokens.background),
+                s.line_number_color_override
+                    .unwrap_or(theme.tokens.muted_foreground),
+                s.line_number_active_color_override
+                    .unwrap_or(theme.tokens.foreground),
+                s.current_line_color_override
+                    .unwrap_or(hsla(0.0, 0.0, 1.0, 0.06)),
+                s.bracket_match_color_override
+                    .unwrap_or(hsla(0.58, 0.70, 0.65, 0.60)),
+                s.word_highlight_color_override
+                    .unwrap_or(hsla(0.0, 0.0, 1.0, 0.08)),
+                s.indent_guide_color_override
+                    .unwrap_or(hsla(0.0, 0.0, 1.0, 0.06)),
+                s.indent_guide_active_color_override
+                    .unwrap_or(hsla(0.0, 0.0, 1.0, 0.15)),
+                s.fold_marker_color_override
+                    .unwrap_or(theme.tokens.muted_foreground),
+                s.tab_size,
+                s.folded.clone(),
+                s.fold_ranges.clone(),
+            )
+        };
 
         if show_line_numbers {
             let gutter_bounds = Bounds {
@@ -2276,23 +2970,74 @@ impl Element for EditorElement {
             });
         }
 
-        let highlight_spans =
-            self.collect_highlight_spans(first_visible_line, last_visible_line, cx);
+        let is_focused = focus_handle.is_focused(window);
+        let is_single_cursor =
+            selection.is_none() || selection.as_ref().map(|s| s.is_empty()).unwrap_or(true);
+
+        if is_focused && is_single_cursor {
+            if let Some(display_row) = buf_to_disp(cursor.line) {
+                if display_row >= first_visible_display_row
+                    && display_row < last_visible_display_row
+                {
+                    let hl_y = bounds.top() + padding_top + line_height * display_row as f32;
+                    window.paint_quad(fill(
+                        Bounds::new(
+                            point(bounds.left(), hl_y),
+                            size(bounds.size.width, line_height),
+                        ),
+                        current_line_color,
+                    ));
+                }
+            }
+        }
+
+        let highlight_spans = self.collect_highlight_spans_for_lines(visible_buffer_lines, cx);
 
         let text_style = window.text_style();
         let mut shaped_layouts: Vec<(usize, Option<ShapedLine>)> =
-            Vec::with_capacity(last_visible_line - first_visible_line);
+            Vec::with_capacity(visible_buffer_lines.len());
         let mut max_line_width = px(0.0);
 
-        for line_idx in first_visible_line..last_visible_line {
-            let y = bounds.top() + padding_top + line_height * line_idx as f32;
+        let char_width = {
+            let space_run = TextRun {
+                len: 1,
+                font: text_style.font(),
+                color: theme.tokens.foreground,
+                background_color: None,
+                underline: None,
+                strikethrough: None,
+            };
+            let shaped_space =
+                window
+                    .text_system()
+                    .shape_line(" ".into(), font_size, &[space_run], None);
+            shaped_space.x_for_index(1)
+        };
+
+        let cursor_indent = if tab_size > 0 {
+            let cursor_line_text = self.state.read(cx).line_text(cursor.line);
+            let cursor_leading = cursor_line_text.len() - cursor_line_text.trim_start().len();
+            cursor_leading / tab_size
+        } else {
+            0
+        };
+
+        for display_row in first_visible_display_row..last_visible_display_row {
+            let line_idx = display_lines_vec[display_row];
+            let y = bounds.top() + padding_top + line_height * display_row as f32;
 
             if show_line_numbers {
+                let is_current_line = line_idx == cursor.line;
+                let num_color = if is_current_line && is_focused {
+                    line_num_active_color
+                } else {
+                    line_num_color
+                };
                 let line_num_text = format!("{:>4}", line_idx + 1);
                 let line_num_run = TextRun {
                     len: line_num_text.len(),
                     font: text_style.font(),
-                    color: line_num_color,
+                    color: num_color,
                     background_color: None,
                     underline: None,
                     strikethrough: None,
@@ -2303,7 +3048,53 @@ impl Element for EditorElement {
                     &[line_num_run],
                     None,
                 );
+
+                let fold_start = fold_ranges.iter().any(|f| f.start_line == line_idx);
+                let is_folded = folded_ranges.iter().any(|f| f.start_line == line_idx);
                 let _ = shaped.paint(point(bounds.left() + px(6.0), y), line_height, window, cx);
+
+                if fold_start {
+                    let icon_name = if is_folded {
+                        "chevron-right"
+                    } else {
+                        "chevron-down"
+                    };
+                    let icon_path = SharedString::from(resolve_icon_path(icon_name));
+                    let icon_size = px(16.0);
+                    let icon_x = bounds.left() + gutter_width - px(18.0);
+                    let icon_y = y + (line_height - icon_size) / 2.0;
+                    let icon_bounds =
+                        Bounds::new(point(icon_x, icon_y), size(icon_size, icon_size));
+                    let _ = window.paint_svg(
+                        icon_bounds,
+                        icon_path,
+                        TransformationMatrix::default(),
+                        fold_marker_color,
+                        cx,
+                    );
+                }
+            }
+
+            let line_text = self.state.read(cx).line_text(line_idx);
+            let leading_spaces = line_text.len() - line_text.trim_start().len();
+            let indent_levels = if tab_size > 0 {
+                leading_spaces / tab_size
+            } else {
+                0
+            };
+
+            for level in 0..indent_levels {
+                let guide_x = bounds.left() + gutter_width + char_width * (level * tab_size) as f32
+                    - scroll_offset_x;
+                let color = if level == cursor_indent.saturating_sub(1) && is_focused {
+                    indent_guide_active_color
+                } else {
+                    indent_guide_color
+                };
+                window.paint_quad(fill(
+                    Bounds::new(point(guide_x, y), size(px(1.0), line_height)),
+                    color,
+                ));
             }
 
             let cached_line = self.state.read(cx).line_layouts.get(&line_idx).cloned();
@@ -2320,8 +3111,6 @@ impl Element for EditorElement {
                 );
                 continue;
             }
-
-            let line_text = self.state.read(cx).line_text(line_idx);
 
             if line_text.is_empty() {
                 shaped_layouts.push((line_idx, None));
@@ -2352,10 +3141,12 @@ impl Element for EditorElement {
             shaped_layouts.push((line_idx, Some(shaped)));
         }
 
+        let first_buf = visible_buffer_lines.first().copied().unwrap_or(0);
+        let last_buf = visible_buffer_lines.last().copied().unwrap_or(0) + 1;
         self.state.update(cx, |state, _| {
-            state.line_layouts.retain(|&line_idx, _| {
-                line_idx >= first_visible_line && line_idx < last_visible_line
-            });
+            state
+                .line_layouts
+                .retain(|&line_idx, _| line_idx >= first_buf && line_idx < last_buf);
             for (idx, layout) in shaped_layouts {
                 if let Some(shaped) = layout {
                     state.line_layouts.insert(idx, shaped);
@@ -2366,16 +3157,46 @@ impl Element for EditorElement {
             }
         });
 
-        let sel_color = self.state.read(cx).selection_color_override
+        if is_focused && is_single_cursor {
+            let word_occurrences = self.find_word_occurrences(visible_buffer_lines, cx);
+            for (occ_line, occ_start, occ_end) in &word_occurrences {
+                if let Some(dr) = buf_to_disp(*occ_line) {
+                    if let Some(layout) = self.state.read(cx).line_layouts.get(occ_line) {
+                        let occ_y = bounds.top() + padding_top + line_height * dr as f32;
+                        let x_start = layout.x_for_index(*occ_start);
+                        let x_end = layout.x_for_index(*occ_end);
+                        window.paint_quad(fill(
+                            Bounds::new(
+                                point(
+                                    bounds.left() + gutter_width + x_start - scroll_offset_x,
+                                    occ_y,
+                                ),
+                                size(x_end - x_start, line_height),
+                            ),
+                            word_highlight_color,
+                        ));
+                    }
+                }
+            }
+        }
+
+        let sel_color = self
+            .state
+            .read(cx)
+            .selection_color_override
             .unwrap_or(theme.tokens.primary.opacity(0.25));
 
         if let Some(selection) = &selection {
             let (start, end) = selection.range();
             for line_idx in start.line..=end.line {
-                if line_idx < first_visible_line || line_idx >= last_visible_line {
+                let dr = match buf_to_disp(line_idx) {
+                    Some(d) => d,
+                    None => continue,
+                };
+                if dr < first_visible_display_row || dr >= last_visible_display_row {
                     continue;
                 }
-                let line_y = bounds.top() + padding_top + line_height * line_idx as f32;
+                let line_y = bounds.top() + padding_top + line_height * dr as f32;
                 let line_len = self.state.read(cx).line_len(line_idx);
                 let start_col = if line_idx == start.line { start.col } else { 0 };
                 let end_col = if line_idx == end.line {
@@ -2388,7 +3209,10 @@ impl Element for EditorElement {
                     if let Some(layout) = self.state.read(cx).line_layouts.get(&line_idx) {
                         let x_start = layout.x_for_index(start_col);
                         let x_end = layout.x_for_index(end_col);
-                        (bounds.left() + gutter_width + x_start - scroll_offset_x, x_end - x_start)
+                        (
+                            bounds.left() + gutter_width + x_start - scroll_offset_x,
+                            x_end - x_start,
+                        )
                     } else {
                         (bounds.left() + gutter_width - scroll_offset_x, px(0.0))
                     };
@@ -2402,7 +3226,8 @@ impl Element for EditorElement {
 
         {
             let state = self.state.read(cx);
-            let (search_normal, search_active) = state.search_match_color_overrides
+            let (search_normal, search_active) = state
+                .search_match_color_overrides
                 .unwrap_or((rgba(0xFFD70040).into(), rgba(0xFF990060).into()));
             let current_match = state.current_match_idx;
             for (match_idx, &(match_start, match_end)) in state.search_matches.iter().enumerate() {
@@ -2416,11 +3241,19 @@ impl Element for EditorElement {
                 };
 
                 for line_idx in start_pos.line..=end_pos.line {
-                    if line_idx < first_visible_line || line_idx >= last_visible_line {
+                    let dr = match buf_to_disp(line_idx) {
+                        Some(d) => d,
+                        None => continue,
+                    };
+                    if dr < first_visible_display_row || dr >= last_visible_display_row {
                         continue;
                     }
-                    let line_y = bounds.top() + padding_top + line_height * line_idx as f32;
-                    let sc = if line_idx == start_pos.line { start_pos.col } else { 0 };
+                    let line_y = bounds.top() + padding_top + line_height * dr as f32;
+                    let sc = if line_idx == start_pos.line {
+                        start_pos.col
+                    } else {
+                        0
+                    };
                     let ec = if line_idx == end_pos.line {
                         end_pos.col
                     } else {
@@ -2430,7 +3263,10 @@ impl Element for EditorElement {
                     let (hx, hw) = if let Some(layout) = state.line_layouts.get(&line_idx) {
                         let x_start = layout.x_for_index(sc);
                         let x_end = layout.x_for_index(ec);
-                        (bounds.left() + gutter_width + x_start - scroll_offset_x, x_end - x_start)
+                        (
+                            bounds.left() + gutter_width + x_start - scroll_offset_x,
+                            x_end - x_start,
+                        )
                     } else {
                         continue;
                     };
@@ -2443,27 +3279,65 @@ impl Element for EditorElement {
             }
         }
 
-        if focus_handle.is_focused(window) {
-            let cursor_col = if cursor.line < total {
-                cursor.col.min(self.state.read(cx).line_len(cursor.line))
-            } else {
-                0
-            };
-            let cursor_y = bounds.top() + padding_top + line_height * cursor.line as f32;
-            let cursor_x =
-                if let Some(layout) = self.state.read(cx).line_layouts.get(&cursor.line) {
+        if is_focused {
+            if let Some((pos_a, pos_b)) = self.state.read(cx).find_matching_bracket() {
+                for pos in [pos_a, pos_b] {
+                    if let Some(dr) = buf_to_disp(pos.line) {
+                        if dr >= first_visible_display_row && dr < last_visible_display_row {
+                            if let Some(layout) = self.state.read(cx).line_layouts.get(&pos.line) {
+                                let bx = bounds.left() + gutter_width + layout.x_for_index(pos.col)
+                                    - scroll_offset_x;
+                                let by = bounds.top() + padding_top + line_height * dr as f32;
+                                let bw =
+                                    layout.x_for_index(pos.col + 1) - layout.x_for_index(pos.col);
+                                let bracket_bounds =
+                                    Bounds::new(point(bx, by), size(bw, line_height));
+                                window.paint_quad(PaintQuad {
+                                    bounds: bracket_bounds,
+                                    corner_radii: Corners::default(),
+                                    background: bracket_match_color.opacity(0.3).into(),
+                                    border_widths: Edges::all(px(1.0)),
+                                    border_color: bracket_match_color,
+                                    border_style: BorderStyle::default(),
+                                    continuous_corners: false,
+                                    transform: Default::default(),
+                                    blend_mode: Default::default(),
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if is_focused {
+            if let Some(cursor_display_row) = buf_to_disp(cursor.line) {
+                let total = self.state.read(cx).total_lines();
+                let cursor_col = if cursor.line < total {
+                    cursor.col.min(self.state.read(cx).line_len(cursor.line))
+                } else {
+                    0
+                };
+                let cursor_y = bounds.top() + padding_top + line_height * cursor_display_row as f32;
+                let cursor_x = if let Some(layout) =
+                    self.state.read(cx).line_layouts.get(&cursor.line)
+                {
                     bounds.left() + gutter_width + layout.x_for_index(cursor_col) - scroll_offset_x
                 } else {
                     bounds.left() + gutter_width - scroll_offset_x
                 };
 
-            let cursor_draw_color = self.state.read(cx).cursor_color_override
-                .unwrap_or(theme.tokens.primary);
+                let cursor_draw_color = self
+                    .state
+                    .read(cx)
+                    .cursor_color_override
+                    .unwrap_or(theme.tokens.primary);
 
-            window.paint_quad(fill(
-                Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
-                cursor_draw_color,
-            ));
+                window.paint_quad(fill(
+                    Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
+                    cursor_draw_color,
+                ));
+            }
         }
     }
 }
@@ -2476,12 +3350,47 @@ struct HighlightSpan {
 }
 
 impl EditorElement {
-    fn collect_highlight_spans(
+    fn find_word_occurrences(
         &self,
-        first_line: usize,
-        last_line: usize,
+        visible_lines: &[usize],
+        cx: &App,
+    ) -> Vec<(usize, usize, usize)> {
+        let state = self.state.read(cx);
+        let word = match state.word_under_cursor_full() {
+            Some((w, _, _)) => w,
+            None => return Vec::new(),
+        };
+        let mut results = Vec::new();
+        for &line_idx in visible_lines {
+            let line_text = state.line_text(line_idx);
+            let mut search_from = 0;
+            while let Some(pos) = line_text[search_from..].find(&word) {
+                let abs_start = search_from + pos;
+                let abs_end = abs_start + word.len();
+                let before_ok = abs_start == 0
+                    || !line_text.as_bytes()[abs_start - 1].is_ascii_alphanumeric()
+                        && line_text.as_bytes()[abs_start - 1] != b'_';
+                let after_ok = abs_end >= line_text.len()
+                    || !line_text.as_bytes()[abs_end].is_ascii_alphanumeric()
+                        && line_text.as_bytes()[abs_end] != b'_';
+                if before_ok && after_ok {
+                    results.push((line_idx, abs_start, abs_end));
+                }
+                search_from = abs_start + 1;
+            }
+        }
+        results
+    }
+
+    fn collect_highlight_spans_for_lines(
+        &self,
+        visible_lines: &[usize],
         cx: &App,
     ) -> Vec<HighlightSpan> {
+        if visible_lines.is_empty() {
+            return Vec::new();
+        }
+
         let state = self.state.read(cx);
         let tree = match &state.syntax_tree {
             Some(t) => t,
@@ -2493,65 +3402,80 @@ impl EditorElement {
             None => return Vec::new(),
         };
 
-        let first_byte = state.rope.line_to_byte(first_line);
-        let last_byte = if last_line < state.rope.len_lines() {
-            state.rope.line_to_byte(last_line)
-        } else {
-            state.rope.len_bytes()
-        };
-
-        let mut cursor = QueryCursor::new();
-        cursor.set_byte_range(first_byte..last_byte);
-
         let rope = &state.rope;
-
+        let total_lines = rope.len_lines();
         let mut spans = Vec::new();
-        let mut matches = cursor.matches(query, tree.root_node(), |node: tree_sitter::Node| {
-            let range = node.byte_range();
-            let text: String = rope
-                .byte_slice(range.start..range.end.min(rope.len_bytes()))
-                .into();
-            std::iter::once(text)
-        });
 
-        while let Some(m) = matches.next() {
-            for capture in m.captures {
-                let capture_name = &query.capture_names()[capture.index as usize];
-                let node = capture.node;
-                let start_byte = node.start_byte();
-                let end_byte = node.end_byte();
-                let color = if let Some(ref color_fn) = state.syntax_color_fn {
-                    color_fn(capture_name)
-                } else {
-                    highlight_color_for_capture(capture_name)
-                };
+        let mut chunk_start = 0usize;
+        while chunk_start < visible_lines.len() {
+            let mut chunk_end = chunk_start;
+            while chunk_end + 1 < visible_lines.len()
+                && visible_lines[chunk_end + 1] == visible_lines[chunk_end] + 1
+            {
+                chunk_end += 1;
+            }
 
-                let start_line = state.rope.byte_to_line(start_byte);
-                let end_line = state
-                    .rope
-                    .byte_to_line(end_byte.min(state.rope.len_bytes().saturating_sub(1)));
+            let first_line = visible_lines[chunk_start];
+            let last_line = visible_lines[chunk_end] + 1;
 
-                for line in start_line..=end_line {
-                    if line < first_line || line >= last_line {
-                        continue;
-                    }
-                    let line_start_byte = state.rope.line_to_byte(line);
-                    let line_text = state.line_text(line);
-                    let line_end_byte = line_start_byte + line_text.len();
+            let first_byte = rope.line_to_byte(first_line);
+            let last_byte = if last_line < total_lines {
+                rope.line_to_byte(last_line)
+            } else {
+                rope.len_bytes()
+            };
 
-                    let span_start = start_byte.max(line_start_byte) - line_start_byte;
-                    let span_end = end_byte.min(line_end_byte) - line_start_byte;
+            let mut cursor = QueryCursor::new();
+            cursor.set_byte_range(first_byte..last_byte);
 
-                    if span_start < span_end {
-                        spans.push(HighlightSpan {
-                            line,
-                            start_col: span_start,
-                            end_col: span_end,
-                            color,
-                        });
+            let mut matches = cursor.matches(query, tree.root_node(), |node: tree_sitter::Node| {
+                let range = node.byte_range();
+                let text: String = rope
+                    .byte_slice(range.start..range.end.min(rope.len_bytes()))
+                    .into();
+                std::iter::once(text)
+            });
+
+            while let Some(m) = matches.next() {
+                for capture in m.captures {
+                    let capture_name = &query.capture_names()[capture.index as usize];
+                    let node = capture.node;
+                    let start_byte = node.start_byte();
+                    let end_byte = node.end_byte();
+                    let color = if let Some(ref color_fn) = state.syntax_color_fn {
+                        color_fn(capture_name)
+                    } else {
+                        highlight_color_for_capture(capture_name)
+                    };
+
+                    let start_line = rope.byte_to_line(start_byte);
+                    let end_line =
+                        rope.byte_to_line(end_byte.min(rope.len_bytes().saturating_sub(1)));
+
+                    for line in start_line..=end_line {
+                        if line < first_line || line >= last_line {
+                            continue;
+                        }
+                        let line_start_byte = rope.line_to_byte(line);
+                        let line_text = state.line_text(line);
+                        let line_end_byte = line_start_byte + line_text.len();
+
+                        let span_start = start_byte.max(line_start_byte) - line_start_byte;
+                        let span_end = end_byte.min(line_end_byte) - line_start_byte;
+
+                        if span_start < span_end {
+                            spans.push(HighlightSpan {
+                                line,
+                                start_col: span_start,
+                                end_col: span_end,
+                                color,
+                            });
+                        }
                     }
                 }
             }
+
+            chunk_start = chunk_end + 1;
         }
 
         spans
@@ -2650,8 +3574,15 @@ pub struct Editor {
     cursor_color: Option<Hsla>,
     selection_color: Option<Hsla>,
     line_number_color: Option<Hsla>,
+    line_number_active_color: Option<Hsla>,
     gutter_bg: Option<Hsla>,
     search_match_colors: Option<(Hsla, Hsla)>,
+    current_line_color: Option<Hsla>,
+    bracket_match_color: Option<Hsla>,
+    word_highlight_color: Option<Hsla>,
+    indent_guide_color: Option<Hsla>,
+    indent_guide_active_color: Option<Hsla>,
+    fold_marker_color: Option<Hsla>,
     syntax_color_fn: Option<Box<dyn Fn(&str) -> Hsla>>,
 }
 
@@ -2666,8 +3597,15 @@ impl Editor {
             cursor_color: None,
             selection_color: None,
             line_number_color: None,
+            line_number_active_color: None,
             gutter_bg: None,
             search_match_colors: None,
+            current_line_color: None,
+            bracket_match_color: None,
+            word_highlight_color: None,
+            indent_guide_color: None,
+            indent_guide_active_color: None,
+            fold_marker_color: None,
             syntax_color_fn: None,
         }
     }
@@ -2717,6 +3655,11 @@ impl Editor {
         self
     }
 
+    pub fn line_number_active_color(mut self, color: Hsla) -> Self {
+        self.line_number_active_color = Some(color);
+        self
+    }
+
     pub fn gutter_bg(mut self, color: Hsla) -> Self {
         self.gutter_bg = Some(color);
         self
@@ -2724,6 +3667,32 @@ impl Editor {
 
     pub fn search_match_colors(mut self, normal: Hsla, active: Hsla) -> Self {
         self.search_match_colors = Some((normal, active));
+        self
+    }
+
+    pub fn current_line_color(mut self, color: Hsla) -> Self {
+        self.current_line_color = Some(color);
+        self
+    }
+
+    pub fn bracket_match_color(mut self, color: Hsla) -> Self {
+        self.bracket_match_color = Some(color);
+        self
+    }
+
+    pub fn word_highlight_color(mut self, color: Hsla) -> Self {
+        self.word_highlight_color = Some(color);
+        self
+    }
+
+    pub fn indent_guide_colors(mut self, normal: Hsla, active: Hsla) -> Self {
+        self.indent_guide_color = Some(normal);
+        self.indent_guide_active_color = Some(active);
+        self
+    }
+
+    pub fn fold_marker_color(mut self, color: Hsla) -> Self {
+        self.fold_marker_color = Some(color);
         self
     }
 
@@ -2750,8 +3719,15 @@ impl RenderOnce for Editor {
             state.cursor_color_override = self.cursor_color;
             state.selection_color_override = self.selection_color;
             state.line_number_color_override = self.line_number_color;
+            state.line_number_active_color_override = self.line_number_active_color;
             state.gutter_bg_override = self.gutter_bg;
             state.search_match_color_overrides = self.search_match_colors;
+            state.current_line_color_override = self.current_line_color;
+            state.bracket_match_color_override = self.bracket_match_color;
+            state.word_highlight_color_override = self.word_highlight_color;
+            state.indent_guide_color_override = self.indent_guide_color;
+            state.indent_guide_active_color_override = self.indent_guide_active_color;
+            state.fold_marker_color_override = self.fold_marker_color;
             state.syntax_color_fn = syn_fn;
         });
         let theme = use_theme();
@@ -2827,7 +3803,7 @@ impl RenderOnce for Editor {
                 move |event: &MouseDownEvent, window: &mut Window, cx: &mut App| {
                     let bounds = state.read(cx).last_bounds.unwrap_or_default();
                     let gutter_width = if state.read(cx).show_line_numbers {
-                        px(60.0)
+                        px(72.0)
                     } else {
                         px(12.0)
                     };
@@ -2843,7 +3819,7 @@ impl RenderOnce for Editor {
                 move |event: &MouseMoveEvent, window: &mut Window, cx: &mut App| {
                     let bounds = state.read(cx).last_bounds.unwrap_or_default();
                     let gutter_width = if state.read(cx).show_line_numbers {
-                        px(60.0)
+                        px(72.0)
                     } else {
                         px(12.0)
                     };
@@ -2876,13 +3852,10 @@ impl RenderOnce for Editor {
                     .flex()
                     .flex_col()
                     .size_full()
-                    .child(
-                        div()
-                            .flex_1()
-                            .overflow_hidden()
-                            .child(scrollable_vertical(self.state.clone()).with_scroll_handle(scroll_handle))
-                    )
-                    .child(HorizontalScrollbar::new(self.state.clone(), cx))
+                    .child(div().flex_1().overflow_hidden().child(
+                        scrollable_vertical(self.state.clone()).with_scroll_handle(scroll_handle),
+                    ))
+                    .child(HorizontalScrollbar::new(self.state.clone(), cx)),
             )
     }
 }
@@ -2892,7 +3865,6 @@ struct HorizontalScrollbar {
     needs_scrollbar: bool,
     thumb_width_pct: f32,
     thumb_left_pct: f32,
-    show_line_numbers: bool,
 }
 
 impl HorizontalScrollbar {
@@ -2901,10 +3873,12 @@ impl HorizontalScrollbar {
         let max_width = s.max_line_width;
         let scroll_x = s.scroll_offset_x;
         let viewport_bounds = s.scroll_handle.bounds();
-        let gutter_width = if s.show_line_numbers { px(60.0) } else { px(12.0) };
+        let gutter_width = if s.show_line_numbers {
+            px(72.0)
+        } else {
+            px(12.0)
+        };
         let content_width = viewport_bounds.size.width - gutter_width;
-        let show_line_numbers = s.show_line_numbers;
-
         let needs_scrollbar = max_width > content_width && content_width > px(0.0);
 
         let (thumb_width_pct, thumb_left_pct) = if needs_scrollbar {
@@ -2926,7 +3900,6 @@ impl HorizontalScrollbar {
             needs_scrollbar,
             thumb_width_pct,
             thumb_left_pct,
-            show_line_numbers,
         }
     }
 }
@@ -2956,7 +3929,11 @@ impl IntoElement for HorizontalScrollbar {
                         s.dragging_h_scrollbar = true;
                         let max_w = s.max_line_width;
                         let vp = s.scroll_handle.bounds();
-                        let gw = if s.show_line_numbers { px(60.0) } else { px(12.0) };
+                        let gw = if s.show_line_numbers {
+                            px(72.0)
+                        } else {
+                            px(12.0)
+                        };
                         let cw = vp.size.width - gw;
                         let scroll_range = max_w - cw;
 

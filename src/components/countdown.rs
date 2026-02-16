@@ -257,31 +257,28 @@ impl CountdownState {
             return;
         }
 
-        cx.spawn(
-            async | this,
-            cx | {
-                cx.background_executor().timer(Duration::from_secs(1)).await;
+        cx.spawn(async |this, cx| {
+            cx.background_executor().timer(Duration::from_secs(1)).await;
 
-                _ = this.update(cx, |state, cx| {
-                    if state.running {
-                        if !state.count_up {
-                            if let Some(target) = state.target_time {
-                                if SystemTime::now() >= target {
-                                    state.completed = true;
-                                    state.running = false;
-                                }
+            _ = this.update(cx, |state, cx| {
+                if state.running {
+                    if !state.count_up {
+                        if let Some(target) = state.target_time {
+                            if SystemTime::now() >= target {
+                                state.completed = true;
+                                state.running = false;
                             }
                         }
-
-                        if state.running {
-                            state.schedule_tick(cx);
-                        }
-
-                        cx.notify();
                     }
-                });
-            },
-        )
+
+                    if state.running {
+                        state.schedule_tick(cx);
+                    }
+
+                    cx.notify();
+                }
+            });
+        })
         .detach();
     }
 }

@@ -96,7 +96,6 @@ pub enum ImageCellKind {
 
 #[derive(Clone, Debug)]
 pub struct TerminalImage {
-    pub id: u32,
     pub data: Arc<gpui::Image>,
     pub display_cols: usize,
     pub display_rows: usize,
@@ -158,6 +157,16 @@ pub struct TerminalLine {
     pub wrapped: bool,
 }
 
+fn blank_cell(style: &CellStyle) -> TerminalCell {
+    TerminalCell {
+        char: ' ',
+        style: style.clone(),
+        width: 1,
+        hyperlink: None,
+        image_cell: ImageCellKind::None,
+    }
+}
+
 impl TerminalLine {
     pub fn new(cols: usize) -> Self {
         Self {
@@ -170,16 +179,8 @@ impl TerminalLine {
         self.cells.len()
     }
 
-    pub fn is_empty(&self) -> bool {
-        self.cells.is_empty()
-    }
-
     pub fn get(&self, col: usize) -> Option<&TerminalCell> {
         self.cells.get(col)
-    }
-
-    pub fn get_mut(&mut self, col: usize) -> Option<&mut TerminalCell> {
-        self.cells.get_mut(col)
     }
 
     pub fn set(&mut self, col: usize, cell: TerminalCell) {
@@ -188,64 +189,27 @@ impl TerminalLine {
         }
     }
 
-    pub fn clear(&mut self) {
-        for cell in &mut self.cells {
-            *cell = TerminalCell::default();
-        }
-        self.wrapped = false;
-    }
-
     pub fn clear_with_style(&mut self, style: &CellStyle) {
+        let blank = blank_cell(style);
         for cell in &mut self.cells {
-            cell.char = ' ';
-            cell.style = style.clone();
-            cell.width = 1;
+            *cell = blank.clone();
         }
         self.wrapped = false;
-    }
-
-    pub fn clear_from(&mut self, col: usize) {
-        for i in col..self.cells.len() {
-            self.cells[i] = TerminalCell::default();
-        }
     }
 
     pub fn clear_from_with_style(&mut self, col: usize, style: &CellStyle) {
+        let blank = blank_cell(style);
         for i in col..self.cells.len() {
-            self.cells[i] = TerminalCell {
-                char: ' ',
-                style: style.clone(),
-                width: 1,
-                hyperlink: None,
-                image_cell: ImageCellKind::None,
-            };
-        }
-    }
-
-    pub fn clear_to(&mut self, col: usize) {
-        let end = col.min(self.cells.len());
-        for i in 0..end {
-            self.cells[i] = TerminalCell::default();
+            self.cells[i] = blank.clone();
         }
     }
 
     pub fn clear_to_with_style(&mut self, col: usize, style: &CellStyle) {
+        let blank = blank_cell(style);
         let end = col.min(self.cells.len());
         for i in 0..end {
-            self.cells[i] = TerminalCell {
-                char: ' ',
-                style: style.clone(),
-                width: 1,
-                hyperlink: None,
-                image_cell: ImageCellKind::None,
-            };
+            self.cells[i] = blank.clone();
         }
-    }
-
-    pub fn text(&self) -> String {
-        let mut s: String = self.cells.iter().map(|c| c.char).collect();
-        s.truncate(s.trim_end().len());
-        s
     }
 
     pub fn resize(&mut self, cols: usize) {
@@ -274,15 +238,10 @@ impl TerminalLine {
     }
 
     pub fn erase_chars(&mut self, col: usize, count: usize, style: &CellStyle) {
+        let blank = blank_cell(style);
         let end = (col + count).min(self.cells.len());
         for i in col..end {
-            self.cells[i] = TerminalCell {
-                char: ' ',
-                style: style.clone(),
-                width: 1,
-                hyperlink: None,
-                image_cell: ImageCellKind::None,
-            };
+            self.cells[i] = blank.clone();
         }
     }
 }
@@ -344,10 +303,6 @@ impl Charset {
 }
 
 impl CursorPosition {
-    pub fn new(row: usize, col: usize) -> Self {
-        Self { row, col }
-    }
-
     pub fn origin() -> Self {
         Self { row: 0, col: 0 }
     }
@@ -527,18 +482,6 @@ impl TerminalState {
         &self.working_directory
     }
 
-    pub fn is_running(&self) -> bool {
-        self.is_running
-    }
-
-    pub fn title(&self) -> Option<&str> {
-        self.title.as_deref()
-    }
-
-    pub fn current_style(&self) -> &CellStyle {
-        &self.current_style
-    }
-
     pub fn total_lines(&self) -> usize {
         self.lines.len()
     }
@@ -555,10 +498,6 @@ impl TerminalState {
         self.scroll_offset == 0
     }
 
-    pub fn user_scrolled(&self) -> bool {
-        self.user_scrolled
-    }
-
     pub fn bracketed_paste(&self) -> bool {
         self.bracketed_paste
     }
@@ -569,6 +508,10 @@ impl TerminalState {
 
     pub fn set_working_directory(&mut self, path: PathBuf) {
         self.working_directory = path;
+    }
+
+    pub fn title(&self) -> Option<&str> {
+        self.title.as_deref()
     }
 
     pub fn set_title(&mut self, title: Option<String>) {
@@ -659,19 +602,8 @@ impl TerminalState {
         self.current_hyperlink = url;
     }
 
-    pub fn current_hyperlink(&self) -> Option<&str> {
-        self.current_hyperlink.as_deref()
-    }
-
     pub fn line(&self, index: usize) -> Option<&TerminalLine> {
         self.lines.get(index)
-    }
-
-    pub fn visible_lines(&self) -> impl Iterator<Item = &TerminalLine> {
-        let total = self.lines.len();
-        let start = total.saturating_sub(self.rows + self.scroll_offset);
-        let end = total.saturating_sub(self.scroll_offset);
-        self.lines[start..end].iter()
     }
 
     fn viewport_to_absolute(&self, row: usize) -> usize {
@@ -685,14 +617,6 @@ impl TerminalState {
             self.lines.push(TerminalLine::new(self.cols));
         }
         &mut self.lines[idx]
-    }
-
-    fn effective_row(&self) -> usize {
-        if self.origin_mode {
-            self.scroll_region_top + self.cursor.row
-        } else {
-            self.cursor.row
-        }
     }
 
     pub fn write_char(&mut self, c: char) {
@@ -854,14 +778,6 @@ impl TerminalState {
         }
     }
 
-    pub fn scroll_up(&mut self) {
-        self.scroll_up_region();
-    }
-
-    pub fn scroll_down(&mut self) {
-        self.scroll_down_region();
-    }
-
     pub fn scroll_up_n(&mut self, n: usize) {
         for _ in 0..n {
             self.scroll_up_region();
@@ -914,15 +830,6 @@ impl TerminalState {
 
     pub fn cursor_to_column(&mut self, col: usize) {
         self.cursor.col = col.saturating_sub(1).min(self.cols.saturating_sub(1));
-    }
-
-    pub fn cursor_to_line(&mut self, line: usize) {
-        let row = line.saturating_sub(1);
-        if self.origin_mode {
-            self.cursor.row = (self.scroll_region_top + row).min(self.scroll_region_bottom);
-        } else {
-            self.cursor.row = row.min(self.rows.saturating_sub(1));
-        }
     }
 
     pub fn cursor_next_line(&mut self, n: usize) {
@@ -982,10 +889,6 @@ impl TerminalState {
 
     pub fn set_autowrap(&mut self, enabled: bool) {
         self.autowrap = enabled;
-    }
-
-    pub fn set_insert_mode(&mut self, enabled: bool) {
-        self.insert_mode = enabled;
     }
 
     pub fn enter_alt_screen(&mut self) {
@@ -1276,7 +1179,6 @@ impl TerminalState {
         let anchor_col = self.cursor.col;
 
         let image = Arc::new(TerminalImage {
-            id,
             data,
             display_cols,
             display_rows,

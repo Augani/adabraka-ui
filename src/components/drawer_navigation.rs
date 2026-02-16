@@ -52,7 +52,9 @@ impl DrawerState {
             cx.notify();
 
             cx.spawn(async move |this, cx| {
-                cx.background_executor().timer(Duration::from_millis(250)).await;
+                cx.background_executor()
+                    .timer(Duration::from_millis(250))
+                    .await;
                 _ = this.update(cx, |state, cx| {
                     state.is_open = false;
                     state.is_dismissing = false;
@@ -233,9 +235,7 @@ impl RenderOnce for DrawerNavigation {
                         })
                         .on_mouse_down(MouseButton::Left, |_, _, _| {})
                         .with_animation(
-                            ElementId::Name(
-                                format!("drawer-slide-{}", animation_version).into(),
-                            ),
+                            ElementId::Name(format!("drawer-slide-{}", animation_version).into()),
                             Animation::new(duration).with_easing(easings::ease_out_cubic),
                             move |el, delta| {
                                 let offset = drawer_width / px(1.0);

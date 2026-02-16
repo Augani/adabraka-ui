@@ -83,19 +83,17 @@ impl Render for ShowcaseApp {
                         "Element transforms, advanced gradients, and blend modes",
                     )),
             )
-            .child(
-                scrollable_vertical(
-                    div()
-                        .flex()
-                        .flex_col()
-                        .gap(px(24.0))
-                        .p(px(24.0))
-                        .child(self.render_transforms_section(&theme, time))
-                        .child(self.render_gradients_section(&theme))
-                        .child(self.render_blend_modes_section(&theme))
-                        .child(self.render_combined_section(&theme, time)),
-                ),
-            )
+            .child(scrollable_vertical(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(24.0))
+                    .p(px(24.0))
+                    .child(self.render_transforms_section(&theme, time))
+                    .child(self.render_gradients_section(&theme))
+                    .child(self.render_blend_modes_section(&theme))
+                    .child(self.render_combined_section(&theme, time)),
+            ))
     }
 }
 
@@ -128,15 +126,12 @@ impl ShowcaseApp {
                             .items_center()
                             .gap(px(12.0))
                             .child(
-                                demo_box()
-                                    .bg(purple)
-                                    .rotate(rotation_angle)
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(white())
-                                            .child("Rotate"),
-                                    ),
+                                demo_box().bg(purple).rotate(rotation_angle).child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(white())
+                                        .child("Rotate"),
+                                ),
                             )
                             .child(
                                 div()
@@ -151,17 +146,9 @@ impl ShowcaseApp {
                             .flex_col()
                             .items_center()
                             .gap(px(12.0))
-                            .child(
-                                demo_box()
-                                    .bg(blue)
-                                    .scale(pulse_scale)
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(white())
-                                            .child("Scale"),
-                                    ),
-                            )
+                            .child(demo_box().bg(blue).scale(pulse_scale).child(
+                                div().text_size(px(13.0)).text_color(white()).child("Scale"),
+                            ))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -176,15 +163,12 @@ impl ShowcaseApp {
                             .items_center()
                             .gap(px(12.0))
                             .child(
-                                demo_box()
-                                    .bg(cyan)
-                                    .scale_xy(1.3, 0.7)
-                                    .child(
-                                        div()
-                                            .text_size(px(13.0))
-                                            .text_color(white())
-                                            .child("ScaleXY"),
-                                    ),
+                                demo_box().bg(cyan).scale_xy(1.3, 0.7).child(
+                                    div()
+                                        .text_size(px(13.0))
+                                        .text_color(white())
+                                        .child("ScaleXY"),
+                                ),
                             )
                             .child(
                                 div()
@@ -200,16 +184,12 @@ impl ShowcaseApp {
                             .items_center()
                             .gap(px(12.0))
                             .child(
-                                demo_box()
-                                    .bg(green)
-                                    .rotate(45.0)
-                                    .scale(0.85)
-                                    .child(
-                                        div()
-                                            .text_size(px(11.0))
-                                            .text_color(white())
-                                            .child("Rot+Scale"),
-                                    ),
+                                demo_box().bg(green).rotate(45.0).scale(0.85).child(
+                                    div()
+                                        .text_size(px(11.0))
+                                        .text_color(white())
+                                        .child("Rot+Scale"),
+                                ),
                             )
                             .child(
                                 div()
@@ -270,9 +250,11 @@ impl ShowcaseApp {
                 "multi_stop_linear_gradient(), radial_gradient(), conic_gradient()",
             ))
             .child(
-                div().flex().flex_col().gap(px(16.0)).child(
-                    h3("Multi-stop Linear Gradients (up to 4 stops)"),
-                ),
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.0))
+                    .child(h3("Multi-stop Linear Gradients (up to 4 stops)")),
             )
             .child(
                 div()
@@ -284,17 +266,15 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(multi_stop_linear_gradient(
-                                    90.0,
-                                    &[
-                                        stop(red, 0.0),
-                                        stop(yellow, 0.33),
-                                        stop(green, 0.66),
-                                        stop(blue, 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(multi_stop_linear_gradient(
+                                90.0,
+                                &[
+                                    stop(red, 0.0),
+                                    stop(yellow, 0.33),
+                                    stop(green, 0.66),
+                                    stop(blue, 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -307,16 +287,10 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(multi_stop_linear_gradient(
-                                    135.0,
-                                    &[
-                                        stop(purple, 0.0),
-                                        stop(pink, 0.5),
-                                        stop(orange, 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(multi_stop_linear_gradient(
+                                135.0,
+                                &[stop(purple, 0.0), stop(pink, 0.5), stop(orange, 1.0)],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -329,17 +303,15 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(multi_stop_linear_gradient(
-                                    0.0,
-                                    &[
-                                        stop(hsla(0.6, 0.9, 0.3, 1.0), 0.0),
-                                        stop(hsla(0.6, 0.9, 0.5, 1.0), 0.4),
-                                        stop(hsla(0.55, 0.8, 0.7, 1.0), 0.7),
-                                        stop(hsla(0.5, 0.7, 0.9, 1.0), 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(multi_stop_linear_gradient(
+                                0.0,
+                                &[
+                                    stop(hsla(0.6, 0.9, 0.3, 1.0), 0.0),
+                                    stop(hsla(0.6, 0.9, 0.5, 1.0), 0.4),
+                                    stop(hsla(0.55, 0.8, 0.7, 1.0), 0.7),
+                                    stop(hsla(0.5, 0.7, 0.9, 1.0), 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -348,7 +320,13 @@ impl ShowcaseApp {
                             ),
                     ),
             )
-            .child(div().flex().flex_col().gap(px(16.0)).child(h3("Radial Gradients")))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.0))
+                    .child(h3("Radial Gradients")),
+            )
             .child(
                 div()
                     .flex()
@@ -359,18 +337,12 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(radial_gradient(
-                                    0.5,
-                                    0.5,
-                                    0.7,
-                                    &[
-                                        stop(yellow, 0.0),
-                                        stop(orange, 0.5),
-                                        stop(red, 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(radial_gradient(
+                                0.5,
+                                0.5,
+                                0.7,
+                                &[stop(yellow, 0.0), stop(orange, 0.5), stop(red, 1.0)],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -383,18 +355,16 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(radial_gradient(
-                                    0.3,
-                                    0.3,
-                                    0.5,
-                                    &[
-                                        stop(white(), 0.0),
-                                        stop(cyan, 0.6),
-                                        stop(hsla(0.6, 0.9, 0.2, 1.0), 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(radial_gradient(
+                                0.3,
+                                0.3,
+                                0.5,
+                                &[
+                                    stop(white(), 0.0),
+                                    stop(cyan, 0.6),
+                                    stop(hsla(0.6, 0.9, 0.2, 1.0), 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -407,18 +377,16 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(radial_gradient(
-                                    0.5,
-                                    0.5,
-                                    1.0,
-                                    &[
-                                        stop(purple, 0.0),
-                                        stop(hsla(0.75, 0.5, 0.3, 1.0), 0.5),
-                                        stop(hsla(0.0, 0.0, 0.05, 1.0), 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(radial_gradient(
+                                0.5,
+                                0.5,
+                                1.0,
+                                &[
+                                    stop(purple, 0.0),
+                                    stop(hsla(0.75, 0.5, 0.3, 1.0), 0.5),
+                                    stop(hsla(0.0, 0.0, 0.05, 1.0), 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -427,7 +395,13 @@ impl ShowcaseApp {
                             ),
                     ),
             )
-            .child(div().flex().flex_col().gap(px(16.0)).child(h3("Conic Gradients")))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(16.0))
+                    .child(h3("Conic Gradients")),
+            )
             .child(
                 div()
                     .flex()
@@ -438,19 +412,17 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(conic_gradient(
-                                    0.5,
-                                    0.5,
-                                    0.0,
-                                    &[
-                                        stop(red, 0.0),
-                                        stop(yellow, 0.33),
-                                        stop(green, 0.66),
-                                        stop(red, 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(conic_gradient(
+                                0.5,
+                                0.5,
+                                0.0,
+                                &[
+                                    stop(red, 0.0),
+                                    stop(yellow, 0.33),
+                                    stop(green, 0.66),
+                                    stop(red, 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -469,11 +441,7 @@ impl ShowcaseApp {
                                         0.5,
                                         0.5,
                                         45.0,
-                                        &[
-                                            stop(blue, 0.0),
-                                            stop(purple, 0.5),
-                                            stop(blue, 1.0),
-                                        ],
+                                        &[stop(blue, 0.0), stop(purple, 0.5), stop(blue, 1.0)],
                                     ))
                                     .rounded(px(70.0)),
                             )
@@ -489,19 +457,17 @@ impl ShowcaseApp {
                             .flex()
                             .flex_col()
                             .gap(px(6.0))
-                            .child(
-                                gradient_box().bg(conic_gradient(
-                                    0.5,
-                                    0.5,
-                                    90.0,
-                                    &[
-                                        stop(hsla(0.0, 0.0, 0.95, 1.0), 0.0),
-                                        stop(hsla(0.0, 0.0, 0.7, 1.0), 0.25),
-                                        stop(hsla(0.0, 0.0, 0.95, 1.0), 0.5),
-                                        stop(hsla(0.0, 0.0, 0.7, 1.0), 1.0),
-                                    ],
-                                )),
-                            )
+                            .child(gradient_box().bg(conic_gradient(
+                                0.5,
+                                0.5,
+                                90.0,
+                                &[
+                                    stop(hsla(0.0, 0.0, 0.95, 1.0), 0.0),
+                                    stop(hsla(0.0, 0.0, 0.7, 1.0), 0.25),
+                                    stop(hsla(0.0, 0.0, 0.95, 1.0), 0.5),
+                                    stop(hsla(0.0, 0.0, 0.7, 1.0), 1.0),
+                                ],
+                            )))
                             .child(
                                 div()
                                     .text_size(px(11.0))
@@ -576,73 +542,88 @@ impl ShowcaseApp {
                             .flex_wrap()
                             .gap(px(16.0))
                             .child(
-                                div().flex().flex_col().items_center().gap(px(6.0)).child(
-                                    div()
-                                        .w(px(140.0))
-                                        .h(px(80.0))
-                                        .rounded(px(8.0))
-                                        .bg(linear_gradient(
-                                            90.0,
-                                            stop(hsla(0.0, 0.8, 0.5, 1.0), 0.0),
-                                            stop(hsla(0.6, 0.8, 0.5, 1.0), 1.0),
-                                        ))
-                                        .blend_mode(BlendMode::Multiply),
-                                )
-                                .child(
-                                    div()
-                                        .text_size(px(11.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("Gradient + Multiply"),
-                                ),
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .items_center()
+                                    .gap(px(6.0))
+                                    .child(
+                                        div()
+                                            .w(px(140.0))
+                                            .h(px(80.0))
+                                            .rounded(px(8.0))
+                                            .bg(linear_gradient(
+                                                90.0,
+                                                stop(hsla(0.0, 0.8, 0.5, 1.0), 0.0),
+                                                stop(hsla(0.6, 0.8, 0.5, 1.0), 1.0),
+                                            ))
+                                            .blend_mode(BlendMode::Multiply),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Gradient + Multiply"),
+                                    ),
                             )
                             .child(
-                                div().flex().flex_col().items_center().gap(px(6.0)).child(
-                                    div()
-                                        .w(px(140.0))
-                                        .h(px(80.0))
-                                        .rounded(px(8.0))
-                                        .bg(radial_gradient(
-                                            0.5,
-                                            0.5,
-                                            0.6,
-                                            &[
-                                                stop(hsla(0.15, 0.9, 0.6, 1.0), 0.0),
-                                                stop(hsla(0.0, 0.8, 0.4, 1.0), 1.0),
-                                            ],
-                                        ))
-                                        .blend_mode(BlendMode::Screen),
-                                )
-                                .child(
-                                    div()
-                                        .text_size(px(11.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("Radial + Screen"),
-                                ),
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .items_center()
+                                    .gap(px(6.0))
+                                    .child(
+                                        div()
+                                            .w(px(140.0))
+                                            .h(px(80.0))
+                                            .rounded(px(8.0))
+                                            .bg(radial_gradient(
+                                                0.5,
+                                                0.5,
+                                                0.6,
+                                                &[
+                                                    stop(hsla(0.15, 0.9, 0.6, 1.0), 0.0),
+                                                    stop(hsla(0.0, 0.8, 0.4, 1.0), 1.0),
+                                                ],
+                                            ))
+                                            .blend_mode(BlendMode::Screen),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Radial + Screen"),
+                                    ),
                             )
                             .child(
-                                div().flex().flex_col().items_center().gap(px(6.0)).child(
-                                    div()
-                                        .w(px(140.0))
-                                        .h(px(80.0))
-                                        .rounded(px(8.0))
-                                        .bg(conic_gradient(
-                                            0.5,
-                                            0.5,
-                                            0.0,
-                                            &[
-                                                stop(hsla(0.0, 0.9, 0.5, 1.0), 0.0),
-                                                stop(hsla(0.3, 0.9, 0.5, 1.0), 0.5),
-                                                stop(hsla(0.0, 0.9, 0.5, 1.0), 1.0),
-                                            ],
-                                        ))
-                                        .blend_mode(BlendMode::Overlay),
-                                )
-                                .child(
-                                    div()
-                                        .text_size(px(11.0))
-                                        .text_color(theme.tokens.muted_foreground)
-                                        .child("Conic + Overlay"),
-                                ),
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .items_center()
+                                    .gap(px(6.0))
+                                    .child(
+                                        div()
+                                            .w(px(140.0))
+                                            .h(px(80.0))
+                                            .rounded(px(8.0))
+                                            .bg(conic_gradient(
+                                                0.5,
+                                                0.5,
+                                                0.0,
+                                                &[
+                                                    stop(hsla(0.0, 0.9, 0.5, 1.0), 0.0),
+                                                    stop(hsla(0.3, 0.9, 0.5, 1.0), 0.5),
+                                                    stop(hsla(0.0, 0.9, 0.5, 1.0), 1.0),
+                                                ],
+                                            ))
+                                            .blend_mode(BlendMode::Overlay),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_size(px(11.0))
+                                            .text_color(theme.tokens.muted_foreground)
+                                            .child("Conic + Overlay"),
+                                    ),
                             ),
                     ),
             )

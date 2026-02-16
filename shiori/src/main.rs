@@ -9,12 +9,14 @@ mod git_view;
 pub mod ide_theme;
 mod pty_service;
 mod search_bar;
-mod status_bar;
 mod terminal_state;
 mod terminal_view;
 
-use app::AppState;
+use adabraka_ui::navigation::app_menu::{
+    edit_menu, file_menu, view_menu, window_menu, StandardMacMenuBar,
+};
 use adabraka_ui::theme::{install_theme, Theme};
+use app::{AppState, NewFile, OpenFile, OpenFolder, SaveFile};
 use gpui::*;
 use std::borrow::Cow;
 use std::path::PathBuf;
@@ -58,6 +60,23 @@ fn main() {
             adabraka_ui::set_icon_base_path("assets/icons");
             install_theme(cx, Theme::dark());
             app::init(cx);
+            crate::ide_theme::sync_adabraka_theme_from_ide(cx);
+
+            cx.set_menus(
+                StandardMacMenuBar::new("Shiori")
+                    .file_menu(
+                        file_menu()
+                            .action("New File", NewFile)
+                            .action("Open File", OpenFile)
+                            .action("Open Folder", OpenFolder)
+                            .separator()
+                            .action("Save", SaveFile),
+                    )
+                    .edit_menu(edit_menu())
+                    .view_menu(view_menu())
+                    .window_menu(window_menu())
+                    .build(),
+            );
 
             let bounds = Bounds::centered(None, size(px(1200.0), px(800.0)), cx);
             let paths_for_window = paths.clone();
@@ -66,9 +85,10 @@ fn main() {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
                         title: Some("Shiori".into()),
-                        appears_transparent: false,
-                        traffic_light_position: None,
+                        appears_transparent: true,
+                        traffic_light_position: Some(point(px(16.0), px(14.0))),
                     }),
+                    window_background: WindowBackgroundAppearance::Opaque,
                     ..Default::default()
                 },
                 |_, cx| {

@@ -51,8 +51,10 @@ struct ShowcaseApp {
 impl ShowcaseApp {
     fn new(cx: &mut Context<Self>) -> Self {
         let typewriter_state = cx.new(|_cx| {
-            TypeWriterState::new("Welcome to adabraka-ui — a beautiful component library for GPUI desktop apps.")
-                .with_speed(Duration::from_millis(40))
+            TypeWriterState::new(
+                "Welcome to adabraka-ui — a beautiful component library for GPUI desktop apps.",
+            )
+            .with_speed(Duration::from_millis(40))
         });
 
         let tw = typewriter_state.clone();
@@ -66,29 +68,28 @@ impl ShowcaseApp {
 
         let counter_state = cx.new(|_cx| AnimatedCounterState::new(0.0));
 
-        cx.spawn(async move |this, cx| {
-            loop {
-                cx.background_executor()
-                    .timer(Duration::from_millis(100))
-                    .await;
-                let result = this.update(cx, |state, cx| {
-                    state.tick = state.tick.wrapping_add(1);
-                    if state.tick % 40 == 0 {
-                        state.progress_value = if state.progress_value >= 1.0 {
-                            0.0
-                        } else {
-                            (state.progress_value + 0.15).min(1.0)
-                        };
-                    }
-                    if state.tick % 30 == 0 {
-                        state.ticker_value += 1247;
-                        state.gauge_value = ((state.tick as f32 * 0.02).sin() * 0.4 + 0.5).clamp(0.0, 1.0);
-                    }
-                    cx.notify();
-                });
-                if result.is_err() {
-                    break;
+        cx.spawn(async move |this, cx| loop {
+            cx.background_executor()
+                .timer(Duration::from_millis(100))
+                .await;
+            let result = this.update(cx, |state, cx| {
+                state.tick = state.tick.wrapping_add(1);
+                if state.tick % 40 == 0 {
+                    state.progress_value = if state.progress_value >= 1.0 {
+                        0.0
+                    } else {
+                        (state.progress_value + 0.15).min(1.0)
+                    };
                 }
+                if state.tick % 30 == 0 {
+                    state.ticker_value += 1247;
+                    state.gauge_value =
+                        ((state.tick as f32 * 0.02).sin() * 0.4 + 0.5).clamp(0.0, 1.0);
+                }
+                cx.notify();
+            });
+            if result.is_err() {
+                break;
             }
         })
         .detach();
@@ -97,9 +98,7 @@ impl ShowcaseApp {
             segmented_state: cx.new(|_cx| SegmentedNavState::new("text")),
             typewriter_state,
             counter_state,
-            copy_state: cx.new(|_cx| {
-                CopyButtonState::new("cargo add adabraka-ui".into())
-            }),
+            copy_state: cx.new(|_cx| CopyButtonState::new("cargo add adabraka-ui".into())),
             confetti_state: cx.new(ConfettiState::new),
             expandable_state_1: cx.new(|_cx| ExpandableCardState::new()),
             expandable_state_2: cx.new(|_cx| ExpandableCardState::new()),
@@ -168,12 +167,11 @@ impl Render for ShowcaseApp {
                             .items_center()
                             .gap(px(12.0))
                             .child(h1("adabraka-ui"))
-                            .child(
-                                Badge::new("v0.3")
-                                    .variant(BadgeVariant::Default),
-                            ),
+                            .child(Badge::new("v0.3").variant(BadgeVariant::Default)),
                     )
-                    .child(muted("85+ components for beautiful GPUI desktop applications"))
+                    .child(muted(
+                        "85+ components for beautiful GPUI desktop applications",
+                    ))
                     .child(
                         div().pt(px(8.0)).child(
                             SegmentedNav::new("main-nav", seg_state)
@@ -223,14 +221,13 @@ impl ShowcaseApp {
                     .child(h2("Gradient Text"))
                     .child(caption("Rich gradient text with customizable colors"))
                     .child(
-                        row()
-                            .child(
-                                GradientText::new("Build beautiful apps")
-                                    .start_color(hsla(0.75, 0.8, 0.6, 1.0))
-                                    .end_color(hsla(0.55, 0.8, 0.6, 1.0))
-                                    .text_size(px(32.0))
-                                    .font_weight(FontWeight::BOLD),
-                            ),
+                        row().child(
+                            GradientText::new("Build beautiful apps")
+                                .start_color(hsla(0.75, 0.8, 0.6, 1.0))
+                                .end_color(hsla(0.55, 0.8, 0.6, 1.0))
+                                .text_size(px(32.0))
+                                .font_weight(FontWeight::BOLD),
+                        ),
                     )
                     .child(
                         row()
@@ -255,42 +252,34 @@ impl ShowcaseApp {
                     .child(h2("Animated Text"))
                     .child(caption("Character-by-character text animations"))
                     .child(
-                        col()
-                            .gap(px(12.0))
-                            .child(
-                                row()
-                                    .gap(px(24.0))
-                                    .child(
-                                        col()
-                                            .child(demo_label("FadeUp", theme))
-                                            .child(
-                                                AnimatedText::new("fade-up", "Hello World")
-                                                    .animation(TextAnimation::FadeUp)
-                                                    .text_size(px(20.0))
-                                                    .font_weight(FontWeight::SEMIBOLD),
-                                            ),
-                                    )
-                                    .child(
-                                        col()
-                                            .child(demo_label("Wave", theme))
-                                            .child(
-                                                AnimatedText::new("wave", "Wavy Motion")
-                                                    .animation(TextAnimation::Wave)
-                                                    .text_size(px(20.0))
-                                                    .font_weight(FontWeight::SEMIBOLD),
-                                            ),
-                                    )
-                                    .child(
-                                        col()
-                                            .child(demo_label("Scale", theme))
-                                            .child(
-                                                AnimatedText::new("scale", "Pop In!")
-                                                    .animation(TextAnimation::Scale)
-                                                    .text_size(px(20.0))
-                                                    .font_weight(FontWeight::SEMIBOLD),
-                                            ),
+                        col().gap(px(12.0)).child(
+                            row()
+                                .gap(px(24.0))
+                                .child(
+                                    col().child(demo_label("FadeUp", theme)).child(
+                                        AnimatedText::new("fade-up", "Hello World")
+                                            .animation(TextAnimation::FadeUp)
+                                            .text_size(px(20.0))
+                                            .font_weight(FontWeight::SEMIBOLD),
                                     ),
-                            ),
+                                )
+                                .child(
+                                    col().child(demo_label("Wave", theme)).child(
+                                        AnimatedText::new("wave", "Wavy Motion")
+                                            .animation(TextAnimation::Wave)
+                                            .text_size(px(20.0))
+                                            .font_weight(FontWeight::SEMIBOLD),
+                                    ),
+                                )
+                                .child(
+                                    col().child(demo_label("Scale", theme)).child(
+                                        AnimatedText::new("scale", "Pop In!")
+                                            .animation(TextAnimation::Scale)
+                                            .text_size(px(20.0))
+                                            .font_weight(FontWeight::SEMIBOLD),
+                                    ),
+                                ),
+                        ),
                     ),
             )
             .child(
@@ -301,26 +290,22 @@ impl ShowcaseApp {
                         col()
                             .gap(px(12.0))
                             .child(
-                                col()
-                                    .child(demo_label("By Word", theme))
-                                    .child(
-                                        TextReveal::new(
-                                            "reveal-word",
-                                            "The quick brown fox jumps over the lazy dog",
-                                        )
-                                        .mode(RevealMode::ByWord)
-                                        .text_size(px(16.0)),
-                                    ),
+                                col().child(demo_label("By Word", theme)).child(
+                                    TextReveal::new(
+                                        "reveal-word",
+                                        "The quick brown fox jumps over the lazy dog",
+                                    )
+                                    .mode(RevealMode::ByWord)
+                                    .text_size(px(16.0)),
+                                ),
                             )
                             .child(
-                                col()
-                                    .child(demo_label("By Character", theme))
-                                    .child(
-                                        TextReveal::new("reveal-char", "Character by character reveal")
-                                            .mode(RevealMode::ByCharacter)
-                                            .stagger(Duration::from_millis(30))
-                                            .text_size(px(16.0)),
-                                    ),
+                                col().child(demo_label("By Character", theme)).child(
+                                    TextReveal::new("reveal-char", "Character by character reveal")
+                                        .mode(RevealMode::ByCharacter)
+                                        .stagger(Duration::from_millis(30))
+                                        .text_size(px(16.0)),
+                                ),
                             ),
                     ),
             )
@@ -343,11 +328,13 @@ impl ShowcaseApp {
                             div()
                                 .flex()
                                 .gap(px(24.0))
-                                .child(body("Breaking: adabraka-ui v0.3 released with 85+ components"))
+                                .child(body(
+                                    "Breaking: adabraka-ui v0.3 released with 85+ components",
+                                ))
                                 .child(
-                                    div()
-                                        .text_color(hsla(0.55, 0.8, 0.6, 1.0))
-                                        .child("New: Transforms, Gradients, Blend Modes in GPUI fork"),
+                                    div().text_color(hsla(0.55, 0.8, 0.6, 1.0)).child(
+                                        "New: Transforms, Gradients, Blend Modes in GPUI fork",
+                                    ),
                                 )
                                 .child(body("Star us on GitHub!"))
                                 .into_any_element()
@@ -377,36 +364,30 @@ impl ShowcaseApp {
                         row()
                             .gap(px(32.0))
                             .child(
-                                col()
-                                    .child(demo_label("Revenue", theme))
-                                    .child(
-                                        NumberTicker::new("ticker-revenue", ticker_val)
-                                            .prefix(SharedString::from("$"))
-                                            .separator(',')
-                                            .text_size(px(32.0))
-                                            .font_weight(FontWeight::BOLD),
-                                    ),
+                                col().child(demo_label("Revenue", theme)).child(
+                                    NumberTicker::new("ticker-revenue", ticker_val)
+                                        .prefix(SharedString::from("$"))
+                                        .separator(',')
+                                        .text_size(px(32.0))
+                                        .font_weight(FontWeight::BOLD),
+                                ),
                             )
                             .child(
-                                col()
-                                    .child(demo_label("Users", theme))
-                                    .child(
-                                        NumberTicker::new("ticker-users", ticker_val / 3)
-                                            .separator(',')
-                                            .text_size(px(32.0))
-                                            .font_weight(FontWeight::BOLD),
-                                    ),
+                                col().child(demo_label("Users", theme)).child(
+                                    NumberTicker::new("ticker-users", ticker_val / 3)
+                                        .separator(',')
+                                        .text_size(px(32.0))
+                                        .font_weight(FontWeight::BOLD),
+                                ),
                             )
                             .child(
-                                col()
-                                    .child(demo_label("Downloads", theme))
-                                    .child(
-                                        NumberTicker::new("ticker-downloads", ticker_val * 7)
-                                            .separator(',')
-                                            .suffix(SharedString::from("k"))
-                                            .text_size(px(32.0))
-                                            .font_weight(FontWeight::BOLD),
-                                    ),
+                                col().child(demo_label("Downloads", theme)).child(
+                                    NumberTicker::new("ticker-downloads", ticker_val * 7)
+                                        .separator(',')
+                                        .suffix(SharedString::from("k"))
+                                        .text_size(px(32.0))
+                                        .font_weight(FontWeight::BOLD),
+                                ),
                             ),
                     ),
             )
@@ -430,25 +411,21 @@ impl ShowcaseApp {
                                     ),
                             )
                             .child(
-                                col()
-                                    .child(demo_label("With Shimmer", theme))
-                                    .child(
-                                        AnimatedProgress::new("progress-shimmer")
-                                            .value(0.65)
-                                            .shimmer(true)
-                                            .color(hsla(0.55, 0.8, 0.5, 1.0))
-                                            .w_full(),
-                                    ),
+                                col().child(demo_label("With Shimmer", theme)).child(
+                                    AnimatedProgress::new("progress-shimmer")
+                                        .value(0.65)
+                                        .shimmer(true)
+                                        .color(hsla(0.55, 0.8, 0.5, 1.0))
+                                        .w_full(),
+                                ),
                             )
                             .child(
-                                col()
-                                    .child(demo_label("Success", theme))
-                                    .child(
-                                        AnimatedProgress::new("progress-success")
-                                            .value(1.0)
-                                            .color(hsla(0.35, 0.7, 0.5, 1.0))
-                                            .w_full(),
-                                    ),
+                                col().child(demo_label("Success", theme)).child(
+                                    AnimatedProgress::new("progress-success")
+                                        .value(1.0)
+                                        .color(hsla(0.35, 0.7, 0.5, 1.0))
+                                        .w_full(),
+                                ),
                             ),
                     ),
             )
@@ -521,16 +498,11 @@ impl ShowcaseApp {
                     .child(
                         TreeMap::new()
                             .data(vec![
-                                TreeMapNode::new("Frontend", 40.0)
-                                    .color(hsla(0.6, 0.7, 0.5, 1.0)),
-                                TreeMapNode::new("Backend", 30.0)
-                                    .color(hsla(0.35, 0.7, 0.5, 1.0)),
-                                TreeMapNode::new("DevOps", 15.0)
-                                    .color(hsla(0.08, 0.9, 0.55, 1.0)),
-                                TreeMapNode::new("Design", 10.0)
-                                    .color(hsla(0.75, 0.6, 0.5, 1.0)),
-                                TreeMapNode::new("QA", 5.0)
-                                    .color(hsla(0.0, 0.7, 0.5, 1.0)),
+                                TreeMapNode::new("Frontend", 40.0).color(hsla(0.6, 0.7, 0.5, 1.0)),
+                                TreeMapNode::new("Backend", 30.0).color(hsla(0.35, 0.7, 0.5, 1.0)),
+                                TreeMapNode::new("DevOps", 15.0).color(hsla(0.08, 0.9, 0.55, 1.0)),
+                                TreeMapNode::new("Design", 10.0).color(hsla(0.75, 0.6, 0.5, 1.0)),
+                                TreeMapNode::new("QA", 5.0).color(hsla(0.0, 0.7, 0.5, 1.0)),
                             ])
                             .show_labels(true)
                             .w(px(600.0))
@@ -877,17 +849,22 @@ impl ShowcaseApp {
                             .child(
                                 row()
                                     .gap(px(12.0))
-                                    .child(
-                                        Shimmer::new()
-                                            .w(px(48.0))
-                                            .h(px(48.0))
-                                            .rounded(px(24.0)),
-                                    )
+                                    .child(Shimmer::new().w(px(48.0)).h(px(48.0)).rounded(px(24.0)))
                                     .child(
                                         col()
                                             .gap(px(6.0))
-                                            .child(Shimmer::new().w(px(160.0)).h(px(16.0)).rounded(px(4.0)))
-                                            .child(Shimmer::new().w(px(120.0)).h(px(12.0)).rounded(px(4.0))),
+                                            .child(
+                                                Shimmer::new()
+                                                    .w(px(160.0))
+                                                    .h(px(16.0))
+                                                    .rounded(px(4.0)),
+                                            )
+                                            .child(
+                                                Shimmer::new()
+                                                    .w(px(120.0))
+                                                    .h(px(12.0))
+                                                    .rounded(px(4.0)),
+                                            ),
                                     ),
                             )
                             .child(Shimmer::new().w_full().h(px(100.0)).rounded(px(8.0))),
@@ -906,8 +883,7 @@ impl ShowcaseApp {
                             .bg(theme.tokens.muted)
                             .rounded(px(12.0))
                             .child(
-                                Confetti::new("confetti-demo", confetti_state.clone())
-                                    .size_full(),
+                                Confetti::new("confetti-demo", confetti_state.clone()).size_full(),
                             )
                             .child(
                                 div()
@@ -980,10 +956,12 @@ impl ShowcaseApp {
                                 col()
                                     .items_center()
                                     .child(
-                                        QRCodeComponent::new("https://github.com/augani/adabraka-ui")
-                                            .size(px(150.0))
-                                            .fg_color(theme.tokens.foreground)
-                                            .bg_color(theme.tokens.card),
+                                        QRCodeComponent::new(
+                                            "https://github.com/augani/adabraka-ui",
+                                        )
+                                        .size(px(150.0))
+                                        .fg_color(theme.tokens.foreground)
+                                        .bg_color(theme.tokens.card),
                                     )
                                     .child(demo_label("GitHub Repo", theme)),
                             )

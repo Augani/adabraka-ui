@@ -44,7 +44,9 @@ impl ExpandableCardState {
             cx.notify();
 
             cx.spawn(async move |this, cx| {
-                cx.background_executor().timer(Duration::from_millis(300)).await;
+                cx.background_executor()
+                    .timer(Duration::from_millis(300))
+                    .await;
                 _ = this.update(cx, |state, cx| {
                     state.is_animating = false;
                     state.is_expanding = false;
@@ -63,7 +65,9 @@ impl ExpandableCardState {
             cx.notify();
 
             cx.spawn(async move |this, cx| {
-                cx.background_executor().timer(Duration::from_millis(300)).await;
+                cx.background_executor()
+                    .timer(Duration::from_millis(300))
+                    .await;
                 _ = this.update(cx, |state, cx| {
                     state.is_expanded = false;
                     state.is_animating = false;
@@ -153,9 +157,7 @@ impl RenderOnce for ExpandableCard {
             })
             .when(!is_expanded && !is_animating, |this| {
                 this.when_some(self.collapsed_content, |this, content| {
-                    this.child(
-                        div().px(px(24.0)).py(px(16.0)).child(content),
-                    )
+                    this.child(div().px(px(24.0)).py(px(16.0)).child(content))
                 })
             })
             .when(is_expanded || is_animating, |this| {
@@ -168,11 +170,8 @@ impl RenderOnce for ExpandableCard {
                             .overflow_hidden()
                             .child(content)
                             .with_animation(
-                                ElementId::Name(
-                                    format!("expand-{}", animation_version).into(),
-                                ),
-                                Animation::new(duration)
-                                    .with_easing(easings::ease_out_cubic),
+                                ElementId::Name(format!("expand-{}", animation_version).into()),
+                                Animation::new(duration).with_easing(easings::ease_out_cubic),
                                 move |el, delta| {
                                     if is_expanding {
                                         el.opacity(delta)

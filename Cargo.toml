@@ -19,7 +19,7 @@ exclude = ["assets/icons/**/*", "assets/audio/**/*", "assets/images/**/*"]
 
 [dependencies]
 # Core Framework
-gpui = { package = "adabraka-gpui", version = "0.4", path = "../adabraka-gpui/crates/gpui" }
+gpui = { package = "adabraka-gpui", version = "0.5", path = "../adabraka-gpui/crates/gpui" }
 smallvec = "1.13.2"
 once_cell = "1.19"
 

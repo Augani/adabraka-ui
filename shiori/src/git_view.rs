@@ -1,11 +1,11 @@
 use crate::diff_highlighter::HighlightRun;
 use crate::git_service::{DiffLineKind, FileStatusKind};
 use crate::git_state::{DiffRow, DiffViewMode, GitState};
+use crate::ide_theme::use_ide_theme;
 use adabraka_ui::components::button::{Button, ButtonVariant};
 use adabraka_ui::components::editor::Editor;
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::resizable::{h_resizable, resizable_panel};
-use adabraka_ui::theme::use_theme;
 use gpui::prelude::FluentBuilder as _;
 use gpui::*;
 use std::rc::Rc;
@@ -15,10 +15,8 @@ struct DiffSplitDrag;
 
 impl Render for DiffSplitDrag {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        div()
-            .w(px(1.0))
-            .h_full()
-            .bg(gpui::hsla(0.58, 0.7, 0.6, 1.0))
+        let chrome = use_ide_theme().chrome;
+        div().w(px(1.0)).h_full().bg(chrome.accent)
     }
 }
 
@@ -115,11 +113,20 @@ const HEADER_HEIGHT: f32 = 32.0;
 #[derive(IntoElement)]
 pub struct GitView {
     state: Entity<GitState>,
+    diff_only: bool,
 }
 
 impl GitView {
     pub fn new(state: Entity<GitState>) -> Self {
-        Self { state }
+        Self {
+            state,
+            diff_only: false,
+        }
+    }
+
+    pub fn diff_only(mut self, val: bool) -> Self {
+        self.diff_only = val;
+        self
     }
 
     fn render_file_entry(
@@ -132,20 +139,19 @@ impl GitView {
         entry_deletions: usize,
         is_selected: bool,
     ) -> Stateful<Div> {
-        let theme = use_theme();
-        let green = gpui::hsla(0.33, 0.7, 0.5, 1.0);
-        let red = theme.tokens.destructive;
+        let ide = use_ide_theme();
+        let chrome = ide.chrome;
+        let green = chrome.diff_add_text;
+        let red = chrome.diff_del_text;
         let yellow = gpui::hsla(0.12, 0.8, 0.55, 1.0);
 
         let (status_icon, icon_color) = if entry_staged {
             ("check", green)
         } else if entry_status == FileStatusKind::Untracked {
-            ("file-plus", theme.tokens.muted_foreground)
+            ("file-plus", chrome.text_secondary)
         } else {
             ("circle-dot", yellow)
         };
-
-        
 
         let filename = entry_path
             .rsplit('/')
@@ -167,8 +173,8 @@ impl GitView {
             FileStatusKind::Added => green,
             FileStatusKind::Deleted => red,
             FileStatusKind::Modified => yellow,
-            FileStatusKind::Renamed => theme.tokens.primary,
-            FileStatusKind::Untracked => theme.tokens.muted_foreground,
+            FileStatusKind::Renamed => chrome.accent,
+            FileStatusKind::Untracked => chrome.text_secondary,
         };
 
         let status_letter = match entry_status {
@@ -192,8 +198,8 @@ impl GitView {
             .py(px(3.0))
             .cursor_pointer()
             .text_size(px(13.0))
-            .when(is_selected, |el| el.bg(theme.tokens.muted.opacity(0.5)))
-            .hover(|s| s.bg(theme.tokens.muted.opacity(0.3)))
+            .when(is_selected, |el| el.bg(chrome.dim.opacity(0.5)))
+            .hover(|s| s.bg(chrome.dim.opacity(0.3)))
             .on_click(move |_, _, cx| {
                 git_state_click.update(cx, |s, cx| s.select_file(idx, cx));
             })
@@ -208,7 +214,7 @@ impl GitView {
                     .justify_center()
                     .rounded(px(3.0))
                     .cursor_pointer()
-                    .hover(|s| s.bg(theme.tokens.muted.opacity(0.5)))
+                    .hover(|s| s.bg(chrome.dim.opacity(0.5)))
                     .on_click(move |_, _, cx| {
                         git_state_icon.update(cx, |s, cx| {
                             s.toggle_stage_file(idx, cx);
@@ -233,11 +239,11 @@ impl GitView {
                             .text_ellipsis()
                             .children(dir_part.map(|d| {
                                 div()
-                                    .text_color(theme.tokens.muted_foreground)
+                                    .text_color(chrome.text_secondary)
                                     .text_size(px(12.0))
                                     .child(d)
                             }))
-                            .child(div().text_color(theme.tokens.foreground).child(filename)),
+                            .child(div().text_color(chrome.bright).child(filename)),
                     )
                     .child(
                         div()
@@ -275,7 +281,7 @@ impl GitView {
         action_icon: &str,
         on_action: impl Fn(&mut Window, &mut App) + 'static,
     ) -> impl IntoElement {
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
         div()
             .w_full()
             .h(px(26.0))
@@ -292,19 +298,19 @@ impl GitView {
                         div()
                             .text_xs()
                             .font_weight(FontWeight::SEMIBOLD)
-                            .text_color(theme.tokens.muted_foreground)
+                            .text_color(chrome.text_secondary)
                             .child(label.to_string()),
                     )
                     .child(
                         div()
                             .text_size(px(10.0))
-                            .text_color(theme.tokens.muted_foreground.opacity(0.6))
+                            .text_color(chrome.text_secondary.opacity(0.6))
                             .px(px(4.0))
                             .h(px(16.0))
                             .flex()
                             .items_center()
                             .rounded(px(8.0))
-                            .bg(theme.tokens.muted.opacity(0.3))
+                            .bg(chrome.dim.opacity(0.3))
                             .child(format!("{}", count)),
                     ),
             )
@@ -318,12 +324,12 @@ impl GitView {
                     .justify_center()
                     .rounded(px(3.0))
                     .cursor_pointer()
-                    .hover(|s| s.bg(theme.tokens.muted.opacity(0.5)))
+                    .hover(|s| s.bg(chrome.dim.opacity(0.5)))
                     .on_click(move |_, window, cx| on_action(window, cx))
                     .child(
                         Icon::new(action_icon)
                             .size(px(14.0))
-                            .color(theme.tokens.muted_foreground),
+                            .color(chrome.text_secondary),
                     ),
             )
     }
@@ -454,7 +460,7 @@ impl GitView {
     }
 
     fn render_commit_area(&self, cx: &mut App) -> impl IntoElement {
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
         let state = self.state.read(cx);
         let branch = state.summary.branch.clone();
         let has_staged = state.file_entries.iter().any(|e| e.staged);
@@ -469,16 +475,17 @@ impl GitView {
             .gap(px(8.0))
             .p(px(8.0))
             .border_t_1()
-            .border_color(theme.tokens.border)
+            .border_color(chrome.header_border)
             .child(
                 div()
                     .w_full()
                     .h(px(80.0))
                     .border_1()
-                    .border_color(theme.tokens.border)
-                    .rounded(px(4.0))
+                    .border_color(chrome.header_border)
+                    .rounded(px(8.0))
                     .overflow_hidden()
                     .cursor_text()
+                    .bg(chrome.editor_bg)
                     .child(
                         Editor::new(&state.commit_editor)
                             .show_line_numbers(false, cx)
@@ -507,12 +514,12 @@ impl GitView {
                             .child(
                                 Icon::new("git-branch")
                                     .size(px(12.0))
-                                    .color(theme.tokens.muted_foreground),
+                                    .color(chrome.text_secondary),
                             )
                             .child(
                                 div()
                                     .text_size(px(12.0))
-                                    .text_color(theme.tokens.muted_foreground)
+                                    .text_color(chrome.text_secondary)
                                     .child(branch),
                             ),
                     ),
@@ -521,7 +528,7 @@ impl GitView {
                 div()
                     .w_full()
                     .text_size(px(11.0))
-                    .text_color(theme.tokens.destructive)
+                    .text_color(chrome.diff_del_text)
                     .child(msg)
             }))
     }
@@ -535,10 +542,10 @@ impl GitView {
             "diff-scroll-newfile",
             item_count,
             move |range, _window, _cx| {
-                let theme = use_theme();
-                let green_bg = gpui::hsla(0.33, 0.7, 0.5, 0.15);
-                let default_color = theme.tokens.foreground;
-                let muted_fg = theme.tokens.muted_foreground.opacity(0.5);
+                let chrome = use_ide_theme().chrome;
+                let green_bg = chrome.diff_add_bg;
+                let default_color = chrome.bright;
+                let muted_fg = chrome.text_secondary.opacity(0.5);
 
                 range
                     .map(|row_idx| {
@@ -623,13 +630,13 @@ impl GitView {
             "diff-scroll-split",
             item_count,
             move |range, _window, _cx| {
-                let theme = use_theme();
-                let green_bg = gpui::hsla(0.33, 0.7, 0.5, 0.15);
-                let red_bg = gpui::hsla(0.0, 0.7, 0.5, 0.15);
-                let filler_bg = theme.tokens.muted.opacity(0.05);
-                let default_color = theme.tokens.foreground;
-                let muted_fg = theme.tokens.muted_foreground.opacity(0.5);
-                let border_color = theme.tokens.border.opacity(0.3);
+                let chrome = use_ide_theme().chrome;
+                let green_bg = chrome.diff_add_bg;
+                let red_bg = chrome.diff_del_bg;
+                let filler_bg = chrome.dim.opacity(0.05);
+                let default_color = chrome.bright;
+                let muted_fg = chrome.text_secondary.opacity(0.5);
+                let border_color = chrome.header_border.opacity(0.3);
 
                 range
                     .map(|row_idx| {
@@ -774,7 +781,7 @@ impl GitView {
         .font_family("JetBrains Mono")
         .text_size(px(13.0));
 
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
         let state_for_drag = git_state.clone();
 
         div()
@@ -797,8 +804,8 @@ impl GitView {
                             .w(px(1.0))
                             .h_full()
                             .mx_auto()
-                            .bg(theme.tokens.border.opacity(0.5))
-                            .hover(|s| s.bg(theme.tokens.accent)),
+                            .bg(chrome.header_border.opacity(0.5))
+                            .hover(|s| s.bg(chrome.accent)),
                     )
                     .on_drag(
                         DiffSplitDrag,
@@ -827,11 +834,11 @@ impl GitView {
             "diff-scroll-unified",
             item_count,
             move |range, _window, _cx| {
-                let theme = use_theme();
-                let green_bg = gpui::hsla(0.33, 0.7, 0.5, 0.15);
-                let red_bg = gpui::hsla(0.0, 0.7, 0.5, 0.15);
-                let default_color = theme.tokens.foreground;
-                let muted_fg = theme.tokens.muted_foreground.opacity(0.5);
+                let chrome = use_ide_theme().chrome;
+                let green_bg = chrome.diff_add_bg;
+                let red_bg = chrome.diff_del_bg;
+                let default_color = chrome.bright;
+                let muted_fg = chrome.text_secondary.opacity(0.5);
 
                 range
                     .map(|row_idx| {
@@ -911,7 +918,7 @@ impl GitView {
                                     .items_center()
                                     .justify_center()
                                     .text_size(px(12.0))
-                                    .text_color(theme.tokens.muted_foreground)
+                                    .text_color(chrome.text_secondary)
                                     .child(prefix),
                             )
                             .child(
@@ -942,10 +949,10 @@ impl GitView {
             "diff-scroll-deleted",
             item_count,
             move |range, _window, _cx| {
-                let theme = use_theme();
-                let red_bg = gpui::hsla(0.0, 0.7, 0.5, 0.15);
-                let default_color = theme.tokens.foreground;
-                let muted_fg = theme.tokens.muted_foreground.opacity(0.5);
+                let chrome = use_ide_theme().chrome;
+                let red_bg = chrome.diff_del_bg;
+                let default_color = chrome.bright;
+                let muted_fg = chrome.text_secondary.opacity(0.5);
 
                 range
                     .map(|row_idx| {
@@ -1017,7 +1024,7 @@ impl GitView {
     }
 
     fn render_diff_panel(&self, cx: &mut App) -> impl IntoElement {
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
         let header_h = px(HEADER_HEIGHT);
 
         let (is_empty, has_diff, is_binary, diff_path, rows, view_mode, file_status, split_pct) = {
@@ -1070,7 +1077,7 @@ impl GitView {
                         .w_full()
                         .h(header_h)
                         .border_b_1()
-                        .border_color(theme.tokens.border),
+                        .border_color(chrome.header_border),
                 )
                 .child(
                     div().flex_1().flex().items_center().justify_center().child(
@@ -1082,12 +1089,12 @@ impl GitView {
                             .child(
                                 Icon::new("circle-check")
                                     .size(px(32.0))
-                                    .color(theme.tokens.muted_foreground.opacity(0.3)),
+                                    .color(chrome.text_secondary.opacity(0.3)),
                             )
                             .child(
                                 div()
                                     .text_size(px(14.0))
-                                    .text_color(theme.tokens.muted_foreground)
+                                    .text_color(chrome.text_secondary)
                                     .child("Working tree clean"),
                             ),
                     ),
@@ -1105,13 +1112,13 @@ impl GitView {
                         .w_full()
                         .h(header_h)
                         .border_b_1()
-                        .border_color(theme.tokens.border),
+                        .border_color(chrome.header_border),
                 )
                 .child(
                     div().flex_1().flex().items_center().justify_center().child(
                         div()
                             .text_size(px(13.0))
-                            .text_color(theme.tokens.muted_foreground)
+                            .text_color(chrome.text_secondary)
                             .child("Select a file to view diff"),
                     ),
                 )
@@ -1128,13 +1135,13 @@ impl GitView {
                         .w_full()
                         .h(header_h)
                         .border_b_1()
-                        .border_color(theme.tokens.border),
+                        .border_color(chrome.header_border),
                 )
                 .child(
                     div().flex_1().flex().items_center().justify_center().child(
                         div()
                             .text_size(px(13.0))
-                            .text_color(theme.tokens.muted_foreground)
+                            .text_color(chrome.text_secondary)
                             .child("Binary file"),
                     ),
                 )
@@ -1157,7 +1164,8 @@ impl GitView {
             None
         };
 
-        let green = gpui::hsla(0.33, 0.7, 0.5, 1.0);
+        let green = chrome.diff_add_text;
+        let del_color = chrome.diff_del_text;
 
         div()
             .size_full()
@@ -1172,8 +1180,8 @@ impl GitView {
                     .justify_between()
                     .px(px(12.0))
                     .border_b_1()
-                    .border_color(theme.tokens.border)
-                    .bg(theme.tokens.muted.opacity(0.2))
+                    .border_color(chrome.header_border)
+                    .bg(chrome.dim.opacity(0.2))
                     .child(
                         div()
                             .flex()
@@ -1182,7 +1190,7 @@ impl GitView {
                             .child(
                                 div()
                                     .text_size(px(12.0))
-                                    .text_color(theme.tokens.foreground)
+                                    .text_color(chrome.bright)
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .child(diff_path),
                             )
@@ -1197,8 +1205,7 @@ impl GitView {
                                         el.bg(green.opacity(0.15)).text_color(green)
                                     })
                                     .when(is_deleted_file, |el| {
-                                        el.bg(theme.tokens.destructive.opacity(0.15))
-                                            .text_color(theme.tokens.destructive)
+                                        el.bg(del_color.opacity(0.15)).text_color(del_color)
                                     })
                                     .child(label)
                             })),
@@ -1220,12 +1227,11 @@ impl GitView {
                                         .cursor_pointer()
                                         .text_size(px(11.0))
                                         .when(split_active, |el| {
-                                            el.bg(theme.tokens.muted.opacity(0.6))
-                                                .text_color(theme.tokens.foreground)
+                                            el.bg(chrome.dim.opacity(0.6)).text_color(chrome.bright)
                                         })
                                         .when(!split_active, |el| {
-                                            el.text_color(theme.tokens.muted_foreground)
-                                                .hover(|s| s.bg(theme.tokens.muted.opacity(0.3)))
+                                            el.text_color(chrome.text_secondary)
+                                                .hover(|s| s.bg(chrome.dim.opacity(0.3)))
                                         })
                                         .on_click(move |_, _, cx| {
                                             git_state_split.update(cx, |s, cx| {
@@ -1234,9 +1240,9 @@ impl GitView {
                                         })
                                         .child(Icon::new("columns-2").size(px(14.0)).color(
                                             if split_active {
-                                                theme.tokens.foreground
+                                                chrome.bright
                                             } else {
-                                                theme.tokens.muted_foreground
+                                                chrome.text_secondary
                                             },
                                         )),
                                 )
@@ -1251,12 +1257,11 @@ impl GitView {
                                         .cursor_pointer()
                                         .text_size(px(11.0))
                                         .when(unified_active, |el| {
-                                            el.bg(theme.tokens.muted.opacity(0.6))
-                                                .text_color(theme.tokens.foreground)
+                                            el.bg(chrome.dim.opacity(0.6)).text_color(chrome.bright)
                                         })
                                         .when(!unified_active, |el| {
-                                            el.text_color(theme.tokens.muted_foreground)
-                                                .hover(|s| s.bg(theme.tokens.muted.opacity(0.3)))
+                                            el.text_color(chrome.text_secondary)
+                                                .hover(|s| s.bg(chrome.dim.opacity(0.3)))
                                         })
                                         .on_click(move |_, _, cx| {
                                             git_state_unified.update(cx, |s, cx| {
@@ -1265,9 +1270,9 @@ impl GitView {
                                         })
                                         .child(Icon::new("rows-2").size(px(14.0)).color(
                                             if unified_active {
-                                                theme.tokens.foreground
+                                                chrome.bright
                                             } else {
-                                                theme.tokens.muted_foreground
+                                                chrome.text_secondary
                                             },
                                         )),
                                 ),
@@ -1293,7 +1298,17 @@ impl GitView {
 
 impl RenderOnce for GitView {
     fn render(self, _window: &mut Window, cx: &mut App) -> impl IntoElement {
-        let theme = use_theme();
+        let chrome = use_ide_theme().chrome;
+
+        if self.diff_only {
+            return div()
+                .size_full()
+                .flex()
+                .flex_col()
+                .child(self.render_diff_panel(cx))
+                .into_any_element();
+        }
+
         let panel_resizable = self.state.read(cx).panel_resizable.clone();
         let header_h = px(HEADER_HEIGHT);
 
@@ -1301,7 +1316,7 @@ impl RenderOnce for GitView {
             .size_full()
             .flex()
             .flex_col()
-            .bg(theme.tokens.background)
+            .bg(chrome.bg)
             .child(
                 div().flex_1().overflow_hidden().child(
                     h_resizable("git-layout", panel_resizable)
@@ -1323,12 +1338,12 @@ impl RenderOnce for GitView {
                                                 .items_center()
                                                 .px(px(12.0))
                                                 .border_b_1()
-                                                .border_color(theme.tokens.border)
+                                                .border_color(chrome.header_border)
                                                 .child(
                                                     div()
                                                         .text_xs()
                                                         .font_weight(FontWeight::SEMIBOLD)
-                                                        .text_color(theme.tokens.muted_foreground)
+                                                        .text_color(chrome.text_secondary)
                                                         .child("SOURCE CONTROL"),
                                                 ),
                                         )
@@ -1339,5 +1354,6 @@ impl RenderOnce for GitView {
                         .child(resizable_panel().child(self.render_diff_panel(cx))),
                 ),
             )
+            .into_any_element()
     }
 }

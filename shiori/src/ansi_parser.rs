@@ -200,6 +200,12 @@ pub enum ParsedSegment {
     CursorPositionReport,
     SetWorkingDirectory(String),
     Reset,
+    SetKeypadMode(bool),
+    SetTabStop,
+    ClearTabStop(u8),
+    InsertMode(bool),
+    RepeatChar(usize),
+    ScreenAlignmentTest,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -489,6 +495,18 @@ impl AnsiParser {
                 segments.push(ParsedSegment::ReverseIndex);
                 self.state = ParserState::Ground;
             }
+            b'H' => {
+                segments.push(ParsedSegment::SetTabStop);
+                self.state = ParserState::Ground;
+            }
+            b'=' => {
+                segments.push(ParsedSegment::SetKeypadMode(true));
+                self.state = ParserState::Ground;
+            }
+            b'>' => {
+                segments.push(ParsedSegment::SetKeypadMode(false));
+                self.state = ParserState::Ground;
+            }
             b'c' => {
                 segments.push(ParsedSegment::Reset);
                 self.reset();
@@ -523,6 +541,11 @@ impl AnsiParser {
                         }
                         b')' => {
                             segments.push(ParsedSegment::SetG1Charset(byte));
+                        }
+                        b'#' => {
+                            if byte == b'8' {
+                                segments.push(ParsedSegment::ScreenAlignmentTest);
+                            }
                         }
                         _ => {}
                     }
@@ -993,10 +1016,29 @@ impl AnsiParser {
                     segments.push(ParsedSegment::CursorPositionReport);
                 }
             }
-            b't' => {}
-            b'q' => {
-                // DECSCUSR - Set Cursor Style (ignore, handled via private modes)
+            b'b' => {
+                segments.push(ParsedSegment::RepeatChar(param_or(&self.params, 0, 1)));
             }
+            b'g' => {
+                let mode = param_or(&self.params, 0, 0) as u8;
+                segments.push(ParsedSegment::ClearTabStop(mode));
+            }
+            b'h' => {
+                for &p in &self.params {
+                    if p == 4 {
+                        segments.push(ParsedSegment::InsertMode(true));
+                    }
+                }
+            }
+            b'l' => {
+                for &p in &self.params {
+                    if p == 4 {
+                        segments.push(ParsedSegment::InsertMode(false));
+                    }
+                }
+            }
+            b't' => {}
+            b'q' => {}
             _ => {}
         }
     }

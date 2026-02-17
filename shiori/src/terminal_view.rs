@@ -47,6 +47,10 @@ pub struct TerminalView {
     content_origin: Point<Pixels>,
     char_width: f32,
     pending_pty_resize: Option<(usize, usize, Instant)>,
+    line_cache_generation: u64,
+    blink_visible: bool,
+    last_text_blink_time: Instant,
+    has_blinking_cells: bool,
 }
 
 impl TerminalView {
@@ -93,6 +97,10 @@ impl TerminalView {
             content_origin: point(px(0.0), px(0.0)),
             char_width: 0.0,
             pending_pty_resize: None,
+            line_cache_generation: 0,
+            blink_visible: true,
+            last_text_blink_time: Instant::now(),
+            has_blinking_cells: false,
         }
     }
 
@@ -276,7 +284,9 @@ impl TerminalView {
             }
             ParsedSegment::ShiftIn => self.state.shift_in(),
             ParsedSegment::ShiftOut => self.state.shift_out(),
-            ParsedSegment::SyncUpdate(_) => {}
+            ParsedSegment::SyncUpdate(enabled) => {
+                self.state.set_sync_update(enabled);
+            }
             ParsedSegment::SetHyperlink(url) => self.state.set_hyperlink(url),
             ParsedSegment::SetClipboard(text) => {
                 self.pending_clipboard = Some(text);
@@ -303,8 +313,35 @@ impl TerminalView {
             ParsedSegment::SetWorkingDirectory(path) => {
                 self.state.set_working_directory(PathBuf::from(path));
             }
-            ParsedSegment::Reset => self.state.reset(),
+            ParsedSegment::Reset => {
+                self.state.reset();
+                self.invalidate_line_cache();
+            }
+            ParsedSegment::SetKeypadMode(enabled) => {
+                self.state.set_application_keypad(enabled);
+            }
+            ParsedSegment::SetTabStop => {
+                self.state.set_tab_stop();
+            }
+            ParsedSegment::ClearTabStop(mode) => match mode {
+                0 => self.state.clear_tab_stop_at_cursor(),
+                3 => self.state.clear_all_tab_stops(),
+                _ => {}
+            },
+            ParsedSegment::InsertMode(enabled) => {
+                self.state.set_insert_mode(enabled);
+            }
+            ParsedSegment::RepeatChar(count) => {
+                self.state.repeat_last_char(count);
+            }
+            ParsedSegment::ScreenAlignmentTest => {
+                self.state.screen_alignment_test();
+            }
         }
+    }
+
+    fn invalidate_line_cache(&mut self) {
+        self.line_cache_generation = self.line_cache_generation.wrapping_add(1);
     }
 
     pub fn send_input(&mut self, data: &[u8]) {
@@ -414,6 +451,7 @@ impl TerminalView {
         let key = event.keystroke.key.as_str();
 
         let app_cursor = self.state.application_cursor_keys();
+        let _app_keypad = self.state.application_keypad();
         let handled = match key {
             "enter" => {
                 self.send_input(key_codes::ENTER);
@@ -997,6 +1035,19 @@ impl TerminalView {
         }
     }
 
+    fn update_text_blink(&mut self) {
+        let now = Instant::now();
+        if now.duration_since(self.last_text_blink_time)
+            >= Duration::from_millis(CURSOR_BLINK_INTERVAL_MS)
+        {
+            self.blink_visible = !self.blink_visible;
+            self.last_text_blink_time = now;
+            if self.has_blinking_cells {
+                self.state.mark_all_dirty();
+            }
+        }
+    }
+
     fn render_line(
         &self,
         idx: usize,
@@ -1106,6 +1157,8 @@ impl TerminalView {
                 current_has_link = has_link;
             } else if let Some(cell) = cell {
                 let cell_has_link = cell.hyperlink.is_some();
+                let cell_blink = cell.style.blink && !self.blink_visible;
+                let display_char = if cell_blink { ' ' } else { cell.char };
                 let needs_flush = current_style.map(|s| s != &cell.style).unwrap_or(true)
                     || is_selected != current_selected
                     || cell_has_link != current_has_link;
@@ -1125,7 +1178,7 @@ impl TerminalView {
                 current_style = Some(&cell.style);
                 current_selected = is_selected;
                 current_has_link = cell_has_link;
-                current_text.push(cell.char);
+                current_text.push(display_char);
             }
         }
 
@@ -1360,6 +1413,23 @@ impl Render for TerminalView {
         self.measure_char_width(window);
         self.process_output();
 
+        let sync_active = self.state.sync_update_active();
+        let sync_timed_out = self
+            .state
+            .sync_update_start()
+            .map(|t| t.elapsed() >= Duration::from_millis(50))
+            .unwrap_or(false);
+        if sync_active && !sync_timed_out {
+            let chrome = use_ide_theme().chrome;
+            return div()
+                .id("terminal-view")
+                .size_full()
+                .bg(chrome.editor_bg);
+        }
+        if sync_timed_out {
+            self.state.set_sync_update(false);
+        }
+
         if let Some(text) = self.pending_clipboard.take() {
             cx.write_to_clipboard(ClipboardItem::new_string(text));
         }
@@ -1425,6 +1495,7 @@ impl Render for TerminalView {
         let empty_above = display_rows.saturating_sub(content_count);
 
         self.update_cursor_blink();
+        self.update_text_blink();
 
         let mut lines_to_render: Vec<(usize, Option<TerminalLine>, bool)> =
             Vec::with_capacity(display_rows);
@@ -1436,6 +1507,14 @@ impl Render for TerminalView {
             let is_cursor_line = idx == cursor_line;
             lines_to_render.push((idx, line, is_cursor_line));
         }
+
+        self.has_blinking_cells = lines_to_render.iter().any(|(_, line, _)| {
+            line.as_ref()
+                .map(|l| l.cells.iter().any(|c| c.style.blink))
+                .unwrap_or(false)
+        });
+
+        self.state.clear_dirty();
 
         let terminal_title = self.title();
         let is_running = self.is_running();

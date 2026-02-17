@@ -1,6 +1,8 @@
 use gpui::Rgba;
+use std::collections::HashSet;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Instant;
 
 pub const DEFAULT_COLS: usize = 80;
 pub const DEFAULT_ROWS: usize = 24;
@@ -385,6 +387,13 @@ pub struct TerminalState {
 
     image_placements: Vec<ImagePlacement>,
     next_image_id: u32,
+
+    sync_update_active: bool,
+    sync_update_start: Option<Instant>,
+    dirty_lines: HashSet<usize>,
+    all_dirty: bool,
+    application_keypad: bool,
+    tab_stops: Vec<bool>,
 }
 
 #[derive(Clone, Debug)]
@@ -410,6 +419,11 @@ impl TerminalState {
         let mut tabs = Vec::new();
         for i in (0..cols).step_by(8) {
             tabs.push(i);
+        }
+
+        let mut tab_stops = vec![false; cols];
+        for i in (0..cols).step_by(8) {
+            tab_stops[i] = true;
         }
 
         Self {
@@ -446,6 +460,12 @@ impl TerminalState {
             current_hyperlink: None,
             image_placements: Vec::new(),
             next_image_id: 0,
+            sync_update_active: false,
+            sync_update_start: None,
+            dirty_lines: HashSet::new(),
+            all_dirty: true,
+            application_keypad: false,
+            tab_stops,
         }
     }
 
@@ -602,6 +622,119 @@ impl TerminalState {
         self.current_hyperlink = url;
     }
 
+    pub fn sync_update_active(&self) -> bool {
+        self.sync_update_active
+    }
+
+    pub fn sync_update_start(&self) -> Option<Instant> {
+        self.sync_update_start
+    }
+
+    pub fn set_sync_update(&mut self, active: bool) {
+        if active {
+            self.sync_update_active = true;
+            self.sync_update_start = Some(Instant::now());
+        } else {
+            self.sync_update_active = false;
+            self.sync_update_start = None;
+            self.mark_all_dirty();
+        }
+    }
+
+    #[allow(dead_code)]
+    pub fn is_line_dirty(&self, viewport_row: usize) -> bool {
+        if self.all_dirty {
+            return true;
+        }
+        let abs = self.viewport_to_absolute(viewport_row);
+        self.dirty_lines.contains(&abs)
+    }
+
+    pub fn mark_line_dirty(&mut self, abs_line: usize) {
+        if !self.all_dirty {
+            self.dirty_lines.insert(abs_line);
+        }
+    }
+
+    pub fn mark_all_dirty(&mut self) {
+        self.all_dirty = true;
+        self.dirty_lines.clear();
+    }
+
+    pub fn clear_dirty(&mut self) {
+        self.all_dirty = false;
+        self.dirty_lines.clear();
+    }
+
+    #[allow(dead_code)]
+    pub fn has_any_dirty(&self) -> bool {
+        self.all_dirty || !self.dirty_lines.is_empty()
+    }
+
+    pub fn application_keypad(&self) -> bool {
+        self.application_keypad
+    }
+
+    pub fn set_application_keypad(&mut self, enabled: bool) {
+        self.application_keypad = enabled;
+    }
+
+    pub fn set_tab_stop(&mut self) {
+        let col = self.cursor.col;
+        if col < self.tab_stops.len() {
+            self.tab_stops[col] = true;
+        }
+    }
+
+    pub fn clear_tab_stop_at_cursor(&mut self) {
+        let col = self.cursor.col;
+        if col < self.tab_stops.len() {
+            self.tab_stops[col] = false;
+        }
+    }
+
+    pub fn clear_all_tab_stops(&mut self) {
+        for stop in &mut self.tab_stops {
+            *stop = false;
+        }
+    }
+
+    pub fn set_insert_mode(&mut self, enabled: bool) {
+        self.insert_mode = enabled;
+    }
+
+    pub fn repeat_last_char(&mut self, count: usize) {
+        let abs = self.viewport_to_absolute(self.cursor.row);
+        let col = self.cursor.col.saturating_sub(1);
+        let ch = self
+            .lines
+            .get(abs)
+            .and_then(|l| l.get(col))
+            .map(|c| c.char)
+            .unwrap_or(' ');
+        if ch == ' ' && self.cursor.col == 0 {
+            return;
+        }
+        for _ in 0..count {
+            self.write_char(ch);
+        }
+    }
+
+    pub fn screen_alignment_test(&mut self) {
+        let start = self.lines.len().saturating_sub(self.rows);
+        for i in start..self.lines.len() {
+            for cell in &mut self.lines[i].cells {
+                cell.char = 'E';
+                cell.style = CellStyle::default();
+                cell.width = 1;
+            }
+        }
+        self.cursor = CursorPosition::origin();
+        self.scroll_region_top = 0;
+        self.scroll_region_bottom = self.rows.saturating_sub(1);
+        self.mark_all_dirty();
+    }
+
     pub fn line(&self, index: usize) -> Option<&TerminalLine> {
         self.lines.get(index)
     }
@@ -641,6 +774,7 @@ impl TerminalState {
             TerminalCell::new(translated, style).with_hyperlink(self.current_hyperlink.clone());
         let width = cell.width as usize;
 
+        let abs_line = self.viewport_to_absolute(self.cursor.row);
         let line = self.current_line_mut();
         line.set(col, cell);
 
@@ -659,6 +793,7 @@ impl TerminalState {
             }
         }
 
+        self.mark_line_dirty(abs_line);
         self.cursor.col += width;
     }
 
@@ -714,11 +849,11 @@ impl TerminalState {
     }
 
     pub fn tab(&mut self) {
-        let next_tab = self
-            .tabs
+        let start = self.cursor.col + 1;
+        let next_tab = self.tab_stops[start..]
             .iter()
-            .find(|&&t| t > self.cursor.col)
-            .copied()
+            .position(|&s| s)
+            .map(|p| start + p)
             .unwrap_or(self.cols - 1);
         self.cursor.col = next_tab.min(self.cols - 1);
     }
@@ -757,6 +892,7 @@ impl TerminalState {
                     .retain(|p| p.anchor_line + p.image.display_rows > 0);
             }
         }
+        self.mark_all_dirty();
     }
 
     fn scroll_down_region(&mut self) {
@@ -776,6 +912,7 @@ impl TerminalState {
                 TerminalLine::new(self.cols),
             );
         }
+        self.mark_all_dirty();
     }
 
     pub fn scroll_up_n(&mut self, n: usize) {
@@ -939,6 +1076,7 @@ impl TerminalState {
         self.cursor = CursorPosition::origin();
         self.image_placements
             .retain(|p| p.anchor_line + p.image.display_rows <= start);
+        self.mark_all_dirty();
     }
 
     pub fn clear_scrollback(&mut self) {
@@ -965,6 +1103,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.clear_to_with_style(self.cursor.col + 1, &self.current_style);
         }
+        self.mark_all_dirty();
     }
 
     pub fn clear_screen_below(&mut self) {
@@ -976,6 +1115,7 @@ impl TerminalState {
         for i in (idx + 1)..self.lines.len() {
             self.lines[i].clear_with_style(&self.current_style);
         }
+        self.mark_all_dirty();
     }
 
     pub fn clear_to_end_of_screen(&mut self) {
@@ -991,6 +1131,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.clear_with_style(&self.current_style);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn clear_to_end_of_line(&mut self) {
@@ -998,6 +1139,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.clear_from_with_style(self.cursor.col, &self.current_style);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn clear_to_start_of_line(&mut self) {
@@ -1005,6 +1147,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.clear_to_with_style(self.cursor.col + 1, &self.current_style);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn erase_chars(&mut self, count: usize) {
@@ -1012,6 +1155,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.erase_chars(self.cursor.col, count, &self.current_style);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn insert_lines(&mut self, count: usize) {
@@ -1031,6 +1175,7 @@ impl TerminalState {
                 TerminalLine::new(self.cols),
             );
         }
+        self.mark_all_dirty();
     }
 
     pub fn delete_lines(&mut self, count: usize) {
@@ -1050,6 +1195,7 @@ impl TerminalState {
                 );
             }
         }
+        self.mark_all_dirty();
     }
 
     pub fn insert_chars(&mut self, count: usize) {
@@ -1057,6 +1203,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.insert_cells(self.cursor.col, count);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn delete_chars(&mut self, count: usize) {
@@ -1064,6 +1211,7 @@ impl TerminalState {
         if let Some(line) = self.lines.get_mut(idx) {
             line.delete_cells(self.cursor.col, count);
         }
+        self.mark_line_dirty(idx);
     }
 
     pub fn scroll_viewport_up(&mut self, lines: usize) {
@@ -1123,6 +1271,13 @@ impl TerminalState {
             self.tabs.push(i);
         }
 
+        self.tab_stops.resize(cols, false);
+        for (i, stop) in self.tab_stops.iter_mut().enumerate() {
+            *stop = i % 8 == 0;
+        }
+
+        self.mark_all_dirty();
+
         for placement in &mut self.image_placements {
             if placement.image.display_cols > cols {
                 let clamped_cols = cols.saturating_sub(placement.anchor_col).max(1);
@@ -1164,6 +1319,14 @@ impl TerminalState {
         self.active_charset = 0;
         self.current_hyperlink = None;
         self.image_placements.clear();
+        self.sync_update_active = false;
+        self.sync_update_start = None;
+        self.application_keypad = false;
+        self.tab_stops = vec![false; self.cols];
+        for i in (0..self.cols).step_by(8) {
+            self.tab_stops[i] = true;
+        }
+        self.mark_all_dirty();
     }
 
     pub fn place_image(

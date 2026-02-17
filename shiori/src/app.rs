@@ -1,13 +1,20 @@
 use crate::autosave::AutosaveManager;
-use crate::completion::{extract_symbols, CompletionItem, CompletionMenu, CompletionState};
+use crate::completion::{
+    extract_symbols, CompletionItem, CompletionMenu, CompletionSource, CompletionState,
+};
+use crate::lsp::client::LspClient;
 use crate::git_service::FileStatusKind;
 use crate::git_state::GitState;
 use crate::git_view::GitView;
 use crate::ide_theme::{all_ide_themes, install_ide_theme, sync_adabraka_theme_from_ide, use_ide_theme, IdeTheme};
+use crate::lsp::registry::LspRegistry;
+use crate::lsp::types::Diagnostic as LspDiagnostic;
 use crate::search_bar::SearchBar;
+use crate::settings::ShioriSettings;
 use crate::terminal_view::TerminalView;
 use adabraka_ui::components::editor::{
-    Editor, EditorState, Enter as EditorEnter, MoveDown, MoveUp, Tab as EditorTab,
+    DiagnosticSeverity as EditorDiagSeverity, Editor, EditorDiagnostic, EditorState, Language,
+    Enter as EditorEnter, MoveDown, MoveUp, Tab as EditorTab,
 };
 use adabraka_ui::components::icon::Icon;
 use adabraka_ui::components::input::{Input, InputState};
@@ -29,6 +36,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 const AUTOSAVE_DELAY: Duration = Duration::from_secs(2);
+
+
 
 actions!(
     shiori,
@@ -59,11 +68,14 @@ actions!(
         GitPrevFile,
         ToggleSymbolOutline,
         ToggleCommandPalette,
+        GotoDefinition,
         FoldToggle,
         FoldAll,
         UnfoldAll,
     ]
 );
+
+
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ViewMode {
@@ -99,6 +111,7 @@ pub fn init(cx: &mut App) {
         KeyBinding::new("cmd-shift-[", FoldToggle, Some("ShioriApp")),
         KeyBinding::new("cmd-k cmd-0", FoldAll, Some("ShioriApp")),
         KeyBinding::new("cmd-k cmd-j", UnfoldAll, Some("ShioriApp")),
+        KeyBinding::new("f12", GotoDefinition, Some("ShioriApp")),
         KeyBinding::new("ctrl-.", TriggerCompletion, Some("ShioriApp")),
         KeyBinding::new("up", CompletionUp, Some("ShioriApp")),
         KeyBinding::new("down", CompletionDown, Some("ShioriApp")),
@@ -153,6 +166,16 @@ pub struct AppState {
     file_search_results: Vec<ContentSearchResult>,
     file_index: Arc<Vec<(PathBuf, String, String)>>,
     search_version: u64,
+    explorer_scroll_handle: ScrollHandle,
+    lsp_registry: LspRegistry,
+    settings: ShioriSettings,
+    buffer_diagnostics: HashMap<PathBuf, Vec<LspDiagnostic>>,
+    lsp_poll_task: Option<Task<()>>,
+    lsp_doc_versions: HashMap<PathBuf, i32>,
+    hover_info: Option<(String, Point<Pixels>)>,
+    hover_task: Option<Task<()>>,
+    lsp_completion_task: Option<Task<()>>,
+    lsp_change_task: Option<Task<()>>,
 }
 
 struct TabMeta {
@@ -161,6 +184,52 @@ struct TabMeta {
     modified: bool,
     title: SharedString,
     is_image: bool,
+}
+
+fn capitalize(s: &str) -> String {
+    let mut chars = s.chars();
+    match chars.next() {
+        None => String::new(),
+        Some(c) => c.to_uppercase().collect::<String>() + chars.as_str(),
+    }
+}
+
+fn language_key_for_display(lang: Language) -> &'static str {
+    match lang {
+        Language::Rust => "rust",
+        Language::JavaScript => "javascript",
+        Language::TypeScript => "typescript",
+        Language::Python => "python",
+        Language::Go => "go",
+        Language::C | Language::Cpp => "c",
+        Language::Java => "java",
+        Language::Ruby => "ruby",
+        Language::Bash => "bash",
+        Language::Css => "css",
+        Language::Html => "html",
+        Language::Lua => "lua",
+        Language::Zig => "zig",
+        _ => "other",
+    }
+}
+
+fn display_key_to_language(key: &str) -> Language {
+    match key {
+        "rust" => Language::Rust,
+        "javascript" => Language::JavaScript,
+        "typescript" => Language::TypeScript,
+        "python" => Language::Python,
+        "go" => Language::Go,
+        "c" => Language::C,
+        "java" => Language::Java,
+        "ruby" => Language::Ruby,
+        "bash" => Language::Bash,
+        "css" => Language::Css,
+        "html" => Language::Html,
+        "lua" => Language::Lua,
+        "zig" => Language::Zig,
+        _ => Language::Plain,
+    }
 }
 
 fn is_image_file(path: &Path) -> bool {
@@ -264,7 +333,11 @@ fn search_content(
                                     continue;
                                 }
                                 let display_line = if trimmed.len() > 120 {
-                                    format!("{}...", &trimmed[..120])
+                                    let mut end = 120;
+                                    while end > 0 && !trimmed.is_char_boundary(end) {
+                                        end -= 1;
+                                    }
+                                    format!("{}...", &trimmed[..end])
                                 } else {
                                     trimmed.to_string()
                                 };
@@ -344,6 +417,17 @@ fn scan_directory(path: &Path, depth: usize) -> Vec<FileNode> {
     nodes
 }
 
+fn count_visible_nodes(nodes: &[FileNode], expanded: &[PathBuf]) -> usize {
+    let mut count = 0;
+    for node in nodes {
+        count += 1;
+        if node.is_directory() && expanded.contains(&node.path) {
+            count += count_visible_nodes(&node.children, expanded);
+        }
+    }
+    count
+}
+
 fn load_children_if_needed(nodes: &mut Vec<FileNode>, target: &Path) {
     for node in nodes.iter_mut() {
         if node.path == target {
@@ -364,6 +448,13 @@ impl AppState {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let focus_handle = cx.focus_handle();
         let completion_state = cx.new(|cx| CompletionState::new(cx));
+
+        let loaded_settings = ShioriSettings::load();
+        let saved_theme_name = loaded_settings.theme.clone();
+        if let Some(theme) = all_ide_themes().iter().find(|t| t.name == saved_theme_name.as_str()) {
+            install_ide_theme(theme.clone());
+            sync_adabraka_theme_from_ide(cx);
+        }
 
         let goto_line_input = cx.new(|cx| InputState::new(cx));
         let file_search_input = cx.new(|cx| InputState::new(cx));
@@ -425,6 +516,16 @@ impl AppState {
             file_search_results: Vec::new(),
             file_index: Arc::new(Vec::new()),
             search_version: 0,
+            explorer_scroll_handle: ScrollHandle::new(),
+            lsp_registry: LspRegistry::new(),
+            settings: loaded_settings,
+            buffer_diagnostics: HashMap::new(),
+            lsp_poll_task: None,
+            lsp_doc_versions: HashMap::new(),
+            hover_info: None,
+            hover_task: None,
+            lsp_completion_task: None,
+            lsp_change_task: None,
         }
     }
 
@@ -518,6 +619,7 @@ impl AppState {
         self.autosave.push();
         self.active_tab = idx;
         self.setup_overlay_check(&buffer, cx);
+        self.lsp_notify_did_open(&buffer, cx);
     }
 
     fn setup_overlay_check(&self, buffer: &Entity<EditorState>, cx: &mut Context<Self>) {
@@ -605,6 +707,9 @@ impl AppState {
 
             if idx == self.active_tab {
                 self.update_completion_for_typing(&buffer, cx);
+                self.lsp_notify_did_change(&buffer, cx);
+                self.dismiss_hover(cx);
+                self.request_hover(cx);
             }
         }
         cx.notify();
@@ -655,28 +760,35 @@ impl AppState {
                 self.completion_state.update(cx, |s, cx| s.dismiss(cx));
             }
         } else if let Some((word, word_start)) = word_info {
-            let state = buffer.read(cx);
-            let tree_exists = state.syntax_tree().is_some();
+            if word.len() >= 2 {
+                let state = buffer.read(cx);
+                let language = state.language();
+                let use_lsp = self.lsp_enabled() && self.lsp_registry.has_client_for(language);
 
-            if word.len() >= 2 && tree_exists {
-                if self.last_symbol_update_line != cursor.line {
-                    if let Some(tree) = state.syntax_tree() {
-                        let content = state.content();
-                        let language = state.language();
-                        let symbols = extract_symbols(tree, &content, language);
-                        self.cached_symbols =
-                            symbols.into_iter().map(CompletionItem::from).collect();
-                        self.last_symbol_update_line = cursor.line;
-                    }
-                }
+                if use_lsp {
+                    self.request_lsp_completion(cx);
+                } else {
+                    let tree_exists = state.syntax_tree().is_some();
+                    if tree_exists {
+                        if self.last_symbol_update_line != cursor.line {
+                            if let Some(tree) = state.syntax_tree() {
+                                let content = state.content();
+                                let symbols = extract_symbols(tree, &content, language);
+                                self.cached_symbols =
+                                    symbols.into_iter().map(CompletionItem::from).collect();
+                                self.last_symbol_update_line = cursor.line;
+                            }
+                        }
 
-                if !self.cached_symbols.is_empty() {
-                    if let Some(anchor) = anchor {
-                        let items = self.cached_symbols.clone();
-                        self.completion_state.update(cx, |s, cx| {
-                            s.show(items, cursor.line, word_start, anchor, cx);
-                            s.set_filter(&word, cx);
-                        });
+                        if !self.cached_symbols.is_empty() {
+                            if let Some(anchor) = anchor {
+                                let items = self.cached_symbols.clone();
+                                self.completion_state.update(cx, |s, cx| {
+                                    s.show(items, cursor.line, word_start, anchor, cx);
+                                    s.set_filter(&word, cx);
+                                });
+                            }
+                        }
                     }
                 }
             }
@@ -690,8 +802,14 @@ impl AppState {
         };
 
         let state = buffer.read(cx);
-        let cursor = state.cursor();
         let language = state.language();
+
+        if self.lsp_enabled() && self.lsp_registry.has_client_for(language) {
+            self.request_lsp_completion(cx);
+            return;
+        }
+
+        let cursor = state.cursor();
         let content = state.content();
 
         if self.last_symbol_update_line != cursor.line {
@@ -759,17 +877,432 @@ impl AppState {
         self.completion_state.update(cx, |s, cx| s.dismiss(cx));
     }
 
+    fn lsp_enabled(&self) -> bool {
+        self.settings.lsp_enabled
+    }
+
+    fn lsp_notify_did_open(&mut self, buffer: &Entity<EditorState>, cx: &App) {
+        if !self.lsp_enabled() {
+            eprintln!("[LSP] did_open skipped - LSP disabled");
+            return;
+        }
+        let state = buffer.read(cx);
+        let path = match state.file_path() {
+            Some(p) => p.clone(),
+            None => {
+                eprintln!("[LSP] did_open skipped - no file path");
+                return;
+            }
+        };
+        let language = state.language();
+        let content = state.content();
+        eprintln!("[LSP] did_open: {:?} lang={:?}", path.file_name(), language);
+        self.lsp_doc_versions.insert(path.clone(), 1);
+        self.lsp_registry
+            .notify_did_open(language, &path, &content, &self.settings);
+    }
+
+    fn lsp_notify_did_change(&mut self, buffer: &Entity<EditorState>, cx: &mut Context<Self>) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let state = buffer.read(cx);
+        let path = match state.file_path() {
+            Some(p) => p.clone(),
+            None => return,
+        };
+        let language = state.language();
+        let version = self
+            .lsp_doc_versions
+            .entry(path.clone())
+            .or_insert(0);
+        *version += 1;
+        let ver = *version;
+
+        let buffer = buffer.clone();
+        let entity = cx.entity().clone();
+        let task = cx.spawn(async move |_, cx| {
+            Timer::after(Duration::from_millis(200)).await;
+            let _ = cx.update(|cx| {
+                let content = buffer.read(cx).content();
+                entity.update(cx, |this, _cx| {
+                    this.lsp_registry
+                        .notify_did_change(language, &path, &content, ver);
+                });
+            });
+        });
+        self.lsp_change_task = Some(task);
+    }
+
+    fn lsp_notify_did_save(&self, buffer: &Entity<EditorState>, cx: &App) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let state = buffer.read(cx);
+        if let Some(path) = state.file_path() {
+            let language = state.language();
+            self.lsp_registry.notify_did_save(language, path);
+        }
+    }
+
+    fn lsp_notify_did_close(&self, buffer: &Entity<EditorState>, cx: &App) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let state = buffer.read(cx);
+        if let Some(path) = state.file_path() {
+            let language = state.language();
+            self.lsp_registry.notify_did_close(language, path);
+        }
+    }
+
+    fn request_lsp_completion(&mut self, cx: &mut Context<Self>) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let buffer = match self.buffers.get(self.active_tab) {
+            Some(b) => b.clone(),
+            None => return,
+        };
+        let state = buffer.read(cx);
+        let path = match state.file_path() {
+            Some(p) => p.clone(),
+            None => return,
+        };
+        let language = state.language();
+        let cursor = state.cursor();
+        let line = cursor.line as u32;
+        let col = cursor.col as u32;
+
+        if !self.lsp_registry.has_client_for(language) {
+            return;
+        }
+
+        let rx = match self.lsp_registry.client_for(language) {
+            Some(client) => match client.completion(&path, line, col) {
+                Ok(rx) => rx,
+                Err(_) => return,
+            },
+            None => return,
+        };
+
+        let entity = cx.entity().clone();
+        let completion_state = self.completion_state.clone();
+        let task = cx.spawn(async move |_, cx| {
+            Timer::after(Duration::from_millis(100)).await;
+            match rx.recv_timeout(std::time::Duration::from_secs(5)) {
+                Ok(response) => {
+                    let items = LspClient::parse_completion_response(&response);
+                    if items.is_empty() {
+                        return;
+                    }
+                    let _ = cx.update(|cx| {
+                        entity.update(cx, |this, cx| {
+                            this.show_lsp_completions(items, cx);
+                        });
+                    });
+                }
+                Err(_) => {}
+            }
+        });
+        self.lsp_completion_task = Some(task);
+    }
+
+    fn show_lsp_completions(
+        &mut self,
+        lsp_items: Vec<crate::lsp::types::LspCompletionItem>,
+        cx: &mut Context<Self>,
+    ) {
+        let buffer = match self.buffers.get(self.active_tab) {
+            Some(b) => b.clone(),
+            None => return,
+        };
+        let state = buffer.read(cx);
+        let cursor = state.cursor();
+        let anchor = match state.cursor_screen_position(px(20.0)) {
+            Some(a) => a,
+            None => return,
+        };
+
+        let (filter_prefix, trigger_col) = if let Some((word, word_start)) = state.word_at_cursor()
+        {
+            (word, word_start)
+        } else {
+            (String::new(), cursor.col)
+        };
+
+        let items: Vec<CompletionItem> = lsp_items
+            .into_iter()
+            .map(|item| {
+                use crate::completion::SymbolKind;
+                let kind = match item.kind {
+                    crate::lsp::types::LspCompletionKind::Function => SymbolKind::Function,
+                    crate::lsp::types::LspCompletionKind::Method => SymbolKind::Method,
+                    crate::lsp::types::LspCompletionKind::Variable => SymbolKind::Variable,
+                    crate::lsp::types::LspCompletionKind::Field => SymbolKind::Field,
+                    crate::lsp::types::LspCompletionKind::Module => SymbolKind::Module,
+                    crate::lsp::types::LspCompletionKind::Struct => SymbolKind::Struct,
+                    crate::lsp::types::LspCompletionKind::Enum => SymbolKind::Enum,
+                    crate::lsp::types::LspCompletionKind::Constant => SymbolKind::Const,
+                    crate::lsp::types::LspCompletionKind::Class => SymbolKind::Class,
+                    crate::lsp::types::LspCompletionKind::Property => SymbolKind::Field,
+                    crate::lsp::types::LspCompletionKind::Interface => SymbolKind::Type,
+                    _ => SymbolKind::Variable,
+                };
+                CompletionItem {
+                    label: item.label,
+                    kind,
+                    insert_text: item.insert_text,
+                    detail: item.detail,
+                    source: CompletionSource::Lsp,
+                    sort_key: item.sort_text,
+                }
+            })
+            .collect();
+
+        self.completion_state.update(cx, |s, cx| {
+            s.show(items, cursor.line, trigger_col, anchor, cx);
+            if !filter_prefix.is_empty() {
+                s.set_filter(&filter_prefix, cx);
+            }
+        });
+    }
+
+    fn goto_definition(&mut self, cx: &mut Context<Self>) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let buffer = match self.buffers.get(self.active_tab) {
+            Some(b) => b.clone(),
+            None => return,
+        };
+        let state = buffer.read(cx);
+        let path = match state.file_path() {
+            Some(p) => p.clone(),
+            None => return,
+        };
+        let language = state.language();
+        let cursor = state.cursor();
+        let line = cursor.line as u32;
+        let col = cursor.col as u32;
+
+        let rx = match self.lsp_registry.client_for(language) {
+            Some(client) => match client.goto_definition(&path, line, col) {
+                Ok(rx) => rx,
+                Err(_) => return,
+            },
+            None => return,
+        };
+
+        let entity = cx.entity().clone();
+        cx.spawn(async move |_, cx| {
+            match rx.recv_timeout(std::time::Duration::from_secs(5)) {
+                Ok(response) => {
+                    let locations = LspClient::parse_definition_response(&response);
+                    if let Some(loc) = locations.first() {
+                        let target_path = loc.path.clone();
+                        let target_line = loc.line as usize;
+                        let target_col = loc.col as usize;
+                        let _ = cx.update(|cx| {
+                            entity.update(cx, |this, cx| {
+                                this.navigate_to_location(target_path, target_line, target_col, cx);
+                            });
+                        });
+                    }
+                }
+                Err(_) => {}
+            }
+        })
+        .detach();
+    }
+
+    fn navigate_to_location(
+        &mut self,
+        path: PathBuf,
+        line: usize,
+        col: usize,
+        cx: &mut Context<Self>,
+    ) {
+        let existing_idx = self.tab_meta.iter().position(|m| {
+            m.file_path.as_ref() == Some(&path)
+        });
+
+        if let Some(idx) = existing_idx {
+            self.active_tab = idx;
+        } else if path.exists() {
+            self.open_paths(vec![path], cx);
+        } else {
+            return;
+        }
+
+        if let Some(buffer) = self.buffers.get(self.active_tab) {
+            buffer.update(cx, |state, cx| {
+                state.set_cursor_position(line, col, cx);
+            });
+        }
+        cx.notify();
+    }
+
+    fn request_hover(&mut self, cx: &mut Context<Self>) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        let buffer = match self.buffers.get(self.active_tab) {
+            Some(b) => b.clone(),
+            None => return,
+        };
+        let state = buffer.read(cx);
+        let path = match state.file_path() {
+            Some(p) => p.clone(),
+            None => return,
+        };
+        let language = state.language();
+        let cursor = state.cursor();
+        let line = cursor.line as u32;
+        let col = cursor.col as u32;
+
+        if !self.lsp_registry.has_client_for(language) {
+            return;
+        }
+
+        let rx = match self.lsp_registry.client_for(language) {
+            Some(client) => match client.hover(&path, line, col) {
+                Ok(rx) => rx,
+                Err(_) => return,
+            },
+            None => return,
+        };
+
+        let anchor = state.cursor_screen_position(px(20.0));
+        let entity = cx.entity().clone();
+        let task = cx.spawn(async move |_, cx| {
+            Timer::after(Duration::from_millis(500)).await;
+            match rx.recv_timeout(std::time::Duration::from_secs(5)) {
+                Ok(response) => {
+                    if let Some(info) = LspClient::parse_hover_response(&response) {
+                        let _ = cx.update(|cx| {
+                            entity.update(cx, |this, cx| {
+                                if let Some(anchor) = anchor {
+                                    this.hover_info = Some((info.contents, anchor));
+                                    cx.notify();
+                                }
+                            });
+                        });
+                    }
+                }
+                Err(_) => {}
+            }
+        });
+        self.hover_task = Some(task);
+    }
+
+    fn dismiss_hover(&mut self, cx: &mut Context<Self>) {
+        if self.hover_info.is_some() {
+            self.hover_info = None;
+            cx.notify();
+        }
+    }
+
+    fn start_lsp_poll(&mut self, cx: &mut Context<Self>) {
+        if self.lsp_poll_task.is_some() {
+            return;
+        }
+        let entity = cx.entity().clone();
+        let task = cx.spawn(async move |_, cx| {
+            loop {
+                Timer::after(Duration::from_millis(200)).await;
+                let ok = cx.update(|cx| {
+                    entity.update(cx, |this, cx| {
+                        this.poll_lsp_diagnostics(cx);
+                    });
+                });
+                if ok.is_err() {
+                    break;
+                }
+            }
+        });
+        self.lsp_poll_task = Some(task);
+    }
+
+    fn poll_lsp_diagnostics(&mut self, cx: &mut Context<Self>) {
+        if !self.lsp_enabled() {
+            return;
+        }
+        self.lsp_registry.poll_ready();
+        let file_diags = self.lsp_registry.drain_diagnostics();
+        if file_diags.is_empty() {
+            return;
+        }
+        for fd in &file_diags {
+            eprintln!(
+                "[LSP] Received {} diagnostics for {}",
+                fd.diagnostics.len(),
+                fd.path.file_name().map(|n| n.to_string_lossy()).unwrap_or_default()
+            );
+        }
+        for fd in file_diags {
+            self.buffer_diagnostics
+                .insert(fd.path.clone(), fd.diagnostics);
+        }
+        self.push_diagnostics_to_buffers(cx);
+        cx.notify();
+    }
+
+    fn push_diagnostics_to_buffers(&self, cx: &mut Context<Self>) {
+        let ide = use_ide_theme();
+        for buffer in &self.buffers {
+            let path = buffer.read(cx).file_path().cloned();
+            if let Some(path) = path {
+                let lsp_diags = self.diagnostics_for_path(&path);
+                let editor_diags: Vec<EditorDiagnostic> = lsp_diags
+                    .iter()
+                    .map(|d| EditorDiagnostic {
+                        start_line: d.range_start_line,
+                        start_col: d.range_start_col,
+                        end_line: d.range_end_line,
+                        end_col: d.range_end_col,
+                        severity: match d.severity {
+                            crate::lsp::types::DiagnosticSeverity::Error => EditorDiagSeverity::Error,
+                            crate::lsp::types::DiagnosticSeverity::Warning => {
+                                EditorDiagSeverity::Warning
+                            }
+                            crate::lsp::types::DiagnosticSeverity::Information => {
+                                EditorDiagSeverity::Information
+                            }
+                            crate::lsp::types::DiagnosticSeverity::Hint => EditorDiagSeverity::Hint,
+                        },
+                        message: d.message.clone(),
+                    })
+                    .collect();
+                buffer.update(cx, |state, ecx| {
+                    state.diagnostic_error_color = Some(ide.editor.diagnostic_error);
+                    state.diagnostic_warning_color = Some(ide.editor.diagnostic_warning);
+                    state.diagnostic_info_color = Some(ide.editor.diagnostic_info);
+                    state.diagnostic_hint_color = Some(ide.editor.diagnostic_hint);
+                    state.set_diagnostics(editor_diags, ecx);
+                });
+            }
+        }
+    }
+
+    fn diagnostics_for_path(&self, path: &Path) -> &[LspDiagnostic] {
+        self.buffer_diagnostics
+            .get(path)
+            .map(|v| v.as_slice())
+            .unwrap_or(&[])
+    }
+
     fn save_active(&mut self, cx: &mut Context<Self>) {
         if let Some(buffer) = self.buffers.get(self.active_tab) {
             let has_path = buffer.read(cx).file_path().is_some();
             if has_path {
                 let buffer = buffer.clone();
-                let saved_path = buffer.read(cx).file_path().cloned();
                 buffer.update(cx, |state, cx| {
                     if let Some(path) = state.file_path().cloned() {
                         state.save_to_file(path, cx);
                     }
                 });
+                self.lsp_notify_did_save(&buffer, cx);
             } else {
                 let buffer = buffer.clone();
                 let rx = cx.prompt_for_new_path(Path::new(""), Some("untitled.txt"));
@@ -884,6 +1417,9 @@ impl AppState {
     fn close_tab_at(&mut self, idx: usize, cx: &mut Context<Self>) {
         if self.buffers.is_empty() {
             return;
+        }
+        if let Some(buffer) = self.buffers.get(idx) {
+            self.lsp_notify_did_close(buffer, cx);
         }
         self.autosave.cancel(idx);
         self.remove_buffer_at(idx);
@@ -1132,6 +1668,8 @@ impl AppState {
         self.rebuild_file_index(&path);
         self.git_state
             .update(cx, |s, cx| s.set_workspace(git_path, cx));
+        self.lsp_registry.set_root(path);
+        self.start_lsp_poll(cx);
         cx.notify();
     }
 
@@ -2058,18 +2596,42 @@ impl AppState {
                             })
                     }),
             )
-            .child(
+            .child({
+                let visible_node_count = count_visible_nodes(
+                    &self.file_tree_nodes,
+                    &self.expanded_paths,
+                );
+                let total_content_h = visible_node_count as f32 * 28.0;
+                let explorer_handle = self.explorer_scroll_handle.clone();
+                let git_state_for_bar = self.git_state.clone();
+
                 div()
-                    .id("sidebar-tree")
                     .flex_1()
-                    .overflow_y_scroll()
-                    .when(self.file_search_query.is_empty(), |el| {
-                        el.child(tree)
-                    })
-                    .when(!self.file_search_query.is_empty(), |el| {
-                        el.child(self.render_file_search_results(cx))
-                    }),
-            )
+                    .min_h_0()
+                    .relative()
+                    .child(
+                        div()
+                            .id("sidebar-tree")
+                            .size_full()
+                            .overflow_y_scroll()
+                            .track_scroll(&explorer_handle)
+                            .on_scroll_wheel(cx.listener(|_, _, _, cx| {
+                                cx.notify();
+                            }))
+                            .when(self.file_search_query.is_empty(), |el| {
+                                el.child(tree)
+                            })
+                            .when(!self.file_search_query.is_empty(), |el| {
+                                el.child(self.render_file_search_results(cx))
+                            }),
+                    )
+                    .child(crate::git_view::render_vertical_scrollbar(
+                        "explorer-vscroll",
+                        explorer_handle,
+                        total_content_h,
+                        git_state_for_bar,
+                    ))
+            })
     }
 
     fn render_file_search_results(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -2421,6 +2983,7 @@ impl AppState {
             .child(
                 div()
                     .w_full()
+                    .flex_shrink_0()
                     .px(px(8.0))
                     .py(px(6.0))
                     .child(
@@ -2467,366 +3030,395 @@ impl AppState {
                             .child("Commit"),
                     ),
             )
-            .child(
-                div()
-                    .id("git-file-list")
-                    .flex_1()
-                    .overflow_y_scroll()
-                    .flex()
-                    .flex_col()
-                    .when(!staged.is_empty(), |el| {
-                        let mut section = div().flex().flex_col().child(
+            .child({
+                let mut file_list_children: Vec<AnyElement> = Vec::new();
+
+                if !staged.is_empty() {
+                    let mut section = div().flex().flex_col().child(
+                        div()
+                            .w_full()
+                            .h(px(32.0))
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .px(px(12.0))
+                            .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap(px(6.0))
+                                    .child(
+                                        Icon::new("chevron-down")
+                                            .size(px(12.0))
+                                            .color(chrome.text_secondary),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .font_weight(FontWeight::SEMIBOLD)
+                                            .text_color(chrome.text_secondary)
+                                            .child("STAGED CHANGES"),
+                                    )
+                                    .child(
+                                        div()
+                                            .px(px(6.0))
+                                            .py(px(1.0))
+                                            .rounded_full()
+                                            .bg(hsla(0.0, 0.0, 1.0, 0.1))
+                                            .text_size(px(10.0))
+                                            .text_color(chrome.text_secondary)
+                                            .child(format!("{}", staged_count)),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .id("unstage-all-btn")
+                                    .w(px(22.0))
+                                    .h(px(22.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(px(4.0))
+                                    .cursor_pointer()
+                                    .opacity(0.5)
+                                    .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0))
+                                    .on_click(cx.listener(|this, _, _, cx| {
+                                        this.git_state.update(cx, |gs, cx| {
+                                            gs.unstage_all(cx);
+                                        });
+                                    }))
+                                    .child(
+                                        Icon::new("minus")
+                                            .size(px(14.0))
+                                            .color(chrome.text_secondary),
+                                    ),
+                            ),
+                    );
+                    for (idx, path, status) in &staged {
+                        let file_idx = *idx;
+                        let letter = status_letter(*status);
+                        let color = status_color(*status);
+                        let icon_name = file_icon_for_path(path);
+                        let icon_color = file_icon_color_for_path(path);
+
+                        let short_name = Path::new(path)
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| path.clone());
+                        let dir_path = Path::new(path)
+                            .parent()
+                            .map(|p| p.to_string_lossy().to_string())
+                            .unwrap_or_default();
+                        let unstage_color = chrome.text_secondary;
+                        section = section.child(
                             div()
+                                .id(ElementId::Name(
+                                    format!("git-staged-{}", file_idx).into(),
+                                ))
                                 .w_full()
-                                .h(px(32.0))
+                                .h(px(30.0))
                                 .flex()
                                 .items_center()
-                                .justify_between()
-                                .px(px(12.0))
+                                .mx(px(8.0))
+                                .px(px(8.0))
+                                .gap(px(8.0))
+                                .rounded(px(8.0))
+                                .cursor_pointer()
+                                .text_size(px(12.0))
+                                .text_color(chrome.text_secondary)
+                                .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.05)))
+                                .on_click(cx.listener(move |this, _, _, cx| {
+                                    this.git_state.update(cx, |gs, cx| {
+                                        gs.select_file(file_idx, cx);
+                                    });
+                                }))
                                 .child(
                                     div()
+                                        .w(px(14.0))
                                         .flex()
                                         .items_center()
-                                        .gap(px(6.0))
-                                        .child(
-                                            Icon::new("chevron-down")
-                                                .size(px(12.0))
-                                                .color(chrome.text_secondary),
-                                        )
-                                        .child(
-                                            div()
-                                                .text_xs()
-                                                .font_weight(FontWeight::SEMIBOLD)
-                                                .text_color(chrome.text_secondary)
-                                                .child("STAGED CHANGES"),
-                                        )
-                                        .child(
-                                            div()
-                                                .px(px(6.0))
-                                                .py(px(1.0))
-                                                .rounded_full()
-                                                .bg(hsla(0.0, 0.0, 1.0, 0.1))
-                                                .text_size(px(10.0))
-                                                .text_color(chrome.text_secondary)
-                                                .child(format!("{}", staged_count)),
-                                        ),
+                                        .justify_center()
+                                        .text_size(px(11.0))
+                                        .font_weight(FontWeight::BOLD)
+                                        .text_color(color)
+                                        .child(letter),
+                                )
+                                .child(
+                                    Icon::new(icon_name)
+                                        .size(px(16.0))
+                                        .color(icon_color),
                                 )
                                 .child(
                                     div()
-                                        .id("unstage-all-btn")
-                                        .w(px(22.0))
-                                        .h(px(22.0))
+                                        .flex_1()
+                                        .flex()
+                                        .items_center()
+                                        .gap(px(6.0))
+                                        .min_w_0()
+                                        .overflow_x_hidden()
+                                        .child(
+                                            div()
+                                                .text_size(px(12.0))
+                                                .text_color(chrome.bright)
+                                                .flex_shrink_0()
+                                                .child(short_name),
+                                        )
+                                        .when(!dir_path.is_empty(), |el| {
+                                            el.child(
+                                                div()
+                                                    .text_size(px(11.0))
+                                                    .text_color(chrome.text_secondary)
+                                                    .font_weight(FontWeight::SEMIBOLD)
+                                                    .text_ellipsis()
+                                                    .child(dir_path),
+                                            )
+                                        }),
+                                )
+                                .child(
+                                    div()
+                                        .id(ElementId::Name(
+                                            format!("git-unstage-btn-{}", file_idx).into(),
+                                        ))
+                                        .flex_shrink_0()
+                                        .w(px(20.0))
+                                        .h(px(20.0))
                                         .flex()
                                         .items_center()
                                         .justify_center()
                                         .rounded(px(4.0))
                                         .cursor_pointer()
                                         .opacity(0.5)
-                                        .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0))
-                                        .on_click(cx.listener(|this, _, _, cx| {
-                                            this.git_state.update(cx, |gs, cx| {
-                                                gs.unstage_all(cx);
-                                            });
-                                        }))
+                                        .hover(|s| {
+                                            s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0)
+                                        })
+                                        .on_mouse_down(
+                                            MouseButton::Left,
+                                            cx.listener(move |this, _, _, cx| {
+                                                this.git_state.update(cx, |gs, cx| {
+                                                    gs.toggle_stage_file(file_idx, cx);
+                                                });
+                                            }),
+                                        )
                                         .child(
                                             Icon::new("minus")
                                                 .size(px(14.0))
-                                                .color(chrome.text_secondary),
+                                                .color(unstage_color),
                                         ),
                                 ),
                         );
-                        for (idx, path, status) in &staged {
-                            let file_idx = *idx;
-                            let letter = status_letter(*status);
-                            let color = status_color(*status);
-                            let icon_name = file_icon_for_path(path);
-                            let icon_color = file_icon_color_for_path(path);
+                    }
+                    file_list_children.push(section.into_any_element());
+                }
 
-                            let short_name = Path::new(path)
-                                .file_name()
-                                .map(|n| n.to_string_lossy().to_string())
-                                .unwrap_or_else(|| path.clone());
-                            let dir_path = Path::new(path)
-                                .parent()
-                                .map(|p| p.to_string_lossy().to_string())
-                                .unwrap_or_default();
-                            let unstage_color = chrome.text_secondary;
-                            section = section.child(
+                if !changes.is_empty() {
+                    let mut section = div().flex().flex_col().child(
+                        div()
+                            .w_full()
+                            .h(px(32.0))
+                            .flex()
+                            .items_center()
+                            .justify_between()
+                            .px(px(12.0))
+                            .child(
                                 div()
-                                    .id(ElementId::Name(
-                                        format!("git-staged-{}", file_idx).into(),
-                                    ))
-                                    .w_full()
-                                    .h(px(30.0))
                                     .flex()
                                     .items_center()
-                                    .mx(px(8.0))
-                                    .px(px(8.0))
-                                    .gap(px(8.0))
-                                    .rounded(px(8.0))
+                                    .gap(px(6.0))
+                                    .child(
+                                        Icon::new("chevron-down")
+                                            .size(px(12.0))
+                                            .color(chrome.text_secondary),
+                                    )
+                                    .child(
+                                        div()
+                                            .text_xs()
+                                            .font_weight(FontWeight::SEMIBOLD)
+                                            .text_color(chrome.text_secondary)
+                                            .child("CHANGES"),
+                                    )
+                                    .child(
+                                        div()
+                                            .px(px(6.0))
+                                            .py(px(1.0))
+                                            .rounded_full()
+                                            .bg(hsla(0.0, 0.0, 1.0, 0.1))
+                                            .text_size(px(10.0))
+                                            .text_color(chrome.text_secondary)
+                                            .child(format!("{}", changes_count)),
+                                    ),
+                            )
+                            .child(
+                                div()
+                                    .id("stage-all-btn")
+                                    .w(px(22.0))
+                                    .h(px(22.0))
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .rounded(px(4.0))
                                     .cursor_pointer()
-                                    .text_size(px(12.0))
-                                    .text_color(chrome.text_secondary)
-                                    .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.05)))
-                                    .on_click(cx.listener(move |this, _, _, cx| {
+                                    .opacity(0.5)
+                                    .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0))
+                                    .on_click(cx.listener(|this, _, _, cx| {
                                         this.git_state.update(cx, |gs, cx| {
-                                            gs.select_file(file_idx, cx);
+                                            gs.stage_all(cx);
                                         });
                                     }))
                                     .child(
-                                        div()
-                                            .w(px(14.0))
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .text_size(px(11.0))
-                                            .font_weight(FontWeight::BOLD)
-                                            .text_color(color)
-                                            .child(letter),
-                                    )
-                                    .child(
-                                        Icon::new(icon_name)
-                                            .size(px(16.0))
-                                            .color(icon_color),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex_1()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(6.0))
-                                            .min_w_0()
-                                            .overflow_x_hidden()
-                                            .child(
-                                                div()
-                                                    .text_size(px(12.0))
-                                                    .text_color(chrome.bright)
-                                                    .flex_shrink_0()
-                                                    .child(short_name),
-                                            )
-                                            .when(!dir_path.is_empty(), |el| {
-                                                el.child(
-                                                    div()
-                                                        .text_size(px(11.0))
-                                                        .text_color(chrome.text_secondary)
-                                                        .font_weight(FontWeight::SEMIBOLD)
-                                                        .text_ellipsis()
-                                                        .child(dir_path),
-                                                )
-                                            }),
-                                    )
-                                    .child(
-                                        div()
-                                            .id(ElementId::Name(
-                                                format!("git-unstage-btn-{}", file_idx).into(),
-                                            ))
-                                            .flex_shrink_0()
-                                            .w(px(20.0))
-                                            .h(px(20.0))
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .rounded(px(4.0))
-                                            .cursor_pointer()
-                                            .opacity(0.5)
-                                            .hover(|s| {
-                                                s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0)
-                                            })
-                                            .on_mouse_down(
-                                                MouseButton::Left,
-                                                cx.listener(move |this, _, _, cx| {
-                                                    this.git_state.update(cx, |gs, cx| {
-                                                        gs.toggle_stage_file(file_idx, cx);
-                                                    });
-                                                }),
-                                            )
-                                            .child(
-                                                Icon::new("minus")
-                                                    .size(px(14.0))
-                                                    .color(unstage_color),
-                                            ),
+                                        Icon::new("plus")
+                                            .size(px(14.0))
+                                            .color(chrome.text_secondary),
                                     ),
-                            );
-                        }
-                        el.child(section)
-                    })
-                    .when(!changes.is_empty(), |el| {
-                        let mut section = div().flex().flex_col().child(
+                            ),
+                    );
+                    for (idx, path, status) in &changes {
+                        let file_idx = *idx;
+                        let letter = status_letter(*status);
+                        let color = status_color(*status);
+                        let icon_name = file_icon_for_path(path);
+                        let icon_color = file_icon_color_for_path(path);
+
+                        let short_name = Path::new(path)
+                            .file_name()
+                            .map(|n| n.to_string_lossy().to_string())
+                            .unwrap_or_else(|| path.clone());
+                        let dir_path = Path::new(path)
+                            .parent()
+                            .map(|p| p.to_string_lossy().to_string())
+                            .unwrap_or_default();
+                        let stage_color = chrome.text_secondary;
+                        section = section.child(
                             div()
+                                .id(ElementId::Name(
+                                    format!("git-change-{}", file_idx).into(),
+                                ))
                                 .w_full()
-                                .h(px(32.0))
+                                .h(px(30.0))
                                 .flex()
                                 .items_center()
-                                .justify_between()
-                                .px(px(12.0))
+                                .mx(px(8.0))
+                                .px(px(8.0))
+                                .gap(px(8.0))
+                                .rounded(px(8.0))
+                                .cursor_pointer()
+                                .text_size(px(12.0))
+                                .text_color(chrome.text_secondary)
+                                .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.05)))
+                                .on_click(cx.listener(move |this, _, _, cx| {
+                                    this.git_state.update(cx, |gs, cx| {
+                                        gs.select_file(file_idx, cx);
+                                    });
+                                }))
                                 .child(
                                     div()
+                                        .w(px(14.0))
                                         .flex()
                                         .items_center()
-                                        .gap(px(6.0))
-                                        .child(
-                                            Icon::new("chevron-down")
-                                                .size(px(12.0))
-                                                .color(chrome.text_secondary),
-                                        )
-                                        .child(
-                                            div()
-                                                .text_xs()
-                                                .font_weight(FontWeight::SEMIBOLD)
-                                                .text_color(chrome.text_secondary)
-                                                .child("CHANGES"),
-                                        )
-                                        .child(
-                                            div()
-                                                .px(px(6.0))
-                                                .py(px(1.0))
-                                                .rounded_full()
-                                                .bg(hsla(0.0, 0.0, 1.0, 0.1))
-                                                .text_size(px(10.0))
-                                                .text_color(chrome.text_secondary)
-                                                .child(format!("{}", changes_count)),
-                                        ),
+                                        .justify_center()
+                                        .text_size(px(11.0))
+                                        .font_weight(FontWeight::BOLD)
+                                        .text_color(color)
+                                        .child(letter),
+                                )
+                                .child(
+                                    Icon::new(icon_name)
+                                        .size(px(16.0))
+                                        .color(icon_color),
                                 )
                                 .child(
                                     div()
-                                        .id("stage-all-btn")
-                                        .w(px(22.0))
-                                        .h(px(22.0))
+                                        .flex_1()
+                                        .flex()
+                                        .items_center()
+                                        .gap(px(6.0))
+                                        .min_w_0()
+                                        .overflow_x_hidden()
+                                        .child(
+                                            div()
+                                                .text_size(px(12.0))
+                                                .text_color(chrome.bright)
+                                                .flex_shrink_0()
+                                                .child(short_name),
+                                        )
+                                        .when(!dir_path.is_empty(), |el| {
+                                            el.child(
+                                                div()
+                                                    .text_size(px(11.0))
+                                                    .text_color(chrome.text_secondary)
+                                                    .font_weight(FontWeight::SEMIBOLD)
+                                                    .text_ellipsis()
+                                                    .child(dir_path),
+                                            )
+                                        }),
+                                )
+                                .child(
+                                    div()
+                                        .id(ElementId::Name(
+                                            format!("git-stage-btn-{}", file_idx).into(),
+                                        ))
+                                        .flex_shrink_0()
+                                        .w(px(20.0))
+                                        .h(px(20.0))
                                         .flex()
                                         .items_center()
                                         .justify_center()
                                         .rounded(px(4.0))
                                         .cursor_pointer()
                                         .opacity(0.5)
-                                        .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0))
-                                        .on_click(cx.listener(|this, _, _, cx| {
-                                            this.git_state.update(cx, |gs, cx| {
-                                                gs.stage_all(cx);
-                                            });
-                                        }))
+                                        .hover(|s| {
+                                            s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0)
+                                        })
+                                        .on_mouse_down(
+                                            MouseButton::Left,
+                                            cx.listener(move |this, _, _, cx| {
+                                                this.git_state.update(cx, |gs, cx| {
+                                                    gs.toggle_stage_file(file_idx, cx);
+                                                });
+                                            }),
+                                        )
                                         .child(
                                             Icon::new("plus")
                                                 .size(px(14.0))
-                                                .color(chrome.text_secondary),
+                                                .color(stage_color),
                                         ),
                                 ),
                         );
-                        for (idx, path, status) in &changes {
-                            let file_idx = *idx;
-                            let letter = status_letter(*status);
-                            let color = status_color(*status);
-                            let icon_name = file_icon_for_path(path);
-                            let icon_color = file_icon_color_for_path(path);
+                    }
+                    file_list_children.push(section.into_any_element());
+                }
 
-                            let short_name = Path::new(path)
-                                .file_name()
-                                .map(|n| n.to_string_lossy().to_string())
-                                .unwrap_or_else(|| path.clone());
-                            let dir_path = Path::new(path)
-                                .parent()
-                                .map(|p| p.to_string_lossy().to_string())
-                                .unwrap_or_default();
-                            let stage_color = chrome.text_secondary;
-                            section = section.child(
-                                div()
-                                    .id(ElementId::Name(
-                                        format!("git-change-{}", file_idx).into(),
-                                    ))
-                                    .w_full()
-                                    .h(px(30.0))
-                                    .flex()
-                                    .items_center()
-                                    .mx(px(8.0))
-                                    .px(px(8.0))
-                                    .gap(px(8.0))
-                                    .rounded(px(8.0))
-                                    .cursor_pointer()
-                                    .text_size(px(12.0))
-                                    .text_color(chrome.text_secondary)
-                                    .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.05)))
-                                    .on_click(cx.listener(move |this, _, _, cx| {
-                                        this.git_state.update(cx, |gs, cx| {
-                                            gs.select_file(file_idx, cx);
-                                        });
-                                    }))
-                                    .child(
-                                        div()
-                                            .w(px(14.0))
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .text_size(px(11.0))
-                                            .font_weight(FontWeight::BOLD)
-                                            .text_color(color)
-                                            .child(letter),
-                                    )
-                                    .child(
-                                        Icon::new(icon_name)
-                                            .size(px(16.0))
-                                            .color(icon_color),
-                                    )
-                                    .child(
-                                        div()
-                                            .flex_1()
-                                            .flex()
-                                            .items_center()
-                                            .gap(px(6.0))
-                                            .min_w_0()
-                                            .overflow_x_hidden()
-                                            .child(
-                                                div()
-                                                    .text_size(px(12.0))
-                                                    .text_color(chrome.bright)
-                                                    .flex_shrink_0()
-                                                    .child(short_name),
-                                            )
-                                            .when(!dir_path.is_empty(), |el| {
-                                                el.child(
-                                                    div()
-                                                        .text_size(px(11.0))
-                                                        .text_color(chrome.text_secondary)
-                                                        .font_weight(FontWeight::SEMIBOLD)
-                                                        .text_ellipsis()
-                                                        .child(dir_path),
-                                                )
-                                            }),
-                                    )
-                                    .child(
-                                        div()
-                                            .id(ElementId::Name(
-                                                format!("git-stage-btn-{}", file_idx).into(),
-                                            ))
-                                            .flex_shrink_0()
-                                            .w(px(20.0))
-                                            .h(px(20.0))
-                                            .flex()
-                                            .items_center()
-                                            .justify_center()
-                                            .rounded(px(4.0))
-                                            .cursor_pointer()
-                                            .opacity(0.5)
-                                            .hover(|s| {
-                                                s.bg(hsla(0.0, 0.0, 1.0, 0.1)).opacity(1.0)
-                                            })
-                                            .on_mouse_down(
-                                                MouseButton::Left,
-                                                cx.listener(move |this, _, _, cx| {
-                                                    this.git_state.update(cx, |gs, cx| {
-                                                        gs.toggle_stage_file(file_idx, cx);
-                                                    });
-                                                }),
-                                            )
-                                            .child(
-                                                Icon::new("plus")
-                                                    .size(px(14.0))
-                                                    .color(stage_color),
-                                            ),
-                                    ),
-                            );
-                        }
-                        el.child(section)
-                    }),
-            )
+                let num_sections = if staged.is_empty() { 0 } else { 1 }
+                    + if changes.is_empty() { 0 } else { 1 };
+                let num_files = staged_count + changes_count;
+                let total_content_h = (num_sections as f32 * 32.0) + (num_files as f32 * 30.0);
+
+                let fl_handle = self.git_state.read(cx).file_list_scroll_handle.clone();
+                let git_state_bar = self.git_state.clone();
+
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .relative()
+                    .child(
+                        div()
+                            .id("git-file-list")
+                            .size_full()
+                            .overflow_y_scroll()
+                            .flex()
+                            .flex_col()
+                            .track_scroll(&fl_handle)
+                            .on_scroll_wheel(cx.listener(move |_this, _, _, cx| {
+                                cx.notify();
+                            }))
+                            .children(file_list_children),
+                    )
+                    .child(crate::git_view::render_vertical_scrollbar(
+                        "git-panel-file-list-vscroll",
+                        fl_handle,
+                        total_content_h,
+                        git_state_bar,
+                    ))
+            })
     }
 
     fn render_terminal_panel(&self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -3041,6 +3633,8 @@ impl AppState {
                 .on_click(cx.listener(move |this, _, _, cx| {
                     install_ide_theme(theme_clone.clone());
                     sync_adabraka_theme_from_ide(cx);
+                    this.settings.theme = theme_clone.name.to_string();
+                    this.settings.save();
                     for buffer in &this.buffers {
                         buffer.update(cx, |state, cx| {
                             state.invalidate_line_layouts(cx);
@@ -3135,6 +3729,257 @@ impl AppState {
                     )
                     .child(grid),
             )
+            .child(self.render_lsp_settings(cx))
+    }
+
+    fn render_lsp_settings(&self, cx: &mut Context<Self>) -> impl IntoElement {
+        let ide = use_ide_theme();
+        let chrome = &ide.chrome;
+        let lsp_enabled = self.settings.lsp_enabled;
+        let active_langs = self.lsp_registry.active_languages();
+        let pending_langs = self.lsp_registry.pending_languages();
+
+        let toggle_row = div()
+            .w_full()
+            .flex()
+            .items_center()
+            .justify_between()
+            .p(px(12.0))
+            .rounded(px(8.0))
+            .bg(chrome.panel_bg)
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(2.0))
+                    .child(
+                        div()
+                            .text_size(px(14.0))
+                            .font_weight(FontWeight::MEDIUM)
+                            .text_color(chrome.bright)
+                            .child("Language Server Protocol"),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(12.0))
+                            .text_color(chrome.text_secondary)
+                            .child("Enable LSP for completions, diagnostics, hover, and go-to-definition"),
+                    ),
+            )
+            .child(
+                div()
+                    .id("lsp-toggle")
+                    .w(px(40.0))
+                    .h(px(22.0))
+                    .rounded(px(11.0))
+                    .cursor_pointer()
+                    .flex()
+                    .items_center()
+                    .when(lsp_enabled, |el| {
+                        el.bg(chrome.accent)
+                            .child(
+                                div().ml(px(20.0)).w(px(18.0)).h(px(18.0)).rounded_full().bg(gpui::white()),
+                            )
+                    })
+                    .when(!lsp_enabled, |el| {
+                        el.bg(hsla(0.0, 0.0, 1.0, 0.15))
+                            .child(
+                                div().ml(px(2.0)).w(px(18.0)).h(px(18.0)).rounded_full().bg(chrome.text_secondary),
+                            )
+                    })
+                    .on_click(cx.listener(move |this, _, _, cx| {
+                        this.settings.lsp_enabled = !this.settings.lsp_enabled;
+                        this.settings.save();
+                        if this.settings.lsp_enabled {
+                            if let Some(root) = this.workspace_root.clone() {
+                                this.lsp_registry.set_root(root);
+                            }
+                            for buffer in this.buffers.clone() {
+                                this.lsp_notify_did_open(&buffer, cx);
+                            }
+                            this.start_lsp_poll(cx);
+                        } else {
+                            this.lsp_registry.stop_all();
+                            this.lsp_poll_task = None;
+                        }
+                        cx.notify();
+                    })),
+            );
+
+        let mut lang_rows = div().flex().flex_col().gap(px(4.0));
+
+        let mut sorted_keys: Vec<_> = self.settings.language_servers.keys().cloned().collect();
+        sorted_keys.sort();
+
+        for lang_key in &sorted_keys {
+            let config = match self.settings.language_servers.get(lang_key) {
+                Some(c) => c,
+                None => continue,
+            };
+
+            let is_active = active_langs.iter().any(|l| {
+                language_key_for_display(*l) == lang_key.as_str()
+            });
+            let is_pending = pending_langs.iter().any(|l| {
+                language_key_for_display(*l) == lang_key.as_str()
+            });
+
+            let installed = which::which(&config.command).is_ok();
+
+            let status_color = if !lsp_enabled || !config.enabled {
+                chrome.text_secondary.opacity(0.3)
+            } else if is_active {
+                hsla(0.38, 0.8, 0.5, 1.0)
+            } else if is_pending {
+                hsla(0.15, 0.8, 0.6, 1.0)
+            } else if installed {
+                hsla(0.12, 0.8, 0.5, 1.0)
+            } else {
+                hsla(0.0, 0.8, 0.5, 1.0)
+            };
+
+            let status_text = if !lsp_enabled || !config.enabled {
+                "Disabled"
+            } else if is_active {
+                "Running"
+            } else if is_pending {
+                "Starting..."
+            } else if installed {
+                "Ready"
+            } else {
+                "Not found"
+            };
+
+            let lang_key_toggle = lang_key.clone();
+            let lang_key_restart = lang_key.clone();
+
+            let row = div()
+                .w_full()
+                .flex()
+                .items_center()
+                .gap(px(8.0))
+                .px(px(12.0))
+                .py(px(6.0))
+                .rounded(px(6.0))
+                .hover(|s| s.bg(chrome.panel_bg))
+                .child(
+                    div()
+                        .w(px(8.0))
+                        .h(px(8.0))
+                        .rounded_full()
+                        .bg(status_color),
+                )
+                .child(
+                    div()
+                        .w(px(90.0))
+                        .text_size(px(13.0))
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(chrome.bright)
+                        .child(capitalize(lang_key)),
+                )
+                .child(
+                    div()
+                        .flex_1()
+                        .text_size(px(12.0))
+                        .text_color(chrome.text_secondary)
+                        .child(config.command.clone()),
+                )
+                .child(
+                    div()
+                        .w(px(70.0))
+                        .text_size(px(11.0))
+                        .text_color(status_color)
+                        .child(status_text),
+                )
+                .when(lsp_enabled && is_active, |el| {
+                    el.child(
+                        div()
+                            .id(SharedString::from(format!("restart-{}", lang_key_restart)))
+                            .text_size(px(11.0))
+                            .text_color(chrome.text_secondary)
+                            .cursor_pointer()
+                            .hover(|s| s.text_color(chrome.bright))
+                            .child("Restart")
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                let settings = this.settings.clone();
+                                this.lsp_registry.restart_language(
+                                    display_key_to_language(&lang_key_restart),
+                                    &settings,
+                                );
+                                cx.notify();
+                            })),
+                    )
+                })
+                .when(lsp_enabled, |el| {
+                    let enabled = config.enabled;
+                    el.child(
+                        div()
+                            .id(SharedString::from(format!("toggle-{}", lang_key_toggle)))
+                            .text_size(px(11.0))
+                            .cursor_pointer()
+                            .when(enabled, |e| {
+                                e.text_color(chrome.accent)
+                                    .hover(|s| s.text_color(chrome.bright))
+                                    .child("On")
+                            })
+                            .when(!enabled, |e| {
+                                e.text_color(chrome.text_secondary.opacity(0.5))
+                                    .hover(|s| s.text_color(chrome.bright))
+                                    .child("Off")
+                            })
+                            .on_click(cx.listener(move |this, _, _, cx| {
+                                if let Some(cfg) = this.settings.language_servers.get_mut(&lang_key_toggle) {
+                                    cfg.enabled = !cfg.enabled;
+                                }
+                                this.settings.save();
+                                cx.notify();
+                            })),
+                    )
+                });
+
+            lang_rows = lang_rows.child(row);
+        }
+
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(12.0))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(4.0))
+                    .child(
+                        div()
+                            .text_size(px(20.0))
+                            .font_weight(FontWeight::BOLD)
+                            .text_color(chrome.bright)
+                            .child("Language Servers"),
+                    )
+                    .child(
+                        div()
+                            .text_size(px(13.0))
+                            .text_color(chrome.text_secondary)
+                            .child("Configure LSP integration for IDE features"),
+                    ),
+            )
+            .child(toggle_row)
+            .when(lsp_enabled, |el| {
+                el.child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(px(4.0))
+                        .child(
+                            div()
+                                .text_xs()
+                                .font_weight(FontWeight::SEMIBOLD)
+                                .text_color(chrome.text_secondary)
+                                .child("LANGUAGE SERVERS"),
+                        )
+                        .child(lang_rows),
+                )
+            })
     }
 
     fn toggle_command_palette(&mut self, window: &mut Window, cx: &mut Context<Self>) {
@@ -3512,7 +4357,7 @@ impl Render for AppState {
         } else if is_git_mode {
             div()
                 .size_full()
-                .child(GitView::new(self.git_state.clone()).diff_only(true))
+                .child(GitView::new(self.git_state.clone()))
                 .into_any_element()
         } else if is_terminal_mode {
             let active_terminal = self.terminals.get(self.active_terminal).cloned();
@@ -3632,7 +4477,7 @@ impl Render for AppState {
                     .child(terminal_tab_bar)
                     .child(div().flex_1().overflow_hidden().children(active_terminal))
                     .into_any_element()
-            } else if self.terminal_visible && !is_git_mode && !is_settings {
+            } else if self.terminal_visible && !is_git_mode && !is_settings && !show_left_panel {
                 let terminal_tab_bar = self.render_terminal_tab_bar(cx);
                 let active_terminal = self.terminals.get(self.active_terminal).cloned();
                 div()
@@ -3848,6 +4693,9 @@ impl Render for AppState {
             .on_action(cx.listener(|this, _: &TriggerCompletion, _, cx| {
                 this.trigger_completion(cx);
             }))
+            .on_action(cx.listener(|this, _: &GotoDefinition, _, cx| {
+                this.goto_definition(cx);
+            }))
             .on_action(cx.listener(|this, _: &CompletionUp, _, cx| {
                 if this.completion_state.read(cx).is_visible() {
                     this.completion_move_up(cx);
@@ -3997,6 +4845,34 @@ impl Render for AppState {
                         this.apply_completion(cx);
                     });
                 })
+            })
+            .when_some(self.hover_info.clone(), |el, (contents, anchor)| {
+                let chrome = use_ide_theme().chrome;
+                el.child(
+                    deferred(
+                        anchored()
+                            .position(anchor)
+                            .snap_to_window_with_margin(px(8.0))
+                            .child(
+                                div()
+                                    .mt(px(4.0))
+                                    .max_w(px(500.0))
+                                    .max_h(px(300.0))
+                                    .bg(chrome.panel_bg)
+                                    .border_1()
+                                    .border_color(chrome.header_border)
+                                    .rounded(px(8.0))
+                                    .shadow_lg()
+                                    .overflow_hidden()
+                                    .p(px(10.0))
+                                    .text_size(px(13.0))
+                                    .text_color(chrome.bright)
+                                    .overflow_hidden()
+                                    .child(contents),
+                            ),
+                    )
+                    .with_priority(1),
+                )
             })
     }
 }

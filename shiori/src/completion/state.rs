@@ -1,11 +1,20 @@
 use super::{Symbol, SymbolKind};
 use gpui::*;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompletionSource {
+    TreeSitter,
+    Lsp,
+}
+
 #[derive(Debug, Clone)]
 pub struct CompletionItem {
     pub label: String,
     pub kind: SymbolKind,
     pub insert_text: String,
+    pub detail: Option<String>,
+    pub source: CompletionSource,
+    pub sort_key: Option<String>,
 }
 
 impl From<Symbol> for CompletionItem {
@@ -14,6 +23,9 @@ impl From<Symbol> for CompletionItem {
             label: sym.name.clone(),
             kind: sym.kind,
             insert_text: sym.name,
+            detail: None,
+            source: CompletionSource::TreeSitter,
+            sort_key: None,
         }
     }
 }

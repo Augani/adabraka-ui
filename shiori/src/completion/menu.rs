@@ -112,8 +112,13 @@ impl Element for CompletionMenuElement {
                 let is_selected = display_idx == selected_idx;
                 let label = item.label.clone();
                 let kind = item.kind;
+                let detail = item.detail.clone();
                 let state_for_click = state_entity.clone();
                 let on_accept_click = on_accept.clone();
+
+                let right_label = detail
+                    .filter(|d| !d.is_empty())
+                    .unwrap_or_else(|| kind.label().to_string());
 
                 div()
                     .id(SharedString::from(format!("completion-{}", display_idx)))
@@ -143,11 +148,7 @@ impl Element for CompletionMenuElement {
                         div()
                             .flex_1()
                             .text_size(px(13.0))
-                            .text_color(if is_selected {
-                                chrome.bright
-                            } else {
-                                chrome.bright
-                            })
+                            .text_color(chrome.bright)
                             .overflow_x_hidden()
                             .text_ellipsis()
                             .child(label),
@@ -156,7 +157,10 @@ impl Element for CompletionMenuElement {
                         div()
                             .text_size(px(10.0))
                             .text_color(chrome.text_secondary.opacity(0.7))
-                            .child(kind.label()),
+                            .max_w(px(100.0))
+                            .overflow_x_hidden()
+                            .text_ellipsis()
+                            .child(right_label),
                     )
             })
             .collect();

@@ -178,7 +178,7 @@ const AUTO_CLOSE_PAIRS: &[(char, char)] = &[
     ('`', '`'),
 ];
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Language {
     Rust,
     JavaScript,
@@ -524,11 +524,35 @@ pub struct EditorState {
     pub indent_guide_color_override: Option<Hsla>,
     pub indent_guide_active_color_override: Option<Hsla>,
     pub fold_marker_color_override: Option<Hsla>,
+    pub diagnostic_error_color: Option<Hsla>,
+    pub diagnostic_warning_color: Option<Hsla>,
+    pub diagnostic_info_color: Option<Hsla>,
+    pub diagnostic_hint_color: Option<Hsla>,
     pub syntax_color_fn: Option<Box<dyn Fn(&str) -> Hsla>>,
 
     fold_ranges: Vec<FoldRange>,
     folded: Vec<FoldRange>,
     cached_display_lines: Option<Rc<Vec<usize>>>,
+
+    diagnostics: Vec<EditorDiagnostic>,
+}
+
+#[derive(Debug, Clone)]
+pub struct EditorDiagnostic {
+    pub start_line: u32,
+    pub start_col: u32,
+    pub end_line: u32,
+    pub end_col: u32,
+    pub severity: DiagnosticSeverity,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DiagnosticSeverity {
+    Error,
+    Warning,
+    Information,
+    Hint,
 }
 
 impl EditorState {
@@ -589,11 +613,41 @@ impl EditorState {
             indent_guide_color_override: None,
             indent_guide_active_color_override: None,
             fold_marker_color_override: None,
+            diagnostic_error_color: None,
+            diagnostic_warning_color: None,
+            diagnostic_info_color: None,
+            diagnostic_hint_color: None,
             syntax_color_fn: None,
             fold_ranges: Vec::new(),
             folded: Vec::new(),
             cached_display_lines: None,
+            diagnostics: Vec::new(),
         }
+    }
+
+    pub fn set_cursor_position(&mut self, line: usize, col: usize, cx: &mut Context<Self>) {
+        let max_line = self.total_lines().saturating_sub(1);
+        self.cursor.line = line.min(max_line);
+        let line_len = self.line_len(self.cursor.line);
+        self.cursor.col = col.min(line_len);
+        self.selection = None;
+        self.ensure_cursor_visible(cx);
+    }
+
+    pub fn set_diagnostics(&mut self, diagnostics: Vec<EditorDiagnostic>, cx: &mut Context<Self>) {
+        self.diagnostics = diagnostics;
+        cx.notify();
+    }
+
+    pub fn diagnostics(&self) -> &[EditorDiagnostic] {
+        &self.diagnostics
+    }
+
+    pub fn diagnostics_at_line(&self, line: usize) -> Vec<&EditorDiagnostic> {
+        self.diagnostics
+            .iter()
+            .filter(|d| d.start_line as usize <= line && line <= d.end_line as usize)
+            .collect()
     }
 
     pub fn content(&self) -> String {
@@ -3411,6 +3465,90 @@ impl Element for EditorElement {
                                 });
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        {
+            let diagnostics = &self.state.read(cx).diagnostics;
+            if !diagnostics.is_empty() {
+                for diag in diagnostics {
+                    let diag_line = diag.start_line as usize;
+                    let dr = match buf_to_disp(diag_line) {
+                        Some(d) => d,
+                        None => continue,
+                    };
+                    if dr < first_visible_display_row || dr >= last_visible_display_row {
+                        continue;
+                    }
+
+                    let underline_color = match diag.severity {
+                        DiagnosticSeverity::Error => self
+                            .state
+                            .read(cx)
+                            .diagnostic_error_color
+                            .unwrap_or(hsla(0.0, 0.85, 0.6, 1.0)),
+                        DiagnosticSeverity::Warning => self
+                            .state
+                            .read(cx)
+                            .diagnostic_warning_color
+                            .unwrap_or(hsla(0.12, 0.85, 0.55, 1.0)),
+                        DiagnosticSeverity::Information => self
+                            .state
+                            .read(cx)
+                            .diagnostic_info_color
+                            .unwrap_or(hsla(0.6, 0.7, 0.6, 1.0)),
+                        DiagnosticSeverity::Hint => self
+                            .state
+                            .read(cx)
+                            .diagnostic_hint_color
+                            .unwrap_or(hsla(0.0, 0.0, 0.5, 0.6)),
+                    };
+
+                    let diag_y =
+                        bounds.top() + padding_top + line_height * dr as f32 + line_height - px(2.0);
+
+                    if let Some(layout) = self.state.read(cx).line_layouts.get(&diag_line) {
+                        let start_col = diag.start_col as usize;
+                        let end_col = if diag.end_line == diag.start_line {
+                            (diag.end_col as usize).max(start_col + 1)
+                        } else {
+                            self.state.read(cx).line_len(diag_line)
+                        };
+                        let x_start = layout.x_for_index(start_col);
+                        let x_end = layout.x_for_index(end_col);
+                        let underline_width = (x_end - x_start).max(char_width);
+                        window.paint_quad(fill(
+                            Bounds::new(
+                                point(
+                                    bounds.left() + gutter_width + x_start - scroll_offset_x,
+                                    diag_y,
+                                ),
+                                size(underline_width, px(2.0)),
+                            ),
+                            underline_color,
+                        ));
+                    }
+
+                    if show_line_numbers {
+                        let dot_size = px(6.0);
+                        let dot_x = bounds.left() + px(2.0);
+                        let dot_y = bounds.top()
+                            + padding_top
+                            + line_height * dr as f32
+                            + (line_height - dot_size) / 2.0;
+                        window.paint_quad(PaintQuad {
+                            bounds: Bounds::new(point(dot_x, dot_y), size(dot_size, dot_size)),
+                            corner_radii: Corners::all(dot_size / 2.0),
+                            background: underline_color.into(),
+                            border_widths: Edges::default(),
+                            border_color: Hsla::transparent_black(),
+                            border_style: BorderStyle::default(),
+                            continuous_corners: false,
+                            transform: Default::default(),
+                            blend_mode: Default::default(),
+                        });
                     }
                 }
             }

@@ -26,6 +26,10 @@ pub struct EditorColors {
     pub indent_guide: Hsla,
     pub indent_guide_active: Hsla,
     pub fold_marker: Hsla,
+    pub diagnostic_error: Hsla,
+    pub diagnostic_warning: Hsla,
+    pub diagnostic_info: Hsla,
+    pub diagnostic_hint: Hsla,
 }
 
 #[derive(Clone, Debug)]
@@ -206,6 +210,10 @@ pub fn island_dark() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x6b7280),
+            diagnostic_error: hsla_from_hex(0xf87171),
+            diagnostic_warning: hsla_from_hex(0xfbbf24),
+            diagnostic_info: hsla_from_hex(0x60a5fa),
+            diagnostic_hint: hsla_from_hex(0x6b7280),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0xc084fc),
@@ -295,6 +303,10 @@ pub fn dracula() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x6272a4),
+            diagnostic_error: hsla_from_hex(0xff5555),
+            diagnostic_warning: hsla_from_hex(0xf1fa8c),
+            diagnostic_info: hsla_from_hex(0x8be9fd),
+            diagnostic_hint: hsla_from_hex(0x6272a4),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0xff79c6),
@@ -384,6 +396,10 @@ pub fn nord() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x4c566a),
+            diagnostic_error: hsla_from_hex(0xbf616a),
+            diagnostic_warning: hsla_from_hex(0xebcb8b),
+            diagnostic_info: hsla_from_hex(0x81a1c1),
+            diagnostic_hint: hsla_from_hex(0x4c566a),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0x81a1c1),
@@ -473,6 +489,10 @@ pub fn monokai_vivid() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x75715e),
+            diagnostic_error: hsla_from_hex(0xf92672),
+            diagnostic_warning: hsla_from_hex(0xe6db74),
+            diagnostic_info: hsla_from_hex(0x66d9ef),
+            diagnostic_hint: hsla_from_hex(0x75715e),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0xf92672),
@@ -562,6 +582,10 @@ pub fn github_dark() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x484f58),
+            diagnostic_error: hsla_from_hex(0xff7b72),
+            diagnostic_warning: hsla_from_hex(0xe3b341),
+            diagnostic_info: hsla_from_hex(0x58a6ff),
+            diagnostic_hint: hsla_from_hex(0x484f58),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0xff7b72),
@@ -651,6 +675,10 @@ pub fn cyberpunk() -> IdeTheme {
             indent_guide: hsla(0.0, 0.0, 1.0, 0.06),
             indent_guide_active: hsla(0.0, 0.0, 1.0, 0.14),
             fold_marker: hsla_from_hex(0x1e3a5f),
+            diagnostic_error: hsla_from_hex(0xff2e97),
+            diagnostic_warning: hsla_from_hex(0xfcee0a),
+            diagnostic_info: hsla_from_hex(0x00d4ff),
+            diagnostic_hint: hsla_from_hex(0x1e3a5f),
         },
         syntax: SyntaxColors {
             keyword: hsla_from_hex(0xfcee0a),

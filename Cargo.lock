@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "adabraka-gpui"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "adabraka-gpui-macros",
  "adabraka_collections",
@@ -98,7 +98,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka-gpui-macros"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "heck 0.5.0",
  "proc-macro2",
@@ -152,7 +152,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_collections"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "indexmap",
  "rustc-hash 2.1.1",
@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_derive_refineable"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -169,7 +169,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_http_client"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "adabraka_util",
  "anyhow",
@@ -193,7 +193,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_media"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "bindgen 0.71.1",
@@ -207,14 +207,14 @@ dependencies = [
 
 [[package]]
 name = "adabraka_refineable"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "adabraka_derive_refineable",
 ]
 
 [[package]]
 name = "adabraka_semantic_version"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "anyhow",
  "serde",
@@ -222,7 +222,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_sum_tree"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "arrayvec",
  "log",
@@ -231,7 +231,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka_util"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "adabraka_collections",
  "anyhow",
@@ -260,12 +260,12 @@ dependencies = [
  "tendril",
  "unicase",
  "walkdir",
- "which",
+ "which 6.0.3",
 ]
 
 [[package]]
 name = "adabraka_util_macros"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "quote",
  "syn 2.0.107",
@@ -655,9 +655,9 @@ dependencies = [
 
 [[package]]
 name = "async-tar"
-version = "0.5.0"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a42f905d4f623faf634bbd1e001e84e0efc24694afa64be9ad239bf6ca49e1f8"
+checksum = "d1937db2d56578aa3919b9bdb0e5100693fd7d1c0f145c53eb81fbb03e217550"
 dependencies = [
  "async-std",
  "filetime",
@@ -1738,13 +1738,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "dirs"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3e8aa94d75141228480295a7d0e7feb620b1a5ad9f12bc40be62411e38cce4e"
+dependencies = [
+ "dirs-sys 0.5.0",
+]
+
+[[package]]
 name = "dirs-sys"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b1d1d91c932ef41c0f2663aa8b0ca0342d444d842c06914aa0a7e352d0bada6"
 dependencies = [
  "libc",
- "redox_users",
+ "redox_users 0.4.6",
  "winapi",
 ]
 
@@ -1756,8 +1765,20 @@ checksum = "520f05a5cbd335fae5a99ff7a6ab8627577660ee5cfd6a94a6a929b52ff0321c"
 dependencies = [
  "libc",
  "option-ext",
- "redox_users",
+ "redox_users 0.4.6",
  "windows-sys 0.48.0",
+]
+
+[[package]]
+name = "dirs-sys"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e01a3366d27ee9890022452ee61b2b63a67e6f13f58900b651ff5665f0bb1fab"
+dependencies = [
+ "libc",
+ "option-ext",
+ "redox_users 0.5.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1896,6 +1917,12 @@ dependencies = [
  "quote",
  "syn 2.0.107",
 ]
+
+[[package]]
+name = "env_home"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c7f84e12ccf0a7ddc17a6c41c93326024c42920d7ee630d04950e6926645c0fe"
 
 [[package]]
 name = "equator"
@@ -2105,6 +2132,15 @@ name = "float_next_after"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8bf7cc16383c4b8d58b9905a8509f02926ce3058053c056376248d958c9df1e8"
+
+[[package]]
+name = "fluent-uri"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17c704e9dbe1ddd863da1e6ff3567795087b1eb201ce80d8fa81162e1516500d"
+dependencies = [
+ "bitflags 1.3.2",
+]
 
 [[package]]
 name = "flume"
@@ -3345,6 +3381,19 @@ name = "lru-slab"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "112b39cec0b298b6c1999fee3e31427f74f676e4cb9879ed1a121b43661a4154"
+
+[[package]]
+name = "lsp-types"
+version = "0.97.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53353550a17c04ac46c585feb189c2db82154fc84b79c7a66c96c2c644f66071"
+dependencies = [
+ "bitflags 1.3.2",
+ "fluent-uri",
+ "serde",
+ "serde_json",
+ "serde_repr",
+]
 
 [[package]]
 name = "lyon"
@@ -4822,6 +4871,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "redox_users"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4e608c6638b9c18977b00b475ac1f28d14e84b27d8d42f70e0bf1e3dec127ac"
+dependencies = [
+ "getrandom 0.2.16",
+ "libredox",
+ "thiserror 2.0.17",
+]
+
+[[package]]
 name = "ref-cast"
 version = "1.0.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5442,16 +5502,22 @@ version = "0.1.0"
 dependencies = [
  "adabraka-gpui",
  "adabraka-ui",
+ "dirs 6.0.0",
  "flume",
  "git2",
  "image",
+ "lsp-types",
  "open",
  "portable-pty",
+ "serde",
+ "serde_json",
  "smallvec",
  "smol",
  "thiserror 2.0.17",
  "tree-sitter",
  "unicode-width 0.2.2",
+ "url",
+ "which 7.0.3",
 ]
 
 [[package]]
@@ -7240,6 +7306,18 @@ dependencies = [
  "either",
  "home",
  "rustix 0.38.44",
+ "winsafe",
+]
+
+[[package]]
+name = "which"
+version = "7.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24d643ce3fd3e5b54854602a080f34fb10ab75e0b813ee32d00ca2b44fa74762"
+dependencies = [
+ "either",
+ "env_home",
+ "rustix 1.1.2",
  "winsafe",
 ]
 

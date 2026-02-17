@@ -4,11 +4,6 @@ use adabraka_ui::components::input::{Input, InputEvent, InputState};
 use crate::ide_theme::use_ide_theme;
 use gpui::prelude::FluentBuilder as _;
 use gpui::*;
-use smol::Timer;
-use std::time::Duration;
-
-const SEARCH_DEBOUNCE: Duration = Duration::from_millis(150);
-
 actions!(
     search_bar,
     [
@@ -66,24 +61,14 @@ impl SearchBar {
                     return;
                 }
 
-                let bar = cx.entity().clone();
-                let task = cx.spawn(async move |_, cx| {
-                    Timer::after(SEARCH_DEBOUNCE).await;
-                    let _ = bar.update(cx, |this, cx| {
-                        let current = this.find_input.read(cx).content.clone();
-                        if current != query {
-                            return;
-                        }
-                        if let Some(editor) = &this.editor {
-                            let editor = editor.clone();
-                            editor.update(cx, |state, ecx| {
-                                state.find_all(current.as_ref(), ecx);
-                            });
-                        }
-                        cx.notify();
+                // Call find_all immediately — it handles its own debouncing
+                // internally and runs the actual search in a background thread.
+                if let Some(editor) = &this.editor {
+                    let editor = editor.clone();
+                    editor.update(cx, |state, ecx| {
+                        state.find_all(query.as_ref(), ecx);
                     });
-                });
-                this.search_task = Some(task);
+                }
             }
         })
         .detach();

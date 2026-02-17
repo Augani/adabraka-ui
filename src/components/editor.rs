@@ -481,6 +481,11 @@ pub struct EditorState {
     scroll_offset_x: Pixels,
     max_line_width: Pixels,
     line_layouts: HashMap<usize, ShapedLine>,
+    line_content_hashes: HashMap<usize, u64>,
+    cached_highlight_spans: Vec<HighlightSpan>,
+    highlight_cache_version: u64,
+    highlight_cache_first_line: usize,
+    highlight_cache_last_line: usize,
     last_bounds: Option<Bounds<Pixels>>,
 
     is_selecting: bool,
@@ -499,6 +504,7 @@ pub struct EditorState {
     overlay_active_check: Option<Box<dyn Fn(&App) -> bool + 'static>>,
 
     reparse_task: Option<Task<()>>,
+    search_task: Option<Task<()>>,
 
     search_query: String,
     search_matches: Vec<(usize, usize)>,
@@ -547,6 +553,11 @@ impl EditorState {
             scroll_offset_x: px(0.0),
             max_line_width: px(0.0),
             line_layouts: HashMap::new(),
+            line_content_hashes: HashMap::new(),
+            cached_highlight_spans: Vec::new(),
+            highlight_cache_version: u64::MAX,
+            highlight_cache_first_line: 0,
+            highlight_cache_last_line: 0,
             last_bounds: None,
             is_selecting: false,
             dragging_h_scrollbar: false,
@@ -560,6 +571,7 @@ impl EditorState {
             read_only: false,
             overlay_active_check: None,
             reparse_task: None,
+            search_task: None,
             search_query: String::new(),
             search_matches: Vec::new(),
             current_match_idx: None,
@@ -888,7 +900,7 @@ impl EditorState {
     }
 
     fn invalidate_folds(&mut self) {
-        self.line_layouts.clear();
+        self.invalidate_all_caches();
         if self.folded.is_empty() {
             self.cached_display_lines = None;
         } else {
@@ -1216,7 +1228,7 @@ impl EditorState {
         self.undo_stack.clear();
         self.redo_stack.clear();
         self.is_modified = false;
-        self.line_layouts.clear();
+        self.invalidate_all_caches();
         if self.rope.len_bytes() > 50_000 {
             self.parse_async(cx);
         } else {
@@ -1276,7 +1288,7 @@ impl EditorState {
                         self.undo_stack.clear();
                         self.redo_stack.clear();
                         self.is_modified = false;
-                        self.line_layouts.clear();
+                        self.invalidate_all_caches();
                         if self.rope.len_bytes() > 50_000 {
                             self.parse_async(cx);
                         } else {
@@ -1389,7 +1401,7 @@ impl EditorState {
                     let _ = this.update(cx, |state, cx| {
                         state.syntax_tree = tree;
                         state.compute_fold_ranges();
-                        state.line_layouts.clear();
+                        state.invalidate_all_caches();
                         cx.notify();
                     });
                 });
@@ -1406,7 +1418,9 @@ impl EditorState {
                 entity.update(cx, |state, cx| {
                     state.update_syntax_tree_incremental_now();
                     state.compute_fold_ranges();
-                    state.line_layouts.clear();
+                    // Only invalidate highlights — line layouts are still valid
+                    // since text content hasn't changed (only syntax tree updated).
+                    state.invalidate_after_edit();
                     cx.notify();
                 });
             });
@@ -1489,7 +1503,7 @@ impl EditorState {
             old_end_position,
             cx,
         );
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
     }
 
     fn delete_selection_internal(&mut self, selection: Selection, cx: &mut Context<Self>) {
@@ -1521,7 +1535,7 @@ impl EditorState {
             old_end_position,
             cx,
         );
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
     }
 
     fn get_selection_text(&self, selection: &Selection) -> String {
@@ -1631,7 +1645,7 @@ impl EditorState {
             self.selection = None;
             self.mark_modified();
             self.update_syntax_tree();
-            self.line_layouts.clear();
+            self.invalidate_after_edit();
             cx.notify();
         }
     }
@@ -1654,7 +1668,7 @@ impl EditorState {
             self.selection = None;
             self.mark_modified();
             self.update_syntax_tree();
-            self.line_layouts.clear();
+            self.invalidate_after_edit();
             cx.notify();
         }
     }
@@ -1897,7 +1911,7 @@ impl EditorState {
         self.mark_modified();
         self.cursor = self.byte_offset_to_pos(del_start);
         self.update_syntax_tree_incremental(del_start, del_end, del_start, old_end_position, cx);
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
         cx.notify();
     }
 
@@ -1925,7 +1939,7 @@ impl EditorState {
         self.rope.remove(offset..del_end);
         self.mark_modified();
         self.update_syntax_tree_incremental(offset, del_end, offset, old_end_position, cx);
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
         cx.notify();
     }
 
@@ -1956,7 +1970,7 @@ impl EditorState {
             old_end_position,
             cx,
         );
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
         cx.notify();
     }
 
@@ -2075,55 +2089,92 @@ impl EditorState {
 
     pub fn find_all(&mut self, query: &str, cx: &mut Context<Self>) {
         self.search_query = query.to_string();
-        self.search_matches.clear();
-        self.current_match_idx = None;
 
         if query.is_empty() {
+            self.search_matches.clear();
+            self.current_match_idx = None;
+            self.search_task = None;
             cx.notify();
             return;
         }
 
-        let content = self.rope.to_string();
+        // Schedule a debounced search — any new call cancels the previous one.
+        // This ensures typing always takes priority; search only runs after
+        // the user stops typing for 200ms.
+        self.schedule_search(cx);
+    }
 
-        if self.search_use_regex {
-            let pattern = if self.search_case_sensitive {
-                query.to_string()
-            } else {
-                format!("(?i){}", query)
-            };
-            if let Ok(re) = Regex::new(&pattern) {
-                for m in re.find_iter(&content) {
-                    self.search_matches.push((m.start(), m.end()));
+    fn schedule_search(&mut self, cx: &mut Context<Self>) {
+        let query_owned = self.search_query.clone();
+        let use_regex = self.search_use_regex;
+        let case_sensitive = self.search_case_sensitive;
+        let entity = cx.entity().clone();
+
+        // Cancel any in-flight search
+        self.search_task = Some(cx.spawn(async move |_, cx| {
+            // Wait for user to stop typing
+            Timer::after(Duration::from_millis(200)).await;
+
+            // Snapshot content and cursor on the main thread, then search in background
+            let search_input = cx.update(|cx| {
+                let state = entity.read(cx);
+                let content = state.rope.to_string();
+                let cursor_byte = state.pos_to_byte_offset(state.cursor);
+                (content, cursor_byte)
+            });
+
+            let Ok((content, cursor_byte)) = search_input else { return };
+
+            let matches = smol::unblock(move || {
+                let mut results = Vec::new();
+                if use_regex {
+                    let pattern = if case_sensitive {
+                        query_owned.to_string()
+                    } else {
+                        format!("(?i){}", query_owned)
+                    };
+                    if let Ok(re) = Regex::new(&pattern) {
+                        for m in re.find_iter(&content) {
+                            results.push((m.start(), m.end()));
+                        }
+                    }
+                } else {
+                    let (haystack, needle): (String, String) = if case_sensitive {
+                        (content.to_string(), query_owned.to_string())
+                    } else {
+                        (content.to_lowercase(), query_owned.to_lowercase())
+                    };
+                    let needle_len = needle.len();
+                    let mut start = 0;
+                    while let Some(pos) = haystack[start..].find(&needle) {
+                        let match_start = start + pos;
+                        let match_end = match_start + needle_len;
+                        results.push((match_start, match_end));
+                        start = match_start + 1;
+                    }
                 }
-            }
-        } else {
-            let (haystack, needle) = if self.search_case_sensitive {
-                (content.clone(), query.to_string())
-            } else {
-                (content.to_lowercase(), query.to_lowercase())
-            };
-            let needle_len = needle.len();
-            let mut start = 0;
-            while let Some(pos) = haystack[start..].find(&needle) {
-                let match_start = start + pos;
-                let match_end = match_start + needle_len;
-                self.search_matches.push((match_start, match_end));
-                start = match_start + 1;
-            }
-        }
+                results
+            })
+            .await;
 
-        if !self.search_matches.is_empty() {
-            let cursor_byte = self.pos_to_byte_offset(self.cursor);
-            let idx = self
-                .search_matches
-                .iter()
-                .position(|(s, _)| *s >= cursor_byte)
-                .unwrap_or(0);
-            self.current_match_idx = Some(idx);
-            self.scroll_to_match(idx);
-        }
-
-        cx.notify();
+            let _ = cx.update(|cx| {
+                entity.update(cx, |state, cx| {
+                    state.search_matches = matches;
+                    if !state.search_matches.is_empty() {
+                        let idx = state
+                            .search_matches
+                            .iter()
+                            .position(|(s, _)| *s >= cursor_byte)
+                            .unwrap_or(0);
+                        state.current_match_idx = Some(idx);
+                        state.scroll_to_match(idx);
+                    } else {
+                        state.current_match_idx = None;
+                    }
+                    cx.notify();
+                });
+            });
+        }));
     }
 
     pub fn find_next(&mut self, cx: &mut Context<Self>) {
@@ -2183,7 +2234,7 @@ impl EditorState {
         self.mark_modified();
         let new_end = start + replacement.len();
         self.update_syntax_tree_incremental(start, end, new_end, old_end_position, cx);
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
         let query = self.search_query.clone();
         self.find_all(&query, cx);
     }
@@ -2208,13 +2259,29 @@ impl EditorState {
         self.redo_stack.clear();
         self.mark_modified();
         self.update_syntax_tree();
-        self.line_layouts.clear();
+        self.invalidate_after_edit();
         let query = self.search_query.clone();
         self.find_all(&query, cx);
     }
 
-    pub fn invalidate_line_layouts(&mut self, cx: &mut Context<Self>) {
+    /// Full invalidation — clears all caches. Use for structural changes
+    /// (file load, language change, fold/unfold).
+    fn invalidate_all_caches(&mut self) {
         self.line_layouts.clear();
+        self.line_content_hashes.clear();
+        self.highlight_cache_version = u64::MAX;
+    }
+
+    /// Invalidation for text edits. Clears all caches since line indices
+    /// shift on insert/delete, making index-keyed caches stale.
+    fn invalidate_after_edit(&mut self) {
+        self.line_layouts.clear();
+        self.line_content_hashes.clear();
+        self.highlight_cache_version = u64::MAX;
+    }
+
+    pub fn invalidate_line_layouts(&mut self, cx: &mut Context<Self>) {
+        self.invalidate_all_caches();
         cx.notify();
     }
 
@@ -2991,10 +3058,28 @@ impl Element for EditorElement {
             }
         }
 
-        let highlight_spans = self.collect_highlight_spans_for_lines(visible_buffer_lines, cx);
+        // Cache highlight spans — only recompute when content changes or visible range shifts
+        let content_version = self.state.read(cx).content_version;
+        let first_buf = visible_buffer_lines.first().copied().unwrap_or(0);
+        let last_buf = visible_buffer_lines.last().copied().unwrap_or(0) + 1;
+        {
+            let state = self.state.read(cx);
+            let needs_rehighlight = state.highlight_cache_version != content_version
+                || first_buf < state.highlight_cache_first_line
+                || last_buf > state.highlight_cache_last_line;
+            if needs_rehighlight {
+                let spans = self.collect_highlight_spans_for_lines(visible_buffer_lines, cx);
+                self.state.update(cx, |state, _| {
+                    state.cached_highlight_spans = spans;
+                    state.highlight_cache_version = content_version;
+                    state.highlight_cache_first_line = first_buf;
+                    state.highlight_cache_last_line = last_buf;
+                });
+            }
+        }
 
         let text_style = window.text_style();
-        let mut shaped_layouts: Vec<(usize, Option<ShapedLine>)> =
+        let mut shaped_layouts: Vec<(usize, Option<ShapedLine>, u64)> =
             Vec::with_capacity(visible_buffer_lines.len());
         let mut max_line_width = px(0.0);
 
@@ -3022,6 +3107,8 @@ impl Element for EditorElement {
             0
         };
 
+        let mut line_num_buf = String::with_capacity(8);
+
         for display_row in first_visible_display_row..last_visible_display_row {
             let line_idx = display_lines_vec[display_row];
             let y = bounds.top() + padding_top + line_height * display_row as f32;
@@ -3033,9 +3120,11 @@ impl Element for EditorElement {
                 } else {
                     line_num_color
                 };
-                let line_num_text = format!("{:>4}", line_idx + 1);
+                line_num_buf.clear();
+                use std::fmt::Write;
+                let _ = write!(line_num_buf, "{:>4}", line_idx + 1);
                 let line_num_run = TextRun {
-                    len: line_num_text.len(),
+                    len: line_num_buf.len(),
                     font: text_style.font(),
                     color: num_color,
                     background_color: None,
@@ -3043,7 +3132,7 @@ impl Element for EditorElement {
                     strikethrough: None,
                 };
                 let shaped = window.text_system().shape_line(
-                    line_num_text.into(),
+                    SharedString::from(line_num_buf.clone()),
                     font_size,
                     &[line_num_run],
                     None,
@@ -3097,8 +3186,22 @@ impl Element for EditorElement {
                 ));
             }
 
-            let cached_line = self.state.read(cx).line_layouts.get(&line_idx).cloned();
-            if let Some(cached) = cached_line {
+            // Content-hash-based cache: only re-shape lines whose content changed
+            let line_hash = {
+                use std::hash::{Hash, Hasher};
+                let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                line_text.hash(&mut hasher);
+                hasher.finish()
+            };
+            let cached_layout = {
+                let state = self.state.read(cx);
+                if state.line_content_hashes.get(&line_idx) == Some(&line_hash) {
+                    state.line_layouts.get(&line_idx).cloned()
+                } else {
+                    None
+                }
+            };
+            if let Some(cached) = cached_layout {
                 let line_width = cached.x_for_index(cached.len());
                 if line_width > max_line_width {
                     max_line_width = line_width;
@@ -3113,12 +3216,13 @@ impl Element for EditorElement {
             }
 
             if line_text.is_empty() {
-                shaped_layouts.push((line_idx, None));
+                shaped_layouts.push((line_idx, None, line_hash));
                 continue;
             }
 
+            let highlight_spans = &self.state.read(cx).cached_highlight_spans;
             let text_runs =
-                self.build_text_runs(&line_text, line_idx, &highlight_spans, &text_style, &theme);
+                self.build_text_runs(&line_text, line_idx, highlight_spans, &text_style, &theme);
 
             let line_len = line_text.len();
             let shaped =
@@ -3138,19 +3242,21 @@ impl Element for EditorElement {
                 cx,
             );
 
-            shaped_layouts.push((line_idx, Some(shaped)));
+            shaped_layouts.push((line_idx, Some(shaped), line_hash));
         }
 
-        let first_buf = visible_buffer_lines.first().copied().unwrap_or(0);
-        let last_buf = visible_buffer_lines.last().copied().unwrap_or(0) + 1;
         self.state.update(cx, |state, _| {
             state
                 .line_layouts
                 .retain(|&line_idx, _| line_idx >= first_buf && line_idx < last_buf);
-            for (idx, layout) in shaped_layouts {
+            state
+                .line_content_hashes
+                .retain(|&line_idx, _| line_idx >= first_buf && line_idx < last_buf);
+            for (idx, layout, hash) in shaped_layouts {
                 if let Some(shaped) = layout {
                     state.line_layouts.insert(idx, shaped);
                 }
+                state.line_content_hashes.insert(idx, hash);
             }
             if max_line_width > state.max_line_width {
                 state.max_line_width = max_line_width;

@@ -357,24 +357,30 @@ impl GitState {
                 };
                 let new_content = GitService::read_workdir_content(&repo, &file_path);
 
-                Some((diff, old_content, new_content))
+                // Compute syntax highlighting in background thread (not on UI thread)
+                let (old_highlights, new_highlights) = if let Some(ref diff) = diff {
+                    let lang = Language::from_path(&std::path::Path::new(&diff.path));
+                    let old_hl = old_content
+                        .as_deref()
+                        .map(|c| compute_line_highlights(c, lang))
+                        .unwrap_or_default();
+                    let new_hl = new_content
+                        .as_deref()
+                        .map(|c| compute_line_highlights(c, lang))
+                        .unwrap_or_default();
+                    (old_hl, new_hl)
+                } else {
+                    (Vec::new(), Vec::new())
+                };
+
+                Some((diff, old_highlights, new_highlights))
             })
             .await;
 
             let _ = cx.update(|cx| {
                 let _ = this.update(cx, |state, cx| {
-                    if let Some((diff_opt, old_content, new_content)) = result {
+                    if let Some((diff_opt, old_highlights, new_highlights)) = result {
                         if let Some(diff) = diff_opt {
-                            let lang = Language::from_path(&std::path::Path::new(&diff.path));
-                            let old_highlights = old_content
-                                .as_deref()
-                                .map(|c| compute_line_highlights(c, lang))
-                                .unwrap_or_default();
-                            let new_highlights = new_content
-                                .as_deref()
-                                .map(|c| compute_line_highlights(c, lang))
-                                .unwrap_or_default();
-
                             state.old_line_highlights = old_highlights;
                             state.new_line_highlights = new_highlights;
                             state.aligned_rows = Self::build_aligned_rows(

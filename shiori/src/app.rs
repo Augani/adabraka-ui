@@ -25,6 +25,7 @@ use gpui::*;
 use smol::Timer;
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 const AUTOSAVE_DELAY: Duration = Duration::from_secs(2);
@@ -150,7 +151,7 @@ pub struct AppState {
     file_search_input: Entity<InputState>,
     file_search_query: String,
     file_search_results: Vec<ContentSearchResult>,
-    file_index: Vec<(PathBuf, String, String)>,
+    file_index: Arc<Vec<(PathBuf, String, String)>>,
     search_version: u64,
 }
 
@@ -194,59 +195,125 @@ fn is_binary_file(path: &Path) -> bool {
     )
 }
 
-fn search_content(query: &str, file_index: &[(PathBuf, String, String)]) -> Vec<ContentSearchResult> {
+fn search_content(
+    query: &str,
+    file_index: &[(PathBuf, String, String)],
+) -> Vec<ContentSearchResult> {
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+
     if query.is_empty() || query.len() < 2 {
         return Vec::new();
     }
 
-    let query_lower = query.to_lowercase();
-    let mut results = Vec::new();
     let max_results = 100;
+    let max_file_size: u64 = 2 * 1024 * 1024; // Skip files > 2MB
+    let query_lower = query.to_lowercase();
+    let query_bytes = query_lower.as_bytes();
 
-    for (path, file_name, dir_path) in file_index {
-        if results.len() >= max_results {
-            break;
-        }
-        if is_binary_file(path) {
-            continue;
-        }
-        let content = match std::fs::read_to_string(path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
+    // Parallel search: split file list into chunks and search concurrently
+    let result_count = AtomicUsize::new(0);
+    let done = AtomicBool::new(false);
 
-        for (line_idx, line) in content.lines().enumerate() {
-            if results.len() >= max_results {
-                break;
-            }
-            let line_lower = line.to_lowercase();
-            if let Some(col) = line_lower.find(&query_lower) {
-                let trimmed = line.trim();
-                if trimmed.is_empty() {
-                    continue;
-                }
-                let display_line = if trimmed.len() > 120 {
-                    format!("{}...", &trimmed[..120])
-                } else {
-                    trimmed.to_string()
-                };
-                let trim_offset = line.find(trimmed).unwrap_or(0);
-                let adjusted_col = col.saturating_sub(trim_offset);
+    let num_threads = std::thread::available_parallelism()
+        .map(|n| n.get().min(8))
+        .unwrap_or(4);
+    let chunk_size = (file_index.len() / num_threads).max(1);
 
-                results.push(ContentSearchResult {
-                    path: path.clone(),
-                    file_name: file_name.clone(),
-                    dir_path: dir_path.clone(),
-                    line_number: line_idx + 1,
-                    line_content: display_line,
-                    col_start: adjusted_col,
-                    col_end: adjusted_col + query.len(),
-                });
-            }
-        }
+    let results: Vec<Vec<ContentSearchResult>> = std::thread::scope(|s| {
+        let handles: Vec<_> = file_index
+            .chunks(chunk_size)
+            .map(|chunk| {
+                let query_lower = &query_lower;
+                let query_bytes = query_bytes;
+                let result_count = &result_count;
+                let done = &done;
+                s.spawn(move || {
+                    let mut local_results = Vec::new();
+                    for (path, file_name, dir_path) in chunk {
+                        if done.load(Ordering::Relaxed) {
+                            break;
+                        }
+                        if is_binary_file(path) {
+                            continue;
+                        }
+                        // Skip large files by checking metadata (cheap syscall)
+                        if let Ok(meta) = std::fs::metadata(path) {
+                            if meta.len() > max_file_size {
+                                continue;
+                            }
+                        }
+                        // Read file and search — streaming line by line
+                        let content = match std::fs::read_to_string(path) {
+                            Ok(c) => c,
+                            Err(_) => continue,
+                        };
+                        // Fast byte-level pre-check: does the file contain the query at all?
+                        let content_lower = content.to_lowercase();
+                        if !memchr_find(content_lower.as_bytes(), query_bytes) {
+                            continue;
+                        }
+                        for (line_idx, line) in content.lines().enumerate() {
+                            if result_count.load(Ordering::Relaxed) >= max_results {
+                                done.store(true, Ordering::Relaxed);
+                                break;
+                            }
+                            let line_lower = line.to_lowercase();
+                            if let Some(col) = line_lower.find(query_lower) {
+                                let trimmed = line.trim();
+                                if trimmed.is_empty() {
+                                    continue;
+                                }
+                                let display_line = if trimmed.len() > 120 {
+                                    format!("{}...", &trimmed[..120])
+                                } else {
+                                    trimmed.to_string()
+                                };
+                                let trim_offset = line.find(trimmed).unwrap_or(0);
+                                let adjusted_col = col.saturating_sub(trim_offset);
+
+                                local_results.push(ContentSearchResult {
+                                    path: path.clone(),
+                                    file_name: file_name.clone(),
+                                    dir_path: dir_path.clone(),
+                                    line_number: line_idx + 1,
+                                    line_content: display_line,
+                                    col_start: adjusted_col,
+                                    col_end: adjusted_col + query.len(),
+                                });
+                                result_count.fetch_add(1, Ordering::Relaxed);
+                            }
+                        }
+                    }
+                    local_results
+                })
+            })
+            .collect();
+
+        handles.into_iter().map(|h| h.join().unwrap_or_default()).collect()
+    });
+
+    let mut merged: Vec<ContentSearchResult> = results.into_iter().flatten().collect();
+    merged.truncate(max_results);
+    merged
+}
+
+/// Fast substring check using first-byte scanning
+fn memchr_find(haystack: &[u8], needle: &[u8]) -> bool {
+    if needle.is_empty() {
+        return true;
     }
-
-    results
+    if needle.len() > haystack.len() {
+        return false;
+    }
+    let first = needle[0];
+    let mut i = 0;
+    while i <= haystack.len() - needle.len() {
+        if haystack[i] == first && &haystack[i..i + needle.len()] == needle {
+            return true;
+        }
+        i += 1;
+    }
+    false
 }
 
 fn scan_directory(path: &Path, depth: usize) -> Vec<FileNode> {
@@ -356,7 +423,7 @@ impl AppState {
             file_search_input,
             file_search_query: String::new(),
             file_search_results: Vec::new(),
-            file_index: Vec::new(),
+            file_index: Arc::new(Vec::new()),
             search_version: 0,
         }
     }
@@ -432,6 +499,7 @@ impl AppState {
             meta.title = Self::compose_tab_title(meta.file_name.as_deref(), idx, meta.modified);
         }
     }
+   
 
     fn refresh_untitled_titles_from(&mut self, start: usize) {
         for idx in start..self.tab_meta.len() {
@@ -542,7 +610,9 @@ impl AppState {
         cx.notify();
     }
 
-    fn update_completion_for_typing(
+    
+  
+        fn update_completion_for_typing(
         &mut self,
         buffer: &Entity<EditorState>,
         cx: &mut Context<Self>,
@@ -694,6 +764,7 @@ impl AppState {
             let has_path = buffer.read(cx).file_path().is_some();
             if has_path {
                 let buffer = buffer.clone();
+                let saved_path = buffer.read(cx).file_path().cloned();
                 buffer.update(cx, |state, cx| {
                     if let Some(path) = state.file_path().cloned() {
                         state.save_to_file(path, cx);
@@ -1046,6 +1117,8 @@ impl AppState {
                     .child(format!("/ {}", line_count)),
             )
     }
+    
+    
 
     pub fn open_folder(&mut self, path: PathBuf, cx: &mut Context<Self>) {
         let nodes = scan_directory(&path, 2);
@@ -1063,7 +1136,7 @@ impl AppState {
     }
 
     fn rebuild_file_index(&mut self, root: &Path) {
-        self.file_index.clear();
+        let mut index = Vec::new();
         fn walk_dir(dir: &Path, root: &Path, out: &mut Vec<(PathBuf, String, String)>, depth: usize) {
             if depth > 12 {
                 return;
@@ -1094,7 +1167,8 @@ impl AppState {
                 }
             }
         }
-        walk_dir(root, root, &mut self.file_index, 0);
+        walk_dir(root, root, &mut index, 0);
+        self.file_index = Arc::new(index);
     }
 
     fn trigger_content_search(&mut self, cx: &mut Context<Self>) {
@@ -1421,6 +1495,7 @@ impl AppState {
                     ),
             )
     }
+  
 
     fn render_symbol_outline(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let ide = use_ide_theme();

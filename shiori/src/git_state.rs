@@ -3,8 +3,8 @@ use crate::git_service::{
     DiffLine, DiffLineKind, FileDiff, FileStatusKind, GitFileEntry, GitService, GitSummary,
 };
 use adabraka_ui::components::editor::{EditorState, Language};
-use adabraka_ui::components::resizable::ResizableState;
 use gpui::*;
+use gpui::UniformListScrollHandle;
 use smol::Timer;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -32,7 +32,6 @@ pub struct GitState {
     pub active_diff: Option<FileDiff>,
     pub aligned_rows: Vec<DiffRow>,
     pub commit_editor: Entity<EditorState>,
-    pub panel_resizable: Entity<ResizableState>,
     pub diff_split_pct: f32,
     pub summary: GitSummary,
     polling_task: Option<Task<()>>,
@@ -41,13 +40,13 @@ pub struct GitState {
     pub diff_view_mode: DiffViewMode,
     old_line_highlights: Vec<Vec<HighlightRun>>,
     new_line_highlights: Vec<Vec<HighlightRun>>,
+    pub diff_scroll_handle: UniformListScrollHandle,
+    pub file_list_scroll_handle: ScrollHandle,
 }
 
 impl GitState {
     pub fn new(cx: &mut Context<Self>) -> Self {
         let commit_editor = cx.new(|cx| EditorState::new(cx));
-        let panel_resizable = ResizableState::new(cx);
-
         Self {
             repo_path: None,
             file_entries: Vec::new(),
@@ -55,7 +54,6 @@ impl GitState {
             active_diff: None,
             aligned_rows: Vec::new(),
             commit_editor,
-            panel_resizable,
             diff_split_pct: 0.5,
             summary: GitSummary::default(),
             polling_task: None,
@@ -64,6 +62,8 @@ impl GitState {
             diff_view_mode: DiffViewMode::Split,
             old_line_highlights: Vec::new(),
             new_line_highlights: Vec::new(),
+            diff_scroll_handle: UniformListScrollHandle::new(),
+            file_list_scroll_handle: ScrollHandle::new(),
         }
     }
 
@@ -90,22 +90,6 @@ impl GitState {
 
     pub fn stage_all(&mut self, cx: &mut Context<Self>) {
         self.stage_filtered(|e| !e.staged, "Stage all failed", cx);
-    }
-
-    pub fn stage_tracked_changes(&mut self, cx: &mut Context<Self>) {
-        self.stage_filtered(
-            |e| !e.staged && e.status != FileStatusKind::Untracked,
-            "Stage changes failed",
-            cx,
-        );
-    }
-
-    pub fn stage_untracked(&mut self, cx: &mut Context<Self>) {
-        self.stage_filtered(
-            |e| !e.staged && e.status == FileStatusKind::Untracked,
-            "Track all failed",
-            cx,
-        );
     }
 
     fn stage_filtered(

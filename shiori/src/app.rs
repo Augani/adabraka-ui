@@ -147,6 +147,7 @@ pub struct AppState {
     selected_tree_path: Option<PathBuf>,
     terminals: Vec<Entity<TerminalView>>,
     active_terminal: usize,
+    terminal_list_scroll_handle: ScrollHandle,
     terminal_visible: bool,
     terminal_fullscreen: bool,
     terminal_resizable_state: Entity<ResizableState>,
@@ -497,6 +498,7 @@ impl AppState {
             selected_tree_path: None,
             terminals: Vec::new(),
             active_terminal: 0,
+            terminal_list_scroll_handle: ScrollHandle::new(),
             terminal_visible: false,
             terminal_fullscreen: false,
             terminal_resizable_state,
@@ -2515,33 +2517,6 @@ impl AppState {
                                     .font_weight(FontWeight::SEMIBOLD)
                                     .text_color(chrome.text_secondary)
                                     .child("EXPLORER"),
-                            )
-                            .child(
-                                div()
-                                    .flex()
-                                    .items_center()
-                                    .gap(px(4.0))
-                                    .child(
-                                        div()
-                                            .w(px(8.0))
-                                            .h(px(8.0))
-                                            .rounded_full()
-                                            .bg(hsla(0.01, 1.0, 0.67, 0.5)),
-                                    )
-                                    .child(
-                                        div()
-                                            .w(px(8.0))
-                                            .h(px(8.0))
-                                            .rounded_full()
-                                            .bg(hsla(0.11, 0.98, 0.59, 0.5)),
-                                    )
-                                    .child(
-                                        div()
-                                            .w(px(8.0))
-                                            .h(px(8.0))
-                                            .rounded_full()
-                                            .bg(hsla(0.37, 0.73, 0.52, 0.5)),
-                                    ),
                             ),
                     )
                     .child({
@@ -3467,100 +3442,119 @@ impl AppState {
                             ),
                     ),
             )
-            .child(
-                div()
-                    .id("terminal-session-list")
-                    .flex_1()
-                    .overflow_y_scroll()
-                    .flex()
-                    .flex_col()
-                    .children(self.terminals.iter().enumerate().map(|(idx, term)| {
-                        let is_active = idx == self.active_terminal;
-                        let title = term.read(cx).title();
-                        let running = term.read(cx).is_running();
-                        let status_text = if running { "Running" } else { "Stopped" };
+            .child({
+                let total_content_h = self.terminals.len() as f32 * 44.0;
+                let tl_handle = self.terminal_list_scroll_handle.clone();
 
+                div()
+                    .flex_1()
+                    .min_h_0()
+                    .relative()
+                    .child(
                         div()
-                            .id(ElementId::Name(format!("term-session-{}", idx).into()))
-                            .w_full()
-                            .h(px(44.0))
+                            .id("terminal-session-list")
+                            .size_full()
+                            .overflow_y_scroll()
                             .flex()
-                            .items_center()
-                            .pl(px(0.0))
-                            .pr(px(12.0))
-                            .gap(px(8.0))
-                            .cursor_pointer()
-                            .border_l_2()
-                            .when(is_active, |el| {
-                                el.border_color(chrome.accent)
-                                    .bg(hsla(0.0, 0.0, 1.0, 0.05))
-                            })
-                            .when(!is_active, |el| {
-                                el.border_color(transparent_black())
-                                    .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.03)))
-                            })
-                            .on_click(cx.listener(move |this, _, _, cx| {
-                                this.active_terminal = idx;
+                            .flex_col()
+                            .track_scroll(&tl_handle)
+                            .on_scroll_wheel(cx.listener(|_this, _, _, cx| {
                                 cx.notify();
                             }))
-                            .child(
+                            .children(self.terminals.iter().enumerate().map(|(idx, term)| {
+                                let is_active = idx == self.active_terminal;
+                                let title = term.read(cx).title();
+                                let running = term.read(cx).is_running();
+                                let status_text = if running { "Running" } else { "Stopped" };
+
                                 div()
-                                    .pl(px(10.0))
-                                    .child(
-                                        Icon::new("terminal")
-                                            .size(px(16.0))
-                                            .color(if is_active {
-                                                chrome.bright
-                                            } else {
-                                                chrome.dim
-                                            }),
-                                    ),
-                            )
-                            .child(
-                                div()
-                                    .flex_1()
-                                    .overflow_x_hidden()
+                                    .id(ElementId::Name(format!("term-session-{}", idx).into()))
+                                    .w_full()
+                                    .h(px(44.0))
                                     .flex()
-                                    .flex_col()
-                                    .gap(px(2.0))
+                                    .items_center()
+                                    .pl(px(0.0))
+                                    .pr(px(12.0))
+                                    .gap(px(8.0))
+                                    .cursor_pointer()
+                                    .border_l_2()
+                                    .when(is_active, |el| {
+                                        el.border_color(chrome.accent)
+                                            .bg(hsla(0.0, 0.0, 1.0, 0.05))
+                                    })
+                                    .when(!is_active, |el| {
+                                        el.border_color(transparent_black())
+                                            .hover(|s| s.bg(hsla(0.0, 0.0, 1.0, 0.03)))
+                                    })
+                                    .on_click(cx.listener(move |this, _, _, cx| {
+                                        this.active_terminal = idx;
+                                        cx.notify();
+                                    }))
                                     .child(
                                         div()
-                                            .text_size(px(13.0))
-                                            .font_weight(FontWeight::MEDIUM)
-                                            .text_color(if is_active {
-                                                chrome.bright
-                                            } else {
-                                                chrome.text_secondary
-                                            })
-                                            .text_ellipsis()
-                                            .child(title),
+                                            .pl(px(10.0))
+                                            .child(
+                                                Icon::new("terminal")
+                                                    .size(px(16.0))
+                                                    .color(if is_active {
+                                                        chrome.bright
+                                                    } else {
+                                                        chrome.dim
+                                                    }),
+                                            ),
                                     )
                                     .child(
                                         div()
+                                            .flex_1()
+                                            .overflow_x_hidden()
                                             .flex()
-                                            .items_center()
-                                            .gap(px(4.0))
+                                            .flex_col()
+                                            .gap(px(2.0))
                                             .child(
                                                 div()
-                                                    .w(px(6.0))
-                                                    .h(px(6.0))
-                                                    .rounded_full()
-                                                    .bg(if running {
-                                                        gpui::rgb(0x4ade80)
+                                                    .text_size(px(13.0))
+                                                    .font_weight(FontWeight::MEDIUM)
+                                                    .text_color(if is_active {
+                                                        chrome.bright
                                                     } else {
-                                                        gpui::rgb(0x6b7280)
-                                                    }),
+                                                        chrome.text_secondary
+                                                    })
+                                                    .text_ellipsis()
+                                                    .child(title),
                                             )
                                             .child(
                                                 div()
-                                                    .text_size(px(11.0))
-                                                    .text_color(chrome.text_secondary)
-                                                    .child(status_text),
+                                                    .flex()
+                                                    .items_center()
+                                                    .gap(px(4.0))
+                                                    .child(
+                                                        div()
+                                                            .w(px(6.0))
+                                                            .h(px(6.0))
+                                                            .rounded_full()
+                                                            .bg(if running {
+                                                                gpui::rgb(0x4ade80)
+                                                            } else {
+                                                                gpui::rgb(0x6b7280)
+                                                            }),
+                                                    )
+                                                    .child(
+                                                        div()
+                                                            .text_size(px(11.0))
+                                                            .text_color(chrome.text_secondary)
+                                                            .child(status_text),
+                                                    ),
                                             ),
-                                    ),
-                            )
-                    })),
-            )
+                                    )
+                            })),
+                    )
+                    .child(crate::git_view::render_vertical_scrollbar(
+                        "terminal-session-list-vscroll",
+                        tl_handle,
+                        total_content_h,
+                        cx.entity().clone(),
+                    ))
+            })
     }
 
     fn render_settings_view(&self, cx: &mut Context<Self>) -> impl IntoElement {

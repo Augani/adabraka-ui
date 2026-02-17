@@ -1950,9 +1950,19 @@ impl EditorState {
         }
 
         let delete_pair = self.is_between_auto_close_pair();
-        let del_start = offset - 1;
-        let del_end = if delete_pair { offset + 1 } else { offset };
-        let del_end = del_end.min(self.rope.len_bytes());
+        let char_idx = self.rope.byte_to_char(offset);
+        let prev_char_byte = self.rope.char_to_byte(char_idx.saturating_sub(1));
+        let del_start = prev_char_byte;
+        let del_end = if delete_pair {
+            let next_char_byte = if char_idx < self.rope.len_chars() {
+                self.rope.char_to_byte(char_idx + 1)
+            } else {
+                self.rope.len_bytes()
+            };
+            next_char_byte.min(self.rope.len_bytes())
+        } else {
+            offset
+        };
 
         let old_end_position = self.byte_to_ts_point(del_end);
         let deleted: String = self.rope.byte_slice(del_start..del_end).into();
@@ -1982,7 +1992,13 @@ impl EditorState {
         if offset >= self.rope.len_bytes() {
             return;
         }
-        let del_end = min(offset + 1, self.rope.len_bytes());
+        let char_idx = self.rope.byte_to_char(offset);
+        let next_char_byte = if char_idx + 1 <= self.rope.len_chars() {
+            self.rope.char_to_byte(char_idx + 1)
+        } else {
+            self.rope.len_bytes()
+        };
+        let del_end = min(next_char_byte, self.rope.len_bytes());
         let old_end_position = self.byte_to_ts_point(del_end);
         let deleted: String = self.rope.byte_slice(offset..del_end).into();
         self.undo_stack.push(EditOp::Delete {
@@ -2492,7 +2508,7 @@ impl EditorState {
         };
         let line = display_lines.get(display_row).copied().unwrap_or(0);
 
-        let relative_x = mouse_pos.x - bounds.left() - gutter_width;
+        let relative_x = mouse_pos.x - bounds.left() - gutter_width + self.scroll_offset_x;
         let col = if let Some(layout) = self.line_layouts.get(&line) {
             let idx = layout.closest_index_for_x(relative_x);
             idx.min(self.line_len(line))
@@ -4096,9 +4112,20 @@ impl RenderOnce for Editor {
                     .flex()
                     .flex_col()
                     .size_full()
-                    .child(div().flex_1().overflow_hidden().child(
-                        scrollable_vertical(self.state.clone()).with_scroll_handle(scroll_handle),
-                    ))
+                    .child(
+                        div()
+                            .flex_1()
+                            .flex()
+                            .flex_row()
+                            .overflow_hidden()
+                            .child(
+                                div().flex_1().overflow_hidden().child(
+                                    scrollable_vertical(self.state.clone())
+                                        .with_scroll_handle(scroll_handle),
+                                ),
+                            )
+                            .child(VerticalScrollbar::new(self.state.clone(), cx)),
+                    )
                     .child(HorizontalScrollbar::new(self.state.clone(), cx)),
             )
     }
@@ -4198,6 +4225,116 @@ impl IntoElement for HorizontalScrollbar {
                     .bottom(px(2.0))
                     .left(relative(self.thumb_left_pct / 100.0))
                     .w(relative(self.thumb_width_pct / 100.0))
+                    .bg(theme.tokens.muted_foreground.opacity(0.6))
+                    .rounded(px(3.0))
+                    .hover(|s| s.bg(theme.tokens.muted_foreground.opacity(0.8))),
+            )
+            .into_any_element()
+    }
+}
+
+struct VerticalScrollbar {
+    state: Entity<EditorState>,
+    needs_scrollbar: bool,
+    thumb_height_pct: f32,
+    thumb_top_pct: f32,
+}
+
+impl VerticalScrollbar {
+    fn new(state: Entity<EditorState>, cx: &App) -> Self {
+        let s = state.read(cx);
+        let line_height = px(20.0);
+        let padding = px(24.0);
+        let num_lines = s.display_line_count();
+        let content_height = padding + (line_height * num_lines as f32);
+        let viewport_height = s.scroll_handle.bounds().size.height;
+        let needs_scrollbar = content_height > viewport_height && viewport_height > px(0.0);
+
+        let (thumb_height_pct, thumb_top_pct) = if needs_scrollbar {
+            let visible_ratio = (viewport_height / content_height).min(1.0);
+            let thp = (visible_ratio * 100.0).max(5.0);
+            let scroll_y = -s.scroll_handle.offset().y;
+            let overscroll = if viewport_height > line_height * 5.0 {
+                viewport_height / 2.0
+            } else {
+                px(100.0)
+            };
+            let max_scroll = content_height + overscroll - viewport_height;
+            let ttp = if max_scroll > px(0.0) {
+                ((scroll_y / max_scroll) * (100.0 - thp)).max(0.0).min(100.0 - thp)
+            } else {
+                0.0
+            };
+            (thp, ttp)
+        } else {
+            (0.0, 0.0)
+        };
+
+        Self {
+            state,
+            needs_scrollbar,
+            thumb_height_pct,
+            thumb_top_pct,
+        }
+    }
+}
+
+impl IntoElement for VerticalScrollbar {
+    type Element = AnyElement;
+
+    fn into_element(self) -> Self::Element {
+        if !self.needs_scrollbar {
+            return div().w(px(0.0)).into_any_element();
+        }
+
+        let theme = use_theme();
+        let editor_state = self.state.clone();
+
+        div()
+            .id("v-scrollbar")
+            .h_full()
+            .w(px(12.0))
+            .bg(theme.tokens.muted.opacity(0.3))
+            .cursor(CursorStyle::PointingHand)
+            .on_mouse_down(MouseButton::Left, {
+                let state = editor_state.clone();
+                move |event: &MouseDownEvent, _window, cx| {
+                    cx.stop_propagation();
+                    state.update(cx, |s, cx| {
+                        let vp = s.scroll_handle.bounds();
+                        let track_height = vp.size.height;
+                        let click_ratio = (event.position.y - vp.top()) / track_height;
+
+                        let line_height = px(20.0);
+                        let padding = px(24.0);
+                        let content_height =
+                            padding + (line_height * s.display_line_count() as f32);
+                        let overscroll = if track_height > line_height * 5.0 {
+                            track_height / 2.0
+                        } else {
+                            px(100.0)
+                        };
+                        let max_scroll = content_height + overscroll - track_height;
+
+                        if max_scroll > px(0.0) {
+                            let new_scroll = max_scroll * click_ratio;
+                            let offset = s.scroll_handle.offset();
+                            s.scroll_handle.set_offset(point(
+                                offset.x,
+                                -new_scroll.max(px(0.0)).min(max_scroll),
+                            ));
+                        }
+                        cx.notify();
+                    });
+                }
+            })
+            .child(
+                div()
+                    .absolute()
+                    .left(px(2.0))
+                    .right(px(2.0))
+                    .top(relative(self.thumb_top_pct / 100.0))
+                    .h(relative(self.thumb_height_pct / 100.0))
                     .bg(theme.tokens.muted_foreground.opacity(0.6))
                     .rounded(px(3.0))
                     .hover(|s| s.bg(theme.tokens.muted_foreground.opacity(0.8))),

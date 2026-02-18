@@ -68,11 +68,11 @@ pub struct ImageViewerState {
     current_index: usize,
     zoom: f32,
     pan_offset: Point<Pixels>,
-    is_panning: bool,
-    last_mouse_pos: Point<Pixels>,
-    loading: bool,
+    _is_panning: bool,
+    _last_mouse_pos: Point<Pixels>,
+    _loading: bool,
     show_thumbnails: bool,
-    fit_mode: ImageViewerSize,
+    _fit_mode: ImageViewerSize,
 }
 
 impl ImageViewerState {
@@ -82,11 +82,11 @@ impl ImageViewerState {
             current_index: 0,
             zoom: 1.0,
             pan_offset: point(px(0.0), px(0.0)),
-            is_panning: false,
-            last_mouse_pos: point(px(0.0), px(0.0)),
-            loading: false,
+            _is_panning: false,
+            _last_mouse_pos: point(px(0.0), px(0.0)),
+            _loading: false,
             show_thumbnails: true,
-            fit_mode: ImageViewerSize::default(),
+            _fit_mode: ImageViewerSize::default(),
         }
     }
 

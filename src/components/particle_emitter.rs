@@ -3,8 +3,6 @@
 use gpui::{prelude::FluentBuilder as _, *};
 use std::time::Duration;
 
-use crate::animations::easings;
-
 #[derive(Clone)]
 pub struct Particle {
     pub position: Point<f32>,
@@ -165,28 +163,31 @@ impl ParticleEmitterState {
             return;
         }
 
-        cx.spawn(async |this, cx| {
-            cx.background_executor()
-                .timer(Duration::from_millis(16))
-                .await;
+        cx.spawn(
+            async | this,
+            cx | {
+                cx.background_executor()
+                    .timer(Duration::from_millis(16))
+                    .await;
 
-            _ = this.update(cx, |state, cx| {
-                if !state.running {
-                    return;
-                }
+                _ = this.update(cx, |state, cx| {
+                    if !state.running {
+                        return;
+                    }
 
-                let dt = 1.0 / 60.0;
-                state.accumulator += state.config.spawn_rate * dt;
+                    let dt = 1.0 / 60.0;
+                    state.accumulator += state.config.spawn_rate * dt;
 
-                let to_spawn = state.accumulator as usize;
-                state.accumulator -= to_spawn as f32;
-                state.emit(to_spawn);
-                state.update(dt);
+                    let to_spawn = state.accumulator as usize;
+                    state.accumulator -= to_spawn as f32;
+                    state.emit(to_spawn);
+                    state.update(dt);
 
-                state.schedule_tick(cx);
-                cx.notify();
-            });
-        })
+                    state.schedule_tick(cx);
+                    cx.notify();
+                });
+            },
+        )
         .detach();
     }
 }

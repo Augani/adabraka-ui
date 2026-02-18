@@ -78,7 +78,7 @@ impl AreaChartRange {
 
         let mut x_min = f64::MAX;
         let mut x_max = f64::MIN;
-        let mut y_min = 0.0_f64;
+        let y_min = 0.0_f64;
         let mut y_max = f64::MIN;
 
         for s in series {
@@ -136,13 +136,13 @@ impl AreaChartRange {
 struct PaintData {
     series: Vec<AreaChartSeries>,
     show_grid: bool,
-    show_x_axis: bool,
-    show_y_axis: bool,
+    _show_x_axis: bool,
+    _show_y_axis: bool,
     mode: AreaChartMode,
-    x_labels: Vec<SharedString>,
+    _x_labels: Vec<SharedString>,
     y_label_count: usize,
     grid_color: Hsla,
-    text_color: Hsla,
+    _text_color: Hsla,
     fill_opacity: f32,
 }
 
@@ -287,13 +287,13 @@ impl RenderOnce for AreaChart {
         let paint_data = PaintData {
             series: self.series,
             show_grid: self.show_grid,
-            show_x_axis: self.show_x_axis,
-            show_y_axis: self.show_y_axis,
+            _show_x_axis: self.show_x_axis,
+            _show_y_axis: self.show_y_axis,
             mode: self.mode,
-            x_labels: self.x_labels.clone(),
+            _x_labels: self.x_labels.clone(),
             y_label_count: self.y_label_count,
             grid_color: theme.tokens.border,
-            text_color,
+            _text_color: text_color,
             fill_opacity: self.fill_opacity,
         };
 

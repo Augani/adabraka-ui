@@ -120,7 +120,7 @@ impl RenderOnce for Heatmap {
         let gap = self.gap;
         let show_values = self.show_values;
         let show_labels = self.show_labels;
-        let text_color = theme.tokens.foreground;
+        let _text_color = theme.tokens.foreground;
         let label_color = theme.tokens.muted_foreground;
 
         let has_y_labels = show_labels && !self.y_labels.is_empty();

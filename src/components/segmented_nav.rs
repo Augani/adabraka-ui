@@ -78,7 +78,7 @@ impl SegmentedNavState {
         &self.active
     }
 
-    fn active_index(&self) -> Option<usize> {
+    fn _active_index(&self) -> Option<usize> {
         self.items.iter().position(|item| item.id == self.active)
     }
 }

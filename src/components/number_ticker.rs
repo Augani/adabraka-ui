@@ -7,7 +7,7 @@ use crate::theme::use_theme;
 
 #[derive(IntoElement)]
 pub struct NumberTicker {
-    id: ElementId,
+    _id: ElementId,
     base: Div,
     value: i64,
     separator: Option<char>,
@@ -19,7 +19,7 @@ pub struct NumberTicker {
 impl NumberTicker {
     pub fn new(id: impl Into<ElementId>, value: i64) -> Self {
         Self {
-            id: id.into(),
+            _id: id.into(),
             base: div(),
             value,
             separator: None,

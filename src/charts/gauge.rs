@@ -40,7 +40,7 @@ struct PaintData {
 
 #[derive(IntoElement)]
 pub struct Gauge {
-    id: SharedString,
+    _id: SharedString,
     value: f32,
     label: Option<SharedString>,
     format_fn: Option<Rc<dyn Fn(f32) -> String>>,
@@ -53,7 +53,7 @@ pub struct Gauge {
 impl Gauge {
     pub fn new(id: impl Into<SharedString>) -> Self {
         Self {
-            id: id.into(),
+            _id: id.into(),
             value: 0.0,
             label: None,
             format_fn: None,

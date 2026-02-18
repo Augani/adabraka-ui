@@ -138,7 +138,7 @@ impl CropAreaState {
                 }
             }
             DragHandle::TopRight => {
-                let mut new_w = (start.size.width + dx)
+                let new_w = (start.size.width + dx)
                     .max(min_size)
                     .min(1.0 - start.origin.x);
                 let mut new_y = start.origin.y + dy;

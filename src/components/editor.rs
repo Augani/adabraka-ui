@@ -1939,7 +1939,9 @@ impl EditorState {
         if self.read_only {
             return;
         }
+        eprintln!("[BACKSPACE] cursor=({},{}) selection={:?}", self.cursor.line, self.cursor.col, self.selection.is_some());
         if let Some(selection) = self.selection.take() {
+            eprintln!("[BACKSPACE] deleting selection");
             self.delete_selection_internal(selection, cx);
             cx.notify();
             return;
@@ -1966,6 +1968,9 @@ impl EditorState {
 
         let old_end_position = self.byte_to_ts_point(del_end);
         let deleted: String = self.rope.byte_slice(del_start..del_end).into();
+        let line_text = self.line_text(self.cursor.line);
+        eprintln!("[BACKSPACE_DEL] cursor=({},{}) offset={} del_range={}..{} deleted={:?} line_text={:?}",
+            self.cursor.line, self.cursor.col, offset, del_start, del_end, &deleted, &line_text[..line_text.len().min(60)]);
         self.undo_stack.push(EditOp::Delete {
             byte_offset: del_start,
             text: deleted,
@@ -2508,9 +2513,19 @@ impl EditorState {
         };
         let line = display_lines.get(display_row).copied().unwrap_or(0);
 
-        let relative_x = mouse_pos.x - bounds.left() - gutter_width + self.scroll_offset_x;
+        let relative_x = mouse_pos.x - bounds.left() - gutter_width;
+        let has_layout = self.line_layouts.contains_key(&line);
         let col = if let Some(layout) = self.line_layouts.get(&line) {
             let idx = layout.closest_index_for_x(relative_x);
+            let round_trip_x = layout.x_for_index(idx);
+            let line_text = self.line_text(line);
+            let text_at_idx = if idx < line_text.len() {
+                &line_text[idx..line_text.len().min(idx + 10)]
+            } else {
+                "<END>"
+            };
+            eprintln!("[POS_DETAIL] rel_x={:.1} closest_idx={} x_for_idx={:.1} line_len={} text_at_idx={:?}",
+                relative_x, idx, round_trip_x, layout.len(), text_at_idx);
             idx.min(self.line_len(line))
         } else {
             let approx_char_width = px(8.4);
@@ -2521,6 +2536,10 @@ impl EditorState {
                 0
             }
         };
+
+        eprintln!("[POS_FOR_MOUSE] mouse=({:.0},{:.0}) bounds_top={:.0} bounds_left={:.0} gutter={:.0} rel_y={:.1} rel_x={:.1} disp_row_f={:.1} disp_row={} line={} col={} has_layout={} disp_count={}",
+            mouse_pos.x, mouse_pos.y, bounds.top(), bounds.left(), gutter_width,
+            relative_y, relative_x, display_row_f, display_row, line, col, has_layout, display_count);
 
         Position::new(line, col)
     }
@@ -3012,6 +3031,11 @@ impl Element for EditorElement {
         );
 
         self.state.update(cx, |state, _| {
+            if state.last_bounds.map(|b| (b.left(), b.top())) != Some((bounds.left(), bounds.top())) {
+                eprintln!("[PAINT] EditorElement bounds=({:.0},{:.0},{:.0},{:.0}) size=({:.0},{:.0})",
+                    bounds.left(), bounds.top(), bounds.right(), bounds.bottom(),
+                    bounds.size.width, bounds.size.height);
+            }
             state.last_bounds = Some(bounds);
         });
 
@@ -4068,6 +4092,9 @@ impl RenderOnce for Editor {
                         px(12.0)
                     };
                     let line_height = px(20.0);
+                    eprintln!("[CLICK] event_pos=({:.0},{:.0}) last_bounds=({:.0},{:.0},{:.0},{:.0})",
+                        event.position.x, event.position.y,
+                        bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
                     state.update(cx, |s, cx| {
                         s.on_mouse_down(event, bounds, gutter_width, line_height, window, cx);
                     });
@@ -4112,20 +4139,10 @@ impl RenderOnce for Editor {
                     .flex()
                     .flex_col()
                     .size_full()
-                    .child(
-                        div()
-                            .flex_1()
-                            .flex()
-                            .flex_row()
-                            .overflow_hidden()
-                            .child(
-                                div().flex_1().overflow_hidden().child(
-                                    scrollable_vertical(self.state.clone())
-                                        .with_scroll_handle(scroll_handle),
-                                ),
-                            )
-                            .child(VerticalScrollbar::new(self.state.clone(), cx)),
-                    )
+                    .child(div().flex_1().overflow_hidden().child(
+                        scrollable_vertical(self.state.clone())
+                            .with_scroll_handle(scroll_handle),
+                    ))
                     .child(HorizontalScrollbar::new(self.state.clone(), cx)),
             )
     }
@@ -4233,6 +4250,7 @@ impl IntoElement for HorizontalScrollbar {
     }
 }
 
+#[allow(dead_code)]
 struct VerticalScrollbar {
     state: Entity<EditorState>,
     needs_scrollbar: bool,
@@ -4241,6 +4259,7 @@ struct VerticalScrollbar {
 }
 
 impl VerticalScrollbar {
+    #[allow(dead_code)]
     fn new(state: Entity<EditorState>, cx: &App) -> Self {
         let s = state.read(cx);
         let line_height = px(20.0);

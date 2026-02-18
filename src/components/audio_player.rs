@@ -1,11 +1,9 @@
 use crate::icon_config::resolve_icon_path;
 use crate::theme::use_theme;
 use gpui::{prelude::*, *};
-use std::rc::Rc;
-use std::sync::Arc;
-
 #[cfg(feature = "audio")]
 use std::io::BufReader;
+use std::rc::Rc;
 #[cfg(feature = "audio")]
 use std::sync::Mutex;
 

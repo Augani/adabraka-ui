@@ -58,7 +58,7 @@ struct PaintData {
     grid_levels: usize,
     fill_opacity: f32,
     grid_color: Hsla,
-    text_color: Hsla,
+    _text_color: Hsla,
     label_padding: f32,
 }
 
@@ -178,7 +178,7 @@ impl RenderOnce for RadarChart {
             grid_levels: self.grid_levels,
             fill_opacity: self.fill_opacity,
             grid_color: theme.tokens.border,
-            text_color,
+            _text_color: text_color,
             label_padding,
         };
 

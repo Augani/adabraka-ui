@@ -221,7 +221,7 @@ impl FileTypeFilter {
 
 #[derive(IntoElement)]
 pub struct FileUpload {
-    id: ElementId,
+    _id: ElementId,
     base: Stateful<Div>,
     state: Entity<FileUploadState>,
     size: FileUploadSize,
@@ -242,7 +242,7 @@ impl FileUpload {
     pub fn new(id: impl Into<ElementId>, state: Entity<FileUploadState>) -> Self {
         let id = id.into();
         Self {
-            id: id.clone(),
+            _id: id.clone(),
             base: div().id(id),
             state,
             size: FileUploadSize::Md,
@@ -334,7 +334,7 @@ impl FileUpload {
         self
     }
 
-    fn validate_file(&self, path: &PathBuf) -> Result<(), String> {
+    fn _validate_file(&self, path: &PathBuf) -> Result<(), String> {
         if let Some(ref filter) = self.file_types {
             if !filter.matches(path) {
                 let allowed = if filter.extensions.is_empty() {

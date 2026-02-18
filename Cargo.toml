@@ -1,6 +1,6 @@
 [package]
 name = "adabraka-ui"
-version = "0.3.3"
+version = "0.3.4"
 edition = "2021"
 authors = ["Adabraka Team"]
 license = "MIT"
@@ -13,6 +13,10 @@ keywords = ["gpui", "ui", "gui", "components", "desktop"]
 categories = ["gui", "rendering"]
 rust-version = "1.70"
 exclude = ["assets/icons/**/*", "assets/audio/**/*", "assets/images/**/*"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
 
 [dependencies]
 # Core Framework

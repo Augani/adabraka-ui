@@ -5,7 +5,7 @@ use gpui::{prelude::*, *};
 use std::io::BufReader;
 use std::rc::Rc;
 #[cfg(feature = "audio")]
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 pub enum AudioPlayerSize {

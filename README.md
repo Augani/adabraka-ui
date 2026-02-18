@@ -55,15 +55,19 @@ Build your project with nightly:
 cargo +nightly build
 ```
 
-## What's New in v0.3.3
+## What's New in v0.3.4
 
 **Latest Release (February 2026)**
 
+### v0.3.4 - docs.rs Fix
+- Fixed docs.rs build failure by gating `Arc` import behind `#[cfg(feature = "audio")]`
+- Added `[package.metadata.docs.rs]` with `all-features = true` for reliable documentation builds
+
 ### v0.3.3 - Editor UTF-8 Bug Fix
-- Fixed rope byte/char offset mismatch that caused cursor drift and incorrect text placement in files with multi-byte UTF-8 characters. All rope insert/remove operations now correctly convert byte offsets to char indices.
+- Fixed rope byte/char offset mismatch that caused cursor drift and incorrect text placement in files with multi-byte UTF-8 characters
 
 ### v0.3.2 - Clean Build
-- Suppressed all compiler warnings across charts and components for a zero-warning build.
+- Suppressed all compiler warnings across charts and components for a zero-warning build
 
 ### v0.3.1 - Editor Improvements
 - Fixed editor cursor positioning with horizontal scroll offset

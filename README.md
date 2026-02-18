@@ -55,45 +55,22 @@ Build your project with nightly:
 cargo +nightly build
 ```
 
-## What's New in v0.3.0
+## What's New in v0.3.3
 
-**Latest Release (February 2026)** - Major release: published full adabraka-gpui ecosystem to crates.io, GPUI fork enhancements, 85+ components, and comprehensive animation/polish system.
+**Latest Release (February 2026)**
 
-### Published to crates.io
-All 12 adabraka-gpui crates and adabraka-ui are now published to crates.io. Simply `cargo add adabraka-ui` to get started -- no git dependencies needed.
+### v0.3.3 - Editor UTF-8 Bug Fix
+- Fixed rope byte/char offset mismatch that caused cursor drift and incorrect text placement in files with multi-byte UTF-8 characters. All rope insert/remove operations now correctly convert byte offsets to char indices.
 
-### GPUI Fork Enhancements (adabraka-gpui)
-- **Inset shadows** - `BoxShadow.inset` field, supported across all shader backends (Metal, WGSL, HLSL)
-- **Letter spacing** - `TextStyle.letter_spacing` with `tracking_tight()`, `tracking_wide()` convenience methods
-- **Animation cancellation** - `AnimationHandle` and `with_cancellable_animation()` for interruptible animations
-- **Squircle corners** - `continuous_corners` on `Styled` for iOS-style superellipse corners in all shaders
-- **Text shadow** - `TextShadow` struct with `text_shadow_sm()`, `text_shadow_md()`, `text_shadow_lg()` presets
+### v0.3.2 - Clean Build
+- Suppressed all compiler warnings across charts and components for a zero-warning build.
 
-### New Components
-- **Form** - Declarative form builder with validation, field groups, and submit handling
-- **InfiniteScroll** - Automatic loading of paginated data as the user scrolls
-- **SortableList** - Drag-to-reorder list with smooth animations
-- **DataGrid** - Spreadsheet-style grid with inline editing, sorting, and column resizing
-- **Spring physics** - Natural spring-based animations
-- **Gestures** - Swipe, pinch, long-press gesture recognizers
-- **Content transitions** - Animated content swapping with enter/exit transitions
-- **Responsive** - Breakpoint-aware layout utilities
-- **Animation coordinator** - Orchestrate complex multi-element animation sequences
+### v0.3.1 - Editor Improvements
+- Fixed editor cursor positioning with horizontal scroll offset
+- Fixed UTF-8 backspace/delete handling in the editor
 
-### Animation & Polish System
-- Exit animations for all overlay components (Dialog, Toast, Popover, Sheet, etc.)
-- Input shake on validation failure (`trigger_shake()`)
-- Ripple effect on Button and IconButton (`.ripple(true)`)
-- 30+ easing functions including elastic, back, circ, expo, cubic-bezier, steps
-- ScrollPhysics integration with momentum scrolling
-- Smooth animated scroll-to (`scroll_to_y_animated`, `scroll_to_x_animated`)
-- Elevation shadows, inset shadows, and layered gradients in theme tokens
-
-### Developer Experience
-- GPUI re-exports via `gpui_ext.rs` -- no need to import gpui separately for common types
-- `StyledExt` trait with `.center()`, `.stack()`, `.row()`, `.glass()`, `.elevated()`, `.ring()` helpers
-- Spacing, duration, and z-index tokens on all 18 themes
-- Expanded prelude with 15+ additional exports
+### v0.3.0 - Major Release
+Published full adabraka-gpui ecosystem to crates.io, GPUI fork enhancements (inset shadows, letter spacing, squircle corners, text shadows, animation cancellation), 5 new components (Form, InfiniteScroll, SortableList, DataGrid, Animation Builder), comprehensive animation/polish system with 30+ easings, spring physics, gestures, and exit animations.
 
 ---
 

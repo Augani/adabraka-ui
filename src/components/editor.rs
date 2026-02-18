@@ -501,6 +501,9 @@ pub struct EditorState {
     tab_size: usize,
     read_only: bool,
 
+    pub font_size: Pixels,
+    pub line_height: Pixels,
+
     overlay_active_check: Option<Box<dyn Fn(&App) -> bool + 'static>>,
 
     reparse_task: Option<Task<()>>,
@@ -593,6 +596,8 @@ impl EditorState {
             show_line_numbers: true,
             tab_size: 4,
             read_only: false,
+            font_size: px(14.0),
+            line_height: px(20.0),
             overlay_active_check: None,
             reparse_task: None,
             search_task: None,
@@ -632,6 +637,14 @@ impl EditorState {
         self.cursor.col = col.min(line_len);
         self.selection = None;
         self.ensure_cursor_visible(cx);
+    }
+
+    pub fn set_font_size(&mut self, size: f32, cx: &mut Context<Self>) {
+        self.font_size = px(size);
+        self.line_height = px((size * 1.5).round());
+        self.line_layouts.clear();
+        self.line_content_hashes.clear();
+        cx.notify();
     }
 
     pub fn set_diagnostics(&mut self, diagnostics: Vec<EditorDiagnostic>, cx: &mut Context<Self>) {
@@ -982,7 +995,7 @@ impl EditorState {
     }
 
     fn clamp_scroll_after_fold(&mut self) {
-        let line_height = px(20.0);
+        let line_height = self.line_height;
         let padding_top = px(12.0);
         let padding_bottom = px(12.0);
         let display_count = self.display_line_count();
@@ -2410,7 +2423,7 @@ impl EditorState {
         }
         let (start, _) = self.search_matches[idx];
         let pos = self.byte_offset_to_pos(start);
-        let line_height = px(20.0);
+        let line_height = self.line_height;
         let padding_top = px(12.0);
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
@@ -2432,7 +2445,7 @@ impl EditorState {
     }
 
     fn ensure_cursor_visible(&mut self, cx: &mut Context<Self>) {
-        let line_height = px(20.0);
+        let line_height = self.line_height;
         let padding_top = px(12.0);
         let viewport_bounds = self.scroll_handle.bounds();
         let viewport_height = viewport_bounds.size.height;
@@ -2540,7 +2553,7 @@ impl EditorState {
 
     fn start_autoscroll(&mut self, cx: &mut Context<Self>) {
         let entity = cx.entity().clone();
-        let line_height = px(20.0);
+        let line_height = self.line_height;
         self.autoscroll_task = Some(cx.spawn(async move |_, cx| loop {
             Timer::after(Duration::from_millis(50)).await;
             let should_continue = cx
@@ -2909,7 +2922,7 @@ impl EntityInputHandler for EditorState {
             } else {
                 px(12.0)
             };
-            let line_height = px(20.0);
+            let line_height = self.line_height;
             let pos = self.position_for_mouse(point, bounds, gutter_width, line_height);
             let offset = self.pos_to_byte_offset(pos);
             Some(self.offset_to_utf16(offset))
@@ -2960,7 +2973,7 @@ impl Element for EditorElement {
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        let line_height = px(20.0);
+        let line_height = self.state.read(cx).line_height;
         let padding_top = px(12.0);
         let padding_bottom = px(12.0);
         let num_lines = self.state.read(cx).display_line_count();
@@ -2989,14 +3002,16 @@ impl Element for EditorElement {
         _window: &mut Window,
         cx: &mut App,
     ) -> Self::PrepaintState {
-        let show_line_numbers = self.state.read(cx).show_line_numbers;
+        let state = self.state.read(cx);
+        let show_line_numbers = state.show_line_numbers;
+        let line_height = state.line_height;
         PrepaintState {
             gutter_width: if show_line_numbers {
                 px(72.0)
             } else {
                 px(12.0)
             },
-            line_height: px(20.0),
+            line_height,
         }
     }
 
@@ -3015,7 +3030,7 @@ impl Element for EditorElement {
         let padding_top = px(12.0);
         let line_height = prepaint.line_height;
         let gutter_width = prepaint.gutter_width;
-        let font_size = px(14.0);
+        let font_size = self.state.read(cx).font_size;
 
         window.handle_input(
             &focus_handle,
@@ -4073,13 +4088,13 @@ impl RenderOnce for Editor {
             .on_mouse_down(MouseButton::Left, {
                 let state = self.state.clone();
                 move |event: &MouseDownEvent, window: &mut Window, cx: &mut App| {
-                    let bounds = state.read(cx).last_bounds.unwrap_or_default();
-                    let gutter_width = if state.read(cx).show_line_numbers {
-                        px(72.0)
-                    } else {
-                        px(12.0)
+                    let (bounds, gutter_width, line_height) = {
+                        let s = state.read(cx);
+                        let b = s.last_bounds.unwrap_or_default();
+                        let gw = if s.show_line_numbers { px(72.0) } else { px(12.0) };
+                        let lh = s.line_height;
+                        (b, gw, lh)
                     };
-                    let line_height = px(20.0);
                     state.update(cx, |s, cx| {
                         s.on_mouse_down(event, bounds, gutter_width, line_height, window, cx);
                     });
@@ -4089,13 +4104,13 @@ impl RenderOnce for Editor {
             .on_mouse_move({
                 let state = self.state.clone();
                 move |event: &MouseMoveEvent, window: &mut Window, cx: &mut App| {
-                    let bounds = state.read(cx).last_bounds.unwrap_or_default();
-                    let gutter_width = if state.read(cx).show_line_numbers {
-                        px(72.0)
-                    } else {
-                        px(12.0)
+                    let (bounds, gutter_width, line_height) = {
+                        let s = state.read(cx);
+                        let b = s.last_bounds.unwrap_or_default();
+                        let gw = if s.show_line_numbers { px(72.0) } else { px(12.0) };
+                        let lh = s.line_height;
+                        (b, gw, lh)
                     };
-                    let line_height = px(20.0);
                     state.update(cx, |s, cx| {
                         s.on_mouse_move(event, bounds, gutter_width, line_height, window, cx);
                     });
@@ -4247,7 +4262,7 @@ impl VerticalScrollbar {
     #[allow(dead_code)]
     fn new(state: Entity<EditorState>, cx: &App) -> Self {
         let s = state.read(cx);
-        let line_height = px(20.0);
+        let line_height = s.line_height;
         let padding = px(24.0);
         let num_lines = s.display_line_count();
         let content_height = padding + (line_height * num_lines as f32);
@@ -4309,7 +4324,7 @@ impl IntoElement for VerticalScrollbar {
                         let track_height = vp.size.height;
                         let click_ratio = (event.position.y - vp.top()) / track_height;
 
-                        let line_height = px(20.0);
+                        let line_height = s.line_height;
                         let padding = px(24.0);
                         let content_height =
                             padding + (line_height * s.display_line_count() as f32);

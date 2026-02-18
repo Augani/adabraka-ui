@@ -1263,6 +1263,18 @@ impl EditorState {
         self.line_text(line).len()
     }
 
+    fn rope_insert(&mut self, byte_offset: usize, text: &str) {
+        let char_offset = self.rope.byte_to_char(byte_offset.min(self.rope.len_bytes()));
+        self.rope.insert(char_offset, text);
+    }
+
+    fn rope_remove(&mut self, byte_start: usize, byte_end: usize) {
+        let len = self.rope.len_bytes();
+        let char_start = self.rope.byte_to_char(byte_start.min(len));
+        let char_end = self.rope.byte_to_char(byte_end.min(len));
+        self.rope.remove(char_start..char_end);
+    }
+
     fn total_lines(&self) -> usize {
         self.line_count()
     }
@@ -1545,7 +1557,7 @@ impl EditorState {
         });
         self.redo_stack.clear();
 
-        self.rope.insert(byte_offset, text);
+        self.rope_insert(byte_offset, text);
         self.mark_modified();
 
         let new_end_byte = byte_offset + text.len();
@@ -1578,7 +1590,7 @@ impl EditorState {
         });
         self.redo_stack.clear();
 
-        self.rope.remove(start_offset..end_offset);
+        self.rope_remove(start_offset, end_offset);
         self.mark_modified();
         self.cursor = start;
         self.clamp_cursor();
@@ -1686,12 +1698,12 @@ impl EditorState {
             match &op {
                 EditOp::Insert { byte_offset, text } => {
                     let end = byte_offset + text.len();
-                    self.rope.remove(*byte_offset..end);
+                    self.rope_remove(*byte_offset, end);
                     self.cursor = self.byte_offset_to_pos(*byte_offset);
                     self.redo_stack.push(op);
                 }
                 EditOp::Delete { byte_offset, text } => {
-                    self.rope.insert(*byte_offset, text);
+                    self.rope_insert(*byte_offset, text);
                     self.cursor = self.byte_offset_to_pos(*byte_offset + text.len());
                     self.redo_stack.push(op);
                 }
@@ -1708,13 +1720,13 @@ impl EditorState {
         if let Some(op) = self.redo_stack.pop() {
             match &op {
                 EditOp::Insert { byte_offset, text } => {
-                    self.rope.insert(*byte_offset, text);
+                    self.rope_insert(*byte_offset, text);
                     self.cursor = self.byte_offset_to_pos(*byte_offset + text.len());
                     self.undo_stack.push(op);
                 }
                 EditOp::Delete { byte_offset, text } => {
                     let end = byte_offset + text.len();
-                    self.rope.remove(*byte_offset..end);
+                    self.rope_remove(*byte_offset, end);
                     self.cursor = self.byte_offset_to_pos(*byte_offset);
                     self.undo_stack.push(op);
                 }
@@ -1939,9 +1951,7 @@ impl EditorState {
         if self.read_only {
             return;
         }
-        eprintln!("[BACKSPACE] cursor=({},{}) selection={:?}", self.cursor.line, self.cursor.col, self.selection.is_some());
         if let Some(selection) = self.selection.take() {
-            eprintln!("[BACKSPACE] deleting selection");
             self.delete_selection_internal(selection, cx);
             cx.notify();
             return;
@@ -1968,15 +1978,12 @@ impl EditorState {
 
         let old_end_position = self.byte_to_ts_point(del_end);
         let deleted: String = self.rope.byte_slice(del_start..del_end).into();
-        let line_text = self.line_text(self.cursor.line);
-        eprintln!("[BACKSPACE_DEL] cursor=({},{}) offset={} del_range={}..{} deleted={:?} line_text={:?}",
-            self.cursor.line, self.cursor.col, offset, del_start, del_end, &deleted, &line_text[..line_text.len().min(60)]);
         self.undo_stack.push(EditOp::Delete {
             byte_offset: del_start,
             text: deleted,
         });
         self.redo_stack.clear();
-        self.rope.remove(del_start..del_end);
+        self.rope_remove(del_start, del_end);
         self.mark_modified();
         self.cursor = self.byte_offset_to_pos(del_start);
         self.update_syntax_tree_incremental(del_start, del_end, del_start, old_end_position, cx);
@@ -2011,7 +2018,7 @@ impl EditorState {
             text: deleted,
         });
         self.redo_stack.clear();
-        self.rope.remove(offset..del_end);
+        self.rope_remove(offset, del_end);
         self.mark_modified();
         self.update_syntax_tree_incremental(offset, del_end, offset, old_end_position, cx);
         self.invalidate_after_edit();
@@ -2035,7 +2042,7 @@ impl EditorState {
             text: deleted,
         });
         self.redo_stack.clear();
-        self.rope.remove(start_offset..end_offset);
+        self.rope_remove(start_offset, end_offset);
         self.mark_modified();
         self.cursor = word_start;
         self.update_syntax_tree_incremental(
@@ -2299,12 +2306,12 @@ impl EditorState {
             byte_offset: start,
             text: deleted,
         });
-        self.rope.remove(start..end);
+        self.rope_remove(start, end);
         self.undo_stack.push(EditOp::Insert {
             byte_offset: start,
             text: replacement.to_string(),
         });
-        self.rope.insert(start, replacement);
+        self.rope_insert(start, replacement);
         self.redo_stack.clear();
         self.mark_modified();
         let new_end = start + replacement.len();
@@ -2318,18 +2325,19 @@ impl EditorState {
         if self.read_only || self.search_matches.is_empty() {
             return;
         }
-        for &(start, end) in self.search_matches.iter().rev() {
+        let matches: Vec<_> = self.search_matches.iter().rev().copied().collect();
+        for (start, end) in matches {
             let deleted: String = self.rope.byte_slice(start..end).into();
             self.undo_stack.push(EditOp::Delete {
                 byte_offset: start,
                 text: deleted,
             });
-            self.rope.remove(start..end);
+            self.rope_remove(start, end);
             self.undo_stack.push(EditOp::Insert {
                 byte_offset: start,
                 text: replacement.to_string(),
             });
-            self.rope.insert(start, replacement);
+            self.rope_insert(start, replacement);
         }
         self.redo_stack.clear();
         self.mark_modified();
@@ -2513,19 +2521,9 @@ impl EditorState {
         };
         let line = display_lines.get(display_row).copied().unwrap_or(0);
 
-        let relative_x = mouse_pos.x - bounds.left() - gutter_width;
-        let has_layout = self.line_layouts.contains_key(&line);
+        let relative_x = mouse_pos.x - bounds.left() - gutter_width + self.scroll_offset_x;
         let col = if let Some(layout) = self.line_layouts.get(&line) {
             let idx = layout.closest_index_for_x(relative_x);
-            let round_trip_x = layout.x_for_index(idx);
-            let line_text = self.line_text(line);
-            let text_at_idx = if idx < line_text.len() {
-                &line_text[idx..line_text.len().min(idx + 10)]
-            } else {
-                "<END>"
-            };
-            eprintln!("[POS_DETAIL] rel_x={:.1} closest_idx={} x_for_idx={:.1} line_len={} text_at_idx={:?}",
-                relative_x, idx, round_trip_x, layout.len(), text_at_idx);
             idx.min(self.line_len(line))
         } else {
             let approx_char_width = px(8.4);
@@ -2536,10 +2534,6 @@ impl EditorState {
                 0
             }
         };
-
-        eprintln!("[POS_FOR_MOUSE] mouse=({:.0},{:.0}) bounds_top={:.0} bounds_left={:.0} gutter={:.0} rel_y={:.1} rel_x={:.1} disp_row_f={:.1} disp_row={} line={} col={} has_layout={} disp_count={}",
-            mouse_pos.x, mouse_pos.y, bounds.top(), bounds.left(), gutter_width,
-            relative_y, relative_x, display_row_f, display_row, line, col, has_layout, display_count);
 
         Position::new(line, col)
     }
@@ -2802,7 +2796,6 @@ impl EntityInputHandler for EditorState {
         if self.read_only {
             return;
         }
-
         let range_utf8 = range_utf16
             .as_ref()
             .map(|r| self.range_from_utf16(r))
@@ -3031,11 +3024,6 @@ impl Element for EditorElement {
         );
 
         self.state.update(cx, |state, _| {
-            if state.last_bounds.map(|b| (b.left(), b.top())) != Some((bounds.left(), bounds.top())) {
-                eprintln!("[PAINT] EditorElement bounds=({:.0},{:.0},{:.0},{:.0}) size=({:.0},{:.0})",
-                    bounds.left(), bounds.top(), bounds.right(), bounds.bottom(),
-                    bounds.size.width, bounds.size.height);
-            }
             state.last_bounds = Some(bounds);
         });
 
@@ -4092,9 +4080,6 @@ impl RenderOnce for Editor {
                         px(12.0)
                     };
                     let line_height = px(20.0);
-                    eprintln!("[CLICK] event_pos=({:.0},{:.0}) last_bounds=({:.0},{:.0},{:.0},{:.0})",
-                        event.position.x, event.position.y,
-                        bounds.left(), bounds.top(), bounds.right(), bounds.bottom());
                     state.update(cx, |s, cx| {
                         s.on_mouse_down(event, bounds, gutter_width, line_height, window, cx);
                     });

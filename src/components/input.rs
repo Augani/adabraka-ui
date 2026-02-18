@@ -713,6 +713,7 @@ impl RenderOnce for Input {
                             .font_family(theme.tokens.font_mono.clone())
                             .text_color(text_color)
                             .shadow(smallvec::smallvec![shadow_xs])
+                            .when(!self.disabled, |h| h.cursor(gpui::CursorStyle::IBeam))
                             .when(!self.disabled, |h| {
                                 h.hover(move |style| {
                                     style.border_color(if self.error {

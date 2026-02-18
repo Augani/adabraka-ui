@@ -589,7 +589,7 @@ impl EditorState {
             is_selecting: false,
             dragging_h_scrollbar: false,
             last_mouse_pos: None,
-            last_mouse_gutter_width: px(72.0),
+            last_mouse_gutter_width: px(80.0),
             autoscroll_task: None,
             last_click_time: None,
             marked_range: None,
@@ -1214,7 +1214,7 @@ impl EditorState {
     pub fn cursor_screen_position(&self, line_height: Pixels) -> Option<Point<Pixels>> {
         let bounds = self.last_bounds?;
         let gutter_width = if self.show_line_numbers {
-            px(72.0)
+            px(80.0)
         } else {
             px(12.0)
         };
@@ -2451,7 +2451,7 @@ impl EditorState {
         let viewport_height = viewport_bounds.size.height;
         let viewport_width = viewport_bounds.size.width;
         let gutter_width = if self.show_line_numbers {
-            px(72.0)
+            px(80.0)
         } else {
             px(12.0)
         };
@@ -2496,7 +2496,7 @@ impl EditorState {
     pub fn scroll_horizontal(&mut self, delta: Pixels, cx: &mut Context<Self>) {
         let viewport_bounds = self.scroll_handle.bounds();
         let gutter_width = if self.show_line_numbers {
-            px(72.0)
+            px(80.0)
         } else {
             px(12.0)
         };
@@ -2694,10 +2694,15 @@ impl EditorState {
         cx: &mut Context<Self>,
     ) {
         if self.dragging_h_scrollbar {
+            if event.pressed_button != Some(MouseButton::Left) {
+                self.dragging_h_scrollbar = false;
+                cx.notify();
+                return;
+            }
             let max_w = self.max_line_width;
             let vp = self.scroll_handle.bounds();
             let gw = if self.show_line_numbers {
-                px(72.0)
+                px(80.0)
             } else {
                 px(12.0)
             };
@@ -2714,7 +2719,12 @@ impl EditorState {
             return;
         }
 
-        if !self.is_selecting {
+        if !self.is_selecting || event.pressed_button != Some(MouseButton::Left) {
+            if self.is_selecting && event.pressed_button != Some(MouseButton::Left) {
+                self.is_selecting = false;
+                self.last_mouse_pos = None;
+                cx.notify();
+            }
             return;
         }
 
@@ -2918,7 +2928,7 @@ impl EntityInputHandler for EditorState {
     ) -> Option<usize> {
         if let Some(bounds) = self.last_bounds {
             let gutter_width = if self.show_line_numbers {
-                px(72.0)
+                px(80.0)
             } else {
                 px(12.0)
             };
@@ -3007,7 +3017,7 @@ impl Element for EditorElement {
         let line_height = state.line_height;
         PrepaintState {
             gutter_width: if show_line_numbers {
-                px(72.0)
+                px(80.0)
             } else {
                 px(12.0)
             },
@@ -3113,27 +3123,6 @@ impl Element for EditorElement {
             )
         };
 
-        if show_line_numbers {
-            let gutter_bounds = Bounds {
-                origin: bounds.origin,
-                size: Size {
-                    width: gutter_width,
-                    height: bounds.size.height,
-                },
-            };
-            window.paint_quad(PaintQuad {
-                bounds: gutter_bounds,
-                corner_radii: Corners::default(),
-                background: gutter_bg_color.into(),
-                border_widths: Edges::default(),
-                border_color: Hsla::transparent_black(),
-                border_style: BorderStyle::default(),
-                continuous_corners: false,
-                transform: Default::default(),
-                blend_mode: Default::default(),
-            });
-        }
-
         let is_focused = focus_handle.is_focused(window);
         let is_single_cursor =
             selection.is_none() || selection.as_ref().map(|s| s.is_empty()).unwrap_or(true);
@@ -3204,62 +3193,9 @@ impl Element for EditorElement {
             0
         };
 
-        let mut line_num_buf = String::with_capacity(8);
-
         for display_row in first_visible_display_row..last_visible_display_row {
             let line_idx = display_lines_vec[display_row];
             let y = bounds.top() + padding_top + line_height * display_row as f32;
-
-            if show_line_numbers {
-                let is_current_line = line_idx == cursor.line;
-                let num_color = if is_current_line && is_focused {
-                    line_num_active_color
-                } else {
-                    line_num_color
-                };
-                line_num_buf.clear();
-                use std::fmt::Write;
-                let _ = write!(line_num_buf, "{:>4}", line_idx + 1);
-                let line_num_run = TextRun {
-                    len: line_num_buf.len(),
-                    font: text_style.font(),
-                    color: num_color,
-                    background_color: None,
-                    underline: None,
-                    strikethrough: None,
-                };
-                let shaped = window.text_system().shape_line(
-                    SharedString::from(line_num_buf.clone()),
-                    font_size,
-                    &[line_num_run],
-                    None,
-                );
-
-                let fold_start = fold_ranges.iter().any(|f| f.start_line == line_idx);
-                let is_folded = folded_ranges.iter().any(|f| f.start_line == line_idx);
-                let _ = shaped.paint(point(bounds.left() + px(6.0), y), line_height, window, cx);
-
-                if fold_start {
-                    let icon_name = if is_folded {
-                        "chevron-right"
-                    } else {
-                        "chevron-down"
-                    };
-                    let icon_path = SharedString::from(resolve_icon_path(icon_name));
-                    let icon_size = px(16.0);
-                    let icon_x = bounds.left() + gutter_width - px(18.0);
-                    let icon_y = y + (line_height - icon_size) / 2.0;
-                    let icon_bounds =
-                        Bounds::new(point(icon_x, icon_y), size(icon_size, icon_size));
-                    let _ = window.paint_svg(
-                        icon_bounds,
-                        icon_path,
-                        TransformationMatrix::default(),
-                        fold_marker_color,
-                        cx,
-                    );
-                }
-            }
 
             let line_text = self.state.read(cx).line_text(line_idx);
             let leading_spaces = line_text.len() - line_text.trim_start().len();
@@ -3359,6 +3295,79 @@ impl Element for EditorElement {
                 state.max_line_width = max_line_width;
             }
         });
+
+        if show_line_numbers {
+            window.paint_quad(PaintQuad {
+                bounds: Bounds {
+                    origin: bounds.origin,
+                    size: Size {
+                        width: gutter_width,
+                        height: bounds.size.height,
+                    },
+                },
+                corner_radii: Corners::default(),
+                background: gutter_bg_color.into(),
+                border_widths: Edges::default(),
+                border_color: Hsla::transparent_black(),
+                border_style: BorderStyle::default(),
+                continuous_corners: false,
+                transform: Default::default(),
+                blend_mode: Default::default(),
+            });
+
+            let mut line_num_buf2 = String::with_capacity(8);
+            for display_row in first_visible_display_row..last_visible_display_row {
+                let line_idx = display_lines_vec[display_row];
+                let y = bounds.top() + padding_top + line_height * display_row as f32;
+                let is_current_line = line_idx == cursor.line;
+                let num_color = if is_current_line && is_focused {
+                    line_num_active_color
+                } else {
+                    line_num_color
+                };
+                line_num_buf2.clear();
+                use std::fmt::Write;
+                let _ = write!(line_num_buf2, "{:>4}", line_idx + 1);
+                let line_num_run = TextRun {
+                    len: line_num_buf2.len(),
+                    font: text_style.font(),
+                    color: num_color,
+                    background_color: None,
+                    underline: None,
+                    strikethrough: None,
+                };
+                let shaped = window.text_system().shape_line(
+                    SharedString::from(line_num_buf2.clone()),
+                    font_size,
+                    &[line_num_run],
+                    None,
+                );
+                let _ = shaped.paint(point(bounds.left() + px(6.0), y), line_height, window, cx);
+
+                let fold_start = fold_ranges.iter().any(|f| f.start_line == line_idx);
+                let is_folded = folded_ranges.iter().any(|f| f.start_line == line_idx);
+                if fold_start {
+                    let icon_name = if is_folded {
+                        "chevron-right"
+                    } else {
+                        "chevron-down"
+                    };
+                    let icon_path = SharedString::from(resolve_icon_path(icon_name));
+                    let icon_size = px(16.0);
+                    let icon_x = bounds.left() + gutter_width - px(18.0);
+                    let icon_y = y + (line_height - icon_size) / 2.0;
+                    let icon_bounds =
+                        Bounds::new(point(icon_x, icon_y), size(icon_size, icon_size));
+                    let _ = window.paint_svg(
+                        icon_bounds,
+                        icon_path,
+                        TransformationMatrix::default(),
+                        fold_marker_color,
+                        cx,
+                    );
+                }
+            }
+        }
 
         if is_focused && is_single_cursor {
             let word_occurrences = self.find_word_occurrences(visible_buffer_lines, cx);
@@ -4091,7 +4100,7 @@ impl RenderOnce for Editor {
                     let (bounds, gutter_width, line_height) = {
                         let s = state.read(cx);
                         let b = s.last_bounds.unwrap_or_default();
-                        let gw = if s.show_line_numbers { px(72.0) } else { px(12.0) };
+                        let gw = if s.show_line_numbers { px(80.0) } else { px(12.0) };
                         let lh = s.line_height;
                         (b, gw, lh)
                     };
@@ -4107,7 +4116,7 @@ impl RenderOnce for Editor {
                     let (bounds, gutter_width, line_height) = {
                         let s = state.read(cx);
                         let b = s.last_bounds.unwrap_or_default();
-                        let gw = if s.show_line_numbers { px(72.0) } else { px(12.0) };
+                        let gw = if s.show_line_numbers { px(80.0) } else { px(12.0) };
                         let lh = s.line_height;
                         (b, gw, lh)
                     };
@@ -4162,7 +4171,7 @@ impl HorizontalScrollbar {
         let scroll_x = s.scroll_offset_x;
         let viewport_bounds = s.scroll_handle.bounds();
         let gutter_width = if s.show_line_numbers {
-            px(72.0)
+            px(80.0)
         } else {
             px(12.0)
         };
@@ -4218,7 +4227,7 @@ impl IntoElement for HorizontalScrollbar {
                         let max_w = s.max_line_width;
                         let vp = s.scroll_handle.bounds();
                         let gw = if s.show_line_numbers {
-                            px(72.0)
+                            px(80.0)
                         } else {
                             px(12.0)
                         };
@@ -4231,6 +4240,15 @@ impl IntoElement for HorizontalScrollbar {
                             let new_scroll = scroll_range * click_ratio;
                             s.scroll_offset_x = new_scroll.max(px(0.0)).min(scroll_range);
                         }
+                        cx.notify();
+                    });
+                }
+            })
+            .on_mouse_up(MouseButton::Left, {
+                let state = editor_state.clone();
+                move |_: &MouseUpEvent, _window, cx| {
+                    state.update(cx, |s, cx| {
+                        s.dragging_h_scrollbar = false;
                         cx.notify();
                     });
                 }

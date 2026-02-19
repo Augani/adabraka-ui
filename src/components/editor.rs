@@ -503,6 +503,7 @@ pub struct EditorState {
 
     pub font_size: Pixels,
     pub line_height: Pixels,
+    pub font_family_override: Option<SharedString>,
 
     overlay_active_check: Option<Box<dyn Fn(&App) -> bool + 'static>>,
 
@@ -598,6 +599,7 @@ impl EditorState {
             read_only: false,
             font_size: px(14.0),
             line_height: px(20.0),
+            font_family_override: None,
             overlay_active_check: None,
             reparse_task: None,
             search_task: None,
@@ -642,6 +644,13 @@ impl EditorState {
     pub fn set_font_size(&mut self, size: f32, cx: &mut Context<Self>) {
         self.font_size = px(size);
         self.line_height = px((size * 1.5).round());
+        self.line_layouts.clear();
+        self.line_content_hashes.clear();
+        cx.notify();
+    }
+
+    pub fn set_font_family(&mut self, family: impl Into<SharedString>, cx: &mut Context<Self>) {
+        self.font_family_override = Some(family.into());
         self.line_layouts.clear();
         self.line_content_hashes.clear();
         cx.notify();
@@ -4027,6 +4036,12 @@ impl RenderOnce for Editor {
             state.syntax_color_fn = syn_fn;
         });
         let theme = use_theme();
+        let font_family_for_editor = self
+            .state
+            .read(cx)
+            .font_family_override
+            .clone()
+            .unwrap_or_else(|| theme.tokens.font_mono.clone());
         let min_height = self.min_lines.map(|lines| px(lines as f32 * 20.0));
         let max_height = self.max_lines.map(|lines| px(lines as f32 * 20.0));
         let scroll_handle = self.state.read(cx).scroll_handle.clone();
@@ -4064,7 +4079,7 @@ impl RenderOnce for Editor {
                 d.style().refine(&user_style);
                 d
             })
-            .font_family(theme.tokens.font_mono.clone())
+            .font_family(font_family_for_editor.clone())
             .on_action(window.listener_for(&self.state, EditorState::move_up))
             .on_action(window.listener_for(&self.state, EditorState::move_down))
             .on_action(window.listener_for(&self.state, EditorState::move_left))

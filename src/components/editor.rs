@@ -324,57 +324,78 @@ impl Language {
         }
     }
 
-    pub fn highlight_query_source(&self) -> Option<&'static str> {
+    pub fn highlight_query_source(&self) -> Option<std::borrow::Cow<'static, str>> {
         match self {
             #[cfg(feature = "tree-sitter-rust")]
-            Language::Rust => Some(tree_sitter_rust::HIGHLIGHTS_QUERY),
+            Language::Rust => Some(tree_sitter_rust::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-javascript")]
-            Language::JavaScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY),
-            #[cfg(feature = "tree-sitter-typescript")]
-            Language::TypeScript => Some(tree_sitter_typescript::HIGHLIGHTS_QUERY),
+            Language::JavaScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY.into()),
+            #[cfg(all(feature = "tree-sitter-typescript", feature = "tree-sitter-javascript"))]
+            Language::TypeScript => {
+                let combined = format!(
+                    "{}\n{}",
+                    tree_sitter_javascript::HIGHLIGHT_QUERY,
+                    tree_sitter_typescript::HIGHLIGHTS_QUERY
+                );
+                Some(combined.into())
+            }
+            #[cfg(all(
+                feature = "tree-sitter-typescript",
+                not(feature = "tree-sitter-javascript")
+            ))]
+            Language::TypeScript => Some(tree_sitter_typescript::HIGHLIGHTS_QUERY.into()),
             #[cfg(all(
                 feature = "tree-sitter-javascript",
                 not(feature = "tree-sitter-typescript")
             ))]
-            Language::TypeScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY),
+            Language::TypeScript => Some(tree_sitter_javascript::HIGHLIGHT_QUERY.into()),
             #[cfg(feature = "tree-sitter-python")]
-            Language::Python => Some(tree_sitter_python::HIGHLIGHTS_QUERY),
+            Language::Python => Some(tree_sitter_python::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-json")]
-            Language::Json => Some(tree_sitter_json::HIGHLIGHTS_QUERY),
+            Language::Json => Some(tree_sitter_json::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-toml-ng")]
-            Language::Toml => Some(tree_sitter_toml_ng::HIGHLIGHTS_QUERY),
+            Language::Toml => Some(tree_sitter_toml_ng::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-md")]
-            Language::Markdown => Some(tree_sitter_md::HIGHLIGHT_QUERY_BLOCK),
+            Language::Markdown => Some(tree_sitter_md::HIGHLIGHT_QUERY_BLOCK.into()),
             #[cfg(feature = "tree-sitter-go")]
-            Language::Go => Some(tree_sitter_go::HIGHLIGHTS_QUERY),
+            Language::Go => Some(tree_sitter_go::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-c")]
-            Language::C => Some(tree_sitter_c::HIGHLIGHT_QUERY),
-            #[cfg(feature = "tree-sitter-cpp")]
-            Language::Cpp => Some(tree_sitter_cpp::HIGHLIGHT_QUERY),
+            Language::C => Some(tree_sitter_c::HIGHLIGHT_QUERY.into()),
+            #[cfg(all(feature = "tree-sitter-cpp", feature = "tree-sitter-c"))]
+            Language::Cpp => {
+                let combined = format!(
+                    "{}\n{}",
+                    tree_sitter_c::HIGHLIGHT_QUERY,
+                    tree_sitter_cpp::HIGHLIGHT_QUERY
+                );
+                Some(combined.into())
+            }
+            #[cfg(all(feature = "tree-sitter-cpp", not(feature = "tree-sitter-c")))]
+            Language::Cpp => Some(tree_sitter_cpp::HIGHLIGHT_QUERY.into()),
             #[cfg(feature = "tree-sitter-java")]
-            Language::Java => Some(tree_sitter_java::HIGHLIGHTS_QUERY),
+            Language::Java => Some(tree_sitter_java::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-ruby")]
-            Language::Ruby => Some(tree_sitter_ruby::HIGHLIGHTS_QUERY),
+            Language::Ruby => Some(tree_sitter_ruby::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-bash")]
-            Language::Bash => Some(tree_sitter_bash::HIGHLIGHT_QUERY),
+            Language::Bash => Some(tree_sitter_bash::HIGHLIGHT_QUERY.into()),
             #[cfg(feature = "tree-sitter-css")]
-            Language::Css => Some(tree_sitter_css::HIGHLIGHTS_QUERY),
+            Language::Css => Some(tree_sitter_css::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-html")]
-            Language::Html => Some(tree_sitter_html::HIGHLIGHTS_QUERY),
+            Language::Html => Some(tree_sitter_html::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-yaml")]
-            Language::Yaml => Some(tree_sitter_yaml::HIGHLIGHTS_QUERY),
+            Language::Yaml => Some(tree_sitter_yaml::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-lua")]
-            Language::Lua => Some(tree_sitter_lua::HIGHLIGHTS_QUERY),
+            Language::Lua => Some(tree_sitter_lua::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-zig")]
-            Language::Zig => Some(tree_sitter_zig::HIGHLIGHTS_QUERY),
+            Language::Zig => Some(tree_sitter_zig::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-scala")]
-            Language::Scala => Some(tree_sitter_scala::HIGHLIGHTS_QUERY),
+            Language::Scala => Some(tree_sitter_scala::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-php")]
-            Language::Php => Some(tree_sitter_php::HIGHLIGHTS_QUERY),
+            Language::Php => Some(tree_sitter_php::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-ocaml")]
-            Language::OCaml => Some(tree_sitter_ocaml::HIGHLIGHTS_QUERY),
+            Language::OCaml => Some(tree_sitter_ocaml::HIGHLIGHTS_QUERY.into()),
             #[cfg(feature = "tree-sitter-sequel")]
-            Language::Sql => Some(tree_sitter_sequel::HIGHLIGHTS_QUERY),
+            Language::Sql => Some(tree_sitter_sequel::HIGHLIGHTS_QUERY.into()),
             _ => None,
         }
     }
@@ -1361,7 +1382,7 @@ impl EditorState {
             self.highlight_query = lang
                 .highlight_query_source()
                 .filter(|src| !src.is_empty())
-                .and_then(|src| Query::new(&ts_lang, src).ok());
+                .and_then(|src| Query::new(&ts_lang, &src).ok());
         } else {
             self.highlight_query = None;
         }
@@ -1388,7 +1409,7 @@ impl EditorState {
             self.highlight_query = lang
                 .highlight_query_source()
                 .filter(|src| !src.is_empty())
-                .and_then(|src| Query::new(&ts_lang, src).ok());
+                .and_then(|src| Query::new(&ts_lang, &src).ok());
         } else {
             self.highlight_query = None;
         }

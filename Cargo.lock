@@ -112,7 +112,7 @@ dependencies = [
 
 [[package]]
 name = "adabraka-ui"
-version = "0.3.6"
+version = "0.3.7"
 dependencies = [
  "adabraka-gpui",
  "bytes",

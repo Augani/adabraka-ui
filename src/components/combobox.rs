@@ -10,7 +10,6 @@
 //! - Full Styled trait support for customization
 
 use crate::components::icon::Icon;
-use crate::components::scrollable::scrollable_vertical;
 use crate::theme::use_theme;
 use gpui::{prelude::*, *};
 
@@ -572,76 +571,73 @@ impl<T: Clone + PartialEq + 'static> Render for Combobox<T> {
                                             .rounded(theme.tokens.radius_md)
                                             .shadow_xl()
                                             .overflow_hidden()
-                                            .child(
+                                            .child({
+                                                let filtered = self.filtered_items(cx);
+
                                                 div()
+                                                    .id("combobox-dropdown-list")
                                                     .max_h(self.max_height)
-                                                    .child({
-                                                        let filtered = self.filtered_items(cx);
-
-                                                        scrollable_vertical(
+                                                    .overflow_y_scroll()
+                                                    .py(px(4.0))
+                                                    .when(filtered.is_empty(), |this| {
+                                                        this.child(
                                                             div()
-                                                                .py(px(4.0))
-                                                                .when(filtered.is_empty(), |this| {
-                                                                    this.child(
-                                                                        div()
-                                                                            .px(px(12.0))
-                                                                            .py(px(16.0))
-                                                                            .flex()
-                                                                            .items_center()
-                                                                            .justify_center()
-                                                                            .text_size(px(13.0))
-                                                                            .font_family(theme.tokens.font_family.clone())
-                                                                            .text_color(theme.tokens.muted_foreground)
-                                                                            .child("No results found")
-                                                                    )
-                                                                })
-                                                                .when(!filtered.is_empty(), |this| {
-                                                                    this.children(
-                                                                        filtered.iter().enumerate().map(|(display_idx, &(_original_idx, item))| {
-                                                                            let is_focused = focused_idx == Some(display_idx);
-                                                                            let is_selected = state.is_selected(item);
-                                                                            let item_text = (self.render_item)(item);
-
-                                                                            div()
-                                                                                .px(px(12.0))
-                                                                                .py(px(8.0))
-                                                                                .flex()
-                                                                                .items_center()
-                                                                                .justify_between()
-                                                                                .text_color(if is_selected {
-                                                                                    theme.tokens.primary
-                                                                                } else {
-                                                                                    theme.tokens.popover_foreground
-                                                                                })
-                                                                                .bg(if is_focused {
-                                                                                    theme.tokens.accent
-                                                                                } else {
-                                                                                    gpui::transparent_black()
-                                                                                })
-                                                                                .hover(|mut style| {
-                                                                                    style.background = Some(theme.tokens.accent.into());
-                                                                                    style
-                                                                                })
-                                                                                .cursor(CursorStyle::PointingHand)
-                                                                                .text_size(px(14.0))
-                                                                                .font_family(theme.tokens.font_family.clone())
-                                                                                .on_mouse_down(MouseButton::Left, cx.listener(move |this, _, window, cx| {
-                                                                                    this.select_item(display_idx, window, cx);
-                                                                                }))
-                                                                                .child(item_text)
-                                                                                .when(is_selected, |div| {
-                                                                                    div.child(
-                                                                                        Icon::new("check")
-                                                                                            .size(px(14.0))
-                                                                                            .color(theme.tokens.primary)
-                                                                                    )
-                                                                                })
-                                                                        })
-                                                                    )
-                                                                })
+                                                                .px(px(12.0))
+                                                                .py(px(16.0))
+                                                                .flex()
+                                                                .items_center()
+                                                                .justify_center()
+                                                                .text_size(px(13.0))
+                                                                .font_family(theme.tokens.font_family.clone())
+                                                                .text_color(theme.tokens.muted_foreground)
+                                                                .child("No results found")
                                                         )
                                                     })
-                                            )
+                                                    .when(!filtered.is_empty(), |this| {
+                                                        this.children(
+                                                            filtered.iter().enumerate().map(|(display_idx, &(_original_idx, item))| {
+                                                                let is_focused = focused_idx == Some(display_idx);
+                                                                let is_selected = state.is_selected(item);
+                                                                let item_text = (self.render_item)(item);
+
+                                                                div()
+                                                                    .px(px(12.0))
+                                                                    .py(px(8.0))
+                                                                    .flex()
+                                                                    .items_center()
+                                                                    .justify_between()
+                                                                    .text_color(if is_selected {
+                                                                        theme.tokens.primary
+                                                                    } else {
+                                                                        theme.tokens.popover_foreground
+                                                                    })
+                                                                    .bg(if is_focused {
+                                                                        theme.tokens.accent
+                                                                    } else {
+                                                                        gpui::transparent_black()
+                                                                    })
+                                                                    .hover(|mut style| {
+                                                                        style.background = Some(theme.tokens.accent.into());
+                                                                        style
+                                                                    })
+                                                                    .cursor(CursorStyle::PointingHand)
+                                                                    .text_size(px(14.0))
+                                                                    .font_family(theme.tokens.font_family.clone())
+                                                                    .on_mouse_down(MouseButton::Left, cx.listener(move |this, _, window, cx| {
+                                                                        this.select_item(display_idx, window, cx);
+                                                                    }))
+                                                                    .child(item_text)
+                                                                    .when(is_selected, |div| {
+                                                                        div.child(
+                                                                            Icon::new("check")
+                                                                                .size(px(14.0))
+                                                                                .color(theme.tokens.primary)
+                                                                        )
+                                                                    })
+                                                            })
+                                                        )
+                                                    })
+                                            })
                                     )
                             )
                     )

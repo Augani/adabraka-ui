@@ -505,6 +505,11 @@ pub struct EditorState {
     pub line_height: Pixels,
     pub font_family_override: Option<SharedString>,
 
+    cursor_visible: bool,
+    blink_task: Option<Task<()>>,
+    last_cursor_move: std::time::Instant,
+    last_blink_cursor: Position,
+
     overlay_active_check: Option<Box<dyn Fn(&App) -> bool + 'static>>,
 
     reparse_task: Option<Task<()>>,
@@ -600,6 +605,10 @@ impl EditorState {
             font_size: px(14.0),
             line_height: px(20.0),
             font_family_override: None,
+            cursor_visible: true,
+            blink_task: None,
+            last_cursor_move: std::time::Instant::now(),
+            last_blink_cursor: Position::zero(),
             overlay_active_check: None,
             reparse_task: None,
             search_task: None,
@@ -638,6 +647,7 @@ impl EditorState {
         let line_len = self.line_len(self.cursor.line);
         self.cursor.col = col.min(line_len);
         self.selection = None;
+        self.reset_cursor_blink(cx);
         self.ensure_cursor_visible(cx);
     }
 
@@ -654,6 +664,25 @@ impl EditorState {
         self.line_layouts.clear();
         self.line_content_hashes.clear();
         cx.notify();
+    }
+
+    fn reset_cursor_blink(&mut self, cx: &mut Context<Self>) {
+        self.cursor_visible = true;
+        self.last_cursor_move = std::time::Instant::now();
+        self.blink_task = Some(cx.spawn(async |this, cx| {
+            loop {
+                smol::Timer::after(std::time::Duration::from_millis(500)).await;
+                let ok = this
+                    .update(cx, |state, cx| {
+                        state.cursor_visible = !state.cursor_visible;
+                        cx.notify();
+                    })
+                    .is_ok();
+                if !ok {
+                    break;
+                }
+            }
+        }));
     }
 
     pub fn set_diagnostics(&mut self, diagnostics: Vec<EditorDiagnostic>, cx: &mut Context<Self>) {
@@ -1560,6 +1589,8 @@ impl EditorState {
     fn mark_modified(&mut self) {
         self.is_modified = true;
         self.content_version = self.content_version.wrapping_add(1);
+        self.cursor_visible = true;
+        self.last_cursor_move = std::time::Instant::now();
     }
 
     pub fn content_version(&self) -> u64 {
@@ -3337,9 +3368,16 @@ impl Element for EditorElement {
                 line_num_buf2.clear();
                 use std::fmt::Write;
                 let _ = write!(line_num_buf2, "{:>4}", line_idx + 1);
+                let num_font = if is_current_line && is_focused {
+                    let mut f = text_style.font();
+                    f.weight = FontWeight::BOLD;
+                    f
+                } else {
+                    text_style.font()
+                };
                 let line_num_run = TextRun {
                     len: line_num_buf2.len(),
-                    font: text_style.font(),
+                    font: num_font,
                     color: num_color,
                     background_color: None,
                     underline: None,
@@ -3616,32 +3654,52 @@ impl Element for EditorElement {
         }
 
         if is_focused {
-            if let Some(cursor_display_row) = buf_to_disp(cursor.line) {
-                let total = self.state.read(cx).total_lines();
-                let cursor_col = if cursor.line < total {
-                    cursor.col.min(self.state.read(cx).line_len(cursor.line))
-                } else {
-                    0
-                };
-                let cursor_y = bounds.top() + padding_top + line_height * cursor_display_row as f32;
-                let cursor_x = if let Some(layout) =
-                    self.state.read(cx).line_layouts.get(&cursor.line)
-                {
-                    bounds.left() + gutter_width + layout.x_for_index(cursor_col) - scroll_offset_x
-                } else {
-                    bounds.left() + gutter_width - scroll_offset_x
-                };
+            let cursor_moved = {
+                let state = self.state.read(cx);
+                state.last_blink_cursor != cursor
+            };
+            if cursor_moved {
+                self.state.update(cx, |state, cx| {
+                    state.last_blink_cursor = cursor;
+                    state.reset_cursor_blink(cx);
+                });
+            } else if self.state.read(cx).blink_task.is_none() {
+                self.state.update(cx, |state, cx| {
+                    state.reset_cursor_blink(cx);
+                });
+            }
 
-                let cursor_draw_color = self
-                    .state
-                    .read(cx)
-                    .cursor_color_override
-                    .unwrap_or(theme.tokens.primary);
+            let cursor_visible = self.state.read(cx).cursor_visible;
+            if cursor_visible {
+                if let Some(cursor_display_row) = buf_to_disp(cursor.line) {
+                    let total = self.state.read(cx).total_lines();
+                    let cursor_col = if cursor.line < total {
+                        cursor.col.min(self.state.read(cx).line_len(cursor.line))
+                    } else {
+                        0
+                    };
+                    let cursor_y =
+                        bounds.top() + padding_top + line_height * cursor_display_row as f32;
+                    let cursor_x = if let Some(layout) =
+                        self.state.read(cx).line_layouts.get(&cursor.line)
+                    {
+                        bounds.left() + gutter_width + layout.x_for_index(cursor_col)
+                            - scroll_offset_x
+                    } else {
+                        bounds.left() + gutter_width - scroll_offset_x
+                    };
 
-                window.paint_quad(fill(
-                    Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
-                    cursor_draw_color,
-                ));
+                    let cursor_draw_color = self
+                        .state
+                        .read(cx)
+                        .cursor_color_override
+                        .unwrap_or(theme.tokens.primary);
+
+                    window.paint_quad(fill(
+                        Bounds::new(point(cursor_x, cursor_y), size(px(2.0), line_height)),
+                        cursor_draw_color,
+                    ));
+                }
             }
         }
     }

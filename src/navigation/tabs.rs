@@ -151,7 +151,8 @@ impl<T: Clone + PartialEq + 'static> Tabs<T> {
 
     pub fn on_close<F>(mut self, f: F) -> Self
     where
-        F: Fn(&T, &mut Window, &mut App) + Send + Sync + 'static,
+        // this actualy return the index like on_change() function, so change this type to same as on_change() 
+        F: Fn(&usize, &mut Window, &mut App) + Send + Sync + 'static,
     {
         self.on_close = Some(Arc::new(f));
         self

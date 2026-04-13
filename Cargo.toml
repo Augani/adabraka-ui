@@ -80,7 +80,7 @@ markup5ever_rcdom = { version = "0.36", optional = true }
 rodio = { version = "0.19", optional = true }
 
 [features]
-default = ["http"]
+default = []
 http = ["isahc"]
 markdown = ["pulldown-cmark"]
 html-render = ["html5ever", "markup5ever_rcdom"]
@@ -95,6 +95,9 @@ editor-languages = [
     "tree-sitter-php", "tree-sitter-ocaml",
     "tree-sitter-sequel",
 ]
+
+[patch.crates-io]
+adabraka-gpui = { path = "vendor/adabraka-gpui" }
 
 [[example]]
 name = "scroll_test"
@@ -322,4 +325,3 @@ required-features = ["markdown"]
 name = "html_demo"
 path = "examples/html_demo.rs"
 required-features = ["html-render"]
-

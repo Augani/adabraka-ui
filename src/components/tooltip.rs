@@ -4,6 +4,8 @@ use crate::theme::use_theme;
 use gpui::{prelude::*, *};
 use std::time::Duration;
 
+const TOOLTIP_GROUP: &str = "tooltip";
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum TooltipPlacement {
     #[default]
@@ -97,56 +99,62 @@ impl IntoElement for Tooltip {
         let theme = use_theme();
         let placement = self.placement;
         let user_style = self.style;
+        let tooltip = div()
+            .occlude()
+            .absolute()
+            .px(px(8.0))
+            .py(px(4.0))
+            .bg(theme.tokens.popover)
+            .text_color(theme.tokens.popover_foreground)
+            .border_1()
+            .border_color(theme.tokens.border)
+            .rounded(theme.tokens.radius_sm)
+            .shadow_md()
+            .text_size(px(12.0))
+            .font_family(theme.tokens.font_family.clone())
+            .whitespace_nowrap()
+            .when_some(self.max_width, |div, width| div.max_w(width))
+            .opacity(0.0)
+            .invisible()
+            .group_hover(TOOLTIP_GROUP, |mut style| {
+                style.opacity = Some(1.0);
+                style.visibility = Some(gpui::Visibility::Visible);
+                style
+            })
+            .map(|this| {
+                let mut div = this;
+                div.style().refine(&user_style);
+                div
+            })
+            .child(self.content);
 
-        // For now, we'll render a simplified version
-        // In a full implementation, you'd use a stateful component with timers
         div()
             .relative()
-            .group("")
+            .group(TOOLTIP_GROUP)
             .when_some(self.child, |this: Div, child| this.child(child))
             .when(!self.disabled, |this: Div| {
-                this.child(
-                    deferred(
-                        anchored()
-                            .snap_to_window_with_margin(px(8.0))
-                            .anchor(match placement {
-                                TooltipPlacement::Top => Corner::BottomLeft,
-                                TooltipPlacement::Bottom => Corner::TopLeft,
-                                TooltipPlacement::Left => Corner::TopRight,
-                                TooltipPlacement::Right => Corner::TopLeft,
-                            })
-                            .child(
-                                div()
-                                    .occlude()
-                                    .px(px(8.0))
-                                    .py(px(4.0))
-                                    .bg(theme.tokens.popover)
-                                    .text_color(theme.tokens.popover_foreground)
-                                    .border_1()
-                                    .border_color(theme.tokens.border)
-                                    .rounded(theme.tokens.radius_sm)
-                                    .shadow_md()
-                                    .text_size(px(12.0))
-                                    .font_family(theme.tokens.font_family.clone())
-                                    .whitespace_nowrap()
-                                    .when_some(self.max_width, |div, width| div.max_w(width))
-                                    .opacity(0.0)
-                                    .invisible()
-                                    .group_hover("", |mut style| {
-                                        style.opacity = Some(1.0);
-                                        style.visibility = Some(gpui::Visibility::Visible);
-                                        style
-                                    })
-                                    .map(|this| {
-                                        let mut div = this;
-                                        div.style().refine(&user_style);
-                                        div
-                                    })
-                                    .child(self.content),
-                            ),
-                    )
-                    .with_priority(1),
-                )
+                this.child(match placement {
+                    TooltipPlacement::Top => tooltip
+                        .bottom_full()
+                        .left_1_2()
+                        .mb(px(8.0))
+                        .ml(px(-80.0)),
+                    TooltipPlacement::Bottom => tooltip
+                        .top_full()
+                        .left_1_2()
+                        .mt(px(8.0))
+                        .ml(px(-80.0)),
+                    TooltipPlacement::Left => tooltip
+                        .right_full()
+                        .top_1_2()
+                        .mr(px(8.0))
+                        .mt(px(-14.0)),
+                    TooltipPlacement::Right => tooltip
+                        .left_full()
+                        .top_1_2()
+                        .ml(px(8.0))
+                        .mt(px(-14.0)),
+                })
             })
     }
 }

@@ -1,6 +1,10 @@
+#[cfg(feature = "http")]
 use futures::future::BoxFuture;
+#[cfg(feature = "http")]
 use futures::FutureExt;
+#[cfg(feature = "http")]
 use gpui::http_client::{AsyncBody, HttpClient, Request, Response};
+#[cfg(feature = "http")]
 use std::sync::Arc;
 
 #[cfg(feature = "http")]

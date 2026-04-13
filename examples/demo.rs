@@ -3,6 +3,9 @@ use gpui::*;
 
 fn main() {
     Application::new().run(|cx| {
+        adabraka_ui::init(cx);
+        adabraka_ui::set_icon_base_path("assets/icons");
+
         cx.open_window(
             WindowOptions {
                 titlebar: Some(gpui::TitlebarOptions {
